@@ -19,7 +19,7 @@ kotlin {
         compilations {
             val main by getting
 
-            val mainClass = "com.lehaine.littlekt.samples.DisplayTestKt"
+            val mainClass = "com.littlekt.samples.DisplayTestKt"
             tasks {
                 register<Copy>("copyResources") {
                     group = "package"
@@ -131,7 +131,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.lehaine.littlekt.samples"
+    namespace = "com.littlekt.samples"
     sourceSets["main"].apply {
         manifest.srcFile("src/androidMain/AndroidManifest.xml")
         assets.srcDirs("src/commonMain/resources")

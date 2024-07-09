@@ -5,7 +5,7 @@ plugins {
     id("littlekt.convention.publication")
 }
 val littleKtVersion: String by project
-group = "com.lehaine.littlekt.gradle"
+group = "com.littlekt.gradle"
 version = littleKtVersion
 
 java {
@@ -39,10 +39,10 @@ dependencies {
 gradlePlugin {
     plugins {
         create("littlektTexturePacker") {
-            id = "com.lehaine.littlekt.gradle.texturepacker"
+            id = "com.littlekt.gradle.texturepacker"
             displayName = "LittleKt Texture Packer Plugin"
             description = "A Gradle plugin that adds packing textures into an atlas"
-            implementationClass = "com.lehaine.littlekt.gradle.texturepacker.LittleKtTexturePackerPlugin"
+            implementationClass = "com.littlekt.gradle.texturepacker.LittleKtTexturePackerPlugin"
         }
     }
 }

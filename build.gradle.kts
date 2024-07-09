@@ -19,7 +19,7 @@ allprojects {
         google()
         mavenCentral()
     }
-    group = "com.lehaine.littlekt"
+    group = "com.littlekt"
     version = littleKtVersion
     extra["isReleaseVersion"] = !littleKtVersion.endsWith("SNAPSHOT")
 

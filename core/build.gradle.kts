@@ -144,7 +144,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.lehaine.littlekt.core"
+    namespace = "com.littlekt.core"
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     compileSdk = (findProperty("android.compileSdk") as String).toInt()
 

@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/littlektframework/littlekt/blob/master/LICENSE)
 [![build](https://github.com/littlektframework/littlekt/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/littlektframework/littlekt/actions/workflows/build.yml)
-[![Download](https://img.shields.io/maven-central/v/com.lehaine.littlekt/core/0.9.0)](https://search.maven.org/artifact/com.lehaine.littlekt/core/0.9.0/pom)
+[![Download](https://img.shields.io/maven-central/v/com.littlekt/core/0.9.0)](https://search.maven.org/artifact/com.littlekt/core/0.9.0/pom)
 
 **Currently, in development.**
 
@@ -41,7 +41,7 @@ val kotlinCoroutinesVersion = "1.8.0" // or whatever version you are using
 sourceSets {
     val commonMain by getting {
         dependencies {
-            implementation("com.lehaine.littlekt:core:$littleKtVersion")
+            implementation("com.littlekt:core:$littleKtVersion")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")  // littlekt requires coroutines library on the classpath
         }
     }
@@ -76,7 +76,7 @@ val kotlinCoroutinesVersion = "1.8.0" // or whatever version you are using
 sourceSets {
     val commonMain by getting {
         dependencies {
-            implementation("com.lehaine.littlekt:core:$littleKtVersion")
+            implementation("com.littlekt:core:$littleKtVersion")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")  // littlekt requires coroutines library on the classpath
         }
     }
