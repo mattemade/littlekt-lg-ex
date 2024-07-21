@@ -1,6 +1,6 @@
 package com.littlekt.file.ldtk
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.file.vfs.*
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.g2d.TextureAtlas
@@ -19,7 +19,7 @@ internal class LDtkLevelLoader(
     private val mapData: LDtkMapData,
     private val atlas: TextureAtlas? = null,
     private val sliceBorder: Int = 2,
-) : Disposable {
+) : Releasable {
 
     private val assetCache = mutableMapOf<VfsFile, TextureSlice>()
     internal val tilesets = mutableMapOf<Int, LDtkTileset>()
@@ -526,8 +526,8 @@ internal class LDtkLevelLoader(
                     .sliceWithBorder(vfs.vfs.context, tilesetDef.tileGridSize, tilesetDef.tileGridSize, sliceBorder)
         )
 
-    override fun dispose() {
-        assetCache.values.forEach { it.texture.dispose() }
+    override fun release() {
+        assetCache.values.forEach { it.texture.release() }
         assetCache.clear()
         tilesets.clear()
     }

@@ -56,7 +56,7 @@ class WebAudioClip(val assetPath: String) : AudioClip {
         latestClip.pause()
     }
 
-    override fun dispose() {
+    override fun release() {
         latestClip.stop()
         clipPool.clear()
     }

@@ -259,7 +259,7 @@ class LwjglContext(override val configuration: JvmConfiguration) : Context() {
         GLFW.glfwTerminate()
         GLFW.glfwSetErrorCallback(null)?.free()
 
-        audioContext.dispose()
+        audioContext.release()
     }
 
     private val Boolean.glfw: Int

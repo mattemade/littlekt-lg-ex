@@ -1,6 +1,6 @@
 package com.littlekt.graphics
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.file.ByteBufferImpl
 import com.littlekt.graphics.gl.TextureFormat
 import kotlinx.browser.document
@@ -17,7 +17,7 @@ actual class Cursor actual constructor(
     actual val pixmap: Pixmap,
     actual val xHotspot: Int,
     actual val yHotSpot: Int
-) : Disposable {
+) : Releasable {
     val cssCursorProperty: String
 
     init {
@@ -49,6 +49,6 @@ actual class Cursor actual constructor(
         cssCursorProperty = "url('${dataUrl}')$xHotspot $yHotSpot,auto"
     }
 
-    actual override fun dispose() = Unit
+    actual override fun release() = Unit
 
 }

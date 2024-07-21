@@ -73,7 +73,7 @@ class OpenALAudioClip(
         context.pauseSourceViaBufferID(bufferID)
     }
 
-    override fun dispose() = withDevice {
+    override fun release() = withDevice {
         if (bufferID == -1) return
 
         context.disposeSourceViaBufferID(bufferID)

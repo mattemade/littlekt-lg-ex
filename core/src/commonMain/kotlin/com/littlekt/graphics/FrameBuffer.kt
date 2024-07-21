@@ -1,7 +1,7 @@
 package com.littlekt.graphics
 
 import com.littlekt.Context
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.graphics.FrameBuffer.TextureAttachment
 import com.littlekt.graphics.gl.*
 import kotlin.contracts.ExperimentalContracts
@@ -26,7 +26,7 @@ open class FrameBuffer(
     val hasDepth: Boolean = false,
     val hasStencil: Boolean = false,
     var hasPackedDepthStencil: Boolean = false,
-) : Preparable, Disposable {
+) : Preparable, Releasable {
 
     /**
      * Encapsulates OpenGL frame buffer objects.
@@ -233,7 +233,7 @@ open class FrameBuffer(
         gl.bindDefaultFrameBuffer()
 
         if (result != FrameBufferStatus.FRAMEBUFFER_COMPLETE) {
-            dispose()
+            release()
 
             when (result) {
                 FrameBufferStatus.FRAMEBUFFER_INCOMPLETE_ATTACHMENT -> throw IllegalStateException("Frame buffer couldn't be constructed: incomplete attachment")
@@ -277,9 +277,9 @@ open class FrameBuffer(
         gl.viewport(x, y, width, height)
     }
 
-    override fun dispose() {
+    override fun release() {
         _textures.forEach {
-            it.dispose()
+            it.release()
         }
 
         if (hasDepth) {

@@ -97,7 +97,7 @@ open class FrameBufferNode : CanvasLayer() {
             lastHeight = newHeight
             width = newWidth
             height = newHeight
-            fbo?.dispose()
+            fbo?.release()
             fbo = FrameBuffer(
                 width,
                 height,

@@ -1,6 +1,6 @@
 package com.littlekt.graph.node.render
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.graphics.shader.ShaderProgram
 import com.littlekt.graphics.util.BlendMode
 import com.littlekt.graphics.util.DepthStencilMode
@@ -14,7 +14,7 @@ open class Material(
      * The [ShaderProgram] that this material will use for rendering
      */
     val shader: ShaderProgram<*, *>? = null,
-) : Disposable {
+) : Releasable {
     /**
      * The [BlendMode] this material uses. Defaults to [BlendMode.NonPreMultiplied].
      */
@@ -30,8 +30,8 @@ open class Material(
      */
     open fun onPreRender() = Unit
 
-    override fun dispose() {
-        shader?.dispose()
+    override fun release() {
+        shader?.release()
     }
 
     override fun equals(other: Any?): Boolean {

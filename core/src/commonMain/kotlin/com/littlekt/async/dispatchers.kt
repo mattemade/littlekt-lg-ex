@@ -1,7 +1,7 @@
 package com.littlekt.async
 
 import com.littlekt.Context
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.util.internal.SingletonBase
 import com.littlekt.util.internal.lock
 import com.littlekt.util.internal.now
@@ -38,7 +38,7 @@ interface KtDispatcher : CoroutineContext, Delay {
 class AsyncThreadDispatcher(
     val executor: AsyncExecutor,
     val threads: Int = -1,
-) : CoroutineDispatcher(), KtDispatcher, Disposable {
+) : CoroutineDispatcher(), KtDispatcher, Releasable {
     private val lock: Any = Any()
     private val tasks = mutableListOf<Runnable>()
     private val timedTasks: MutableList<TimedTask> = mutableListOf()
@@ -57,8 +57,8 @@ class AsyncThreadDispatcher(
         }
     }
 
-    override fun dispose() {
-        executor.dispose()
+    override fun release() {
+        executor.release()
     }
 
 

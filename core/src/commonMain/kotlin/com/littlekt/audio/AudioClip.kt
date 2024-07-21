@@ -1,6 +1,6 @@
 package com.littlekt.audio
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import kotlin.time.Duration
 
 /**
@@ -8,7 +8,7 @@ import kotlin.time.Duration
  * @author Colton Daily
  * @date 12/19/2021
  */
-interface AudioClip : Disposable {
+interface AudioClip : Releasable {
     var volume: Float
 
     /**

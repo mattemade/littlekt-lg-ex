@@ -1,7 +1,7 @@
 package com.littlekt.graphics
 
 import com.littlekt.Context
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.graphics.g2d.TextureSlice
 import com.littlekt.graphics.gl.*
 
@@ -11,7 +11,7 @@ import com.littlekt.graphics.gl.*
  */
 class Texture(
     val textureData: TextureData
-) : Preparable, Disposable {
+) : Preparable, Releasable {
     private var gl: GL? = null
     private var isPrepared = false
 
@@ -125,7 +125,7 @@ class Texture(
 
     }
 
-    override fun dispose() {
+    override fun release() {
         val gl = gl ?: return
         val glTexture = glTexture ?: return
 

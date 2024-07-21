@@ -1,7 +1,7 @@
 package com.littlekt.graphics.shader
 
 import com.littlekt.Context
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.file.createIntBuffer
 import com.littlekt.graphics.GL
 import com.littlekt.graphics.Preparable
@@ -11,7 +11,7 @@ import kotlin.math.min
 class ShaderProgram<V : VertexShader, F : FragmentShader>(
     val vertexShader: V,
     val fragmentShader: F,
-) : Preparable, Disposable {
+) : Preparable, Releasable {
     companion object {
         const val POSITION_ATTRIBUTE = "a_position"
 
@@ -181,7 +181,7 @@ class ShaderProgram<V : VertexShader, F : FragmentShader>(
         return shader
     }
 
-    override fun dispose() {
+    override fun release() {
         val gl = gl
         if (!prepared || gl == null) return
         gl.useDefaultProgram()

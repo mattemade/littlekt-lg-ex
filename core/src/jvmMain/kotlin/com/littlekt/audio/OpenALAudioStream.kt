@@ -130,7 +130,7 @@ class OpenALAudioStream(
         isPlaying = false
     }
 
-    override fun dispose() = withDevice {
+    override fun release() = withDevice {
         if (sourceID != -1) {
             context.audioStreams -= this
             alSourceStop(sourceID)

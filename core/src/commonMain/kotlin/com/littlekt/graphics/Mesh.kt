@@ -1,7 +1,7 @@
 package com.littlekt.graphics
 
 import com.littlekt.ContextListener
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.graphics.gl.DrawMode
 import com.littlekt.graphics.gl.IndexType
 import com.littlekt.graphics.gl.Usage
@@ -99,7 +99,7 @@ class Mesh(
     val gl: GL,
     val geometry: MeshGeometry,
     var autoBind: Boolean = true,
-) : Disposable {
+) : Releasable {
 
     private val isStatic get() = geometry.usage == Usage.STATIC_DRAW
     private val vertexAttributes = geometry.attributes
@@ -204,8 +204,8 @@ class Mesh(
     /**
      * Disposes the mesh and any buffers.
      */
-    override fun dispose() {
-        vertices.dispose()
-        indices.dispose()
+    override fun release() {
+        vertices.release()
+        indices.release()
     }
 }

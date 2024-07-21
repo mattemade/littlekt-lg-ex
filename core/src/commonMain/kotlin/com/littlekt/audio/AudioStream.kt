@@ -1,13 +1,13 @@
 package com.littlekt.audio
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 
 /**
  * A stream of audio that can be played.
  * @author Colton Daily
  * @date 12/19/2021
  */
-interface AudioStream : Disposable {
+interface AudioStream : Releasable {
     /**
      * Settings this will adjust the current volume of the stream.
      * @return the current volume

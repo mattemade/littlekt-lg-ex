@@ -1,6 +1,6 @@
 package com.littlekt.graphics
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.file.ByteBufferImpl
 import com.littlekt.graphics.gl.TextureFormat
 import org.lwjgl.glfw.GLFW
@@ -14,7 +14,7 @@ actual class Cursor actual constructor(
     actual val pixmap: Pixmap,
     actual val xHotspot: Int,
     actual val yHotSpot: Int
-) : Disposable {
+) : Releasable {
 
     private val glfwImage: GLFWImage
     private val pixmapCopy: Pixmap
@@ -48,7 +48,7 @@ actual class Cursor actual constructor(
         cursorHandle = GLFW.glfwCreateCursor(glfwImage, xHotspot, yHotSpot)
     }
 
-    actual override fun dispose() {
+    actual override fun release() {
         check(!destroyed) { "Cursor already disposed." }
 
         destroyed = true

@@ -1,6 +1,6 @@
 package com.littlekt.graphics
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.file.FloatBuffer
 import com.littlekt.file.ShortBuffer
 import com.littlekt.file.createFloatBuffer
@@ -23,7 +23,7 @@ class VertexBufferObject(
     val isStatic: Boolean,
     val attributes: VertexAttributes,
     var buffer: FloatBuffer,
-) : Disposable {
+) : Releasable {
     private val glBuffer: GlBuffer = gl.createBuffer()
     private val vaoGl: GlVertexArray? = if (gl.isG30) gl.createVertexArray() else null
     private val usage = if (isStatic) Usage.STATIC_DRAW else Usage.DYNAMIC_DRAW
@@ -147,7 +147,7 @@ class VertexBufferObject(
         }
     }
 
-    override fun dispose() {
+    override fun release() {
         gl.bindDefaultBuffer(GL.ARRAY_BUFFER)
         gl.deleteBuffer(glBuffer)
     }
@@ -158,7 +158,7 @@ class IndexBufferObject(
     val gl: GL,
     val isStatic: Boolean = true,
     var buffer: ShortBuffer,
-) : Disposable {
+) : Releasable {
 
     private val glBuffer: GlBuffer = gl.createBuffer()
     private val usage = if (isStatic) Usage.STATIC_DRAW else Usage.DYNAMIC_DRAW
@@ -245,7 +245,7 @@ class IndexBufferObject(
         }
     }
 
-    override fun dispose() {
+    override fun release() {
         gl.bindDefaultBuffer(BufferTarget.ELEMENT_ARRAY)
         gl.deleteBuffer(glBuffer)
     }

@@ -1,7 +1,7 @@
 package com.littlekt.graph
 
 import com.littlekt.Context
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.graph.node.*
 import com.littlekt.graph.node.annotation.SceneGraphDslMarker
 import com.littlekt.graph.node.render.Material
@@ -171,7 +171,7 @@ open class SceneGraph<InputType>(
         uiInputSignals
     ),
     whitePixel: TextureSlice = Textures.white,
-) : InputMapProcessor<InputType>, Disposable {
+) : InputMapProcessor<InputType>, Releasable {
     private var ownsBatch = true
     val batch: Batch = batch?.also { ownsBatch = false } ?: SpriteBatch(context)
     val shapeRenderer: ShapeRenderer = ShapeRenderer(this.batch, whitePixel)
@@ -1138,10 +1138,10 @@ open class SceneGraph<InputType>(
      * Lifecycle method. Do any necessary unloading / disposing here. This is called when this scene is removed
      * from the active slot.
      */
-    override fun dispose() {
+    override fun release() {
         sceneCanvas.destroy()
         if (ownsBatch) {
-            batch.dispose()
+            batch.release()
         }
         controller.removeInputMapProcessor(this)
         context.input.removeInputProcessor(this)

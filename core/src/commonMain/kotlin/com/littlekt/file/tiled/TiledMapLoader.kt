@@ -173,7 +173,7 @@ internal constructor(
                                 tilesetBorder,
                                 mipmaps
                             )
-                        it.dispose()
+                        it.release()
                         result.getOrNull(0)?.let { slice -> textures += slice.texture }
                         result
                     }

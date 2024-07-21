@@ -1,6 +1,6 @@
 package com.littlekt.audio
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.util.fastForEach
 import org.lwjgl.openal.*
 import java.nio.ByteBuffer
@@ -10,7 +10,7 @@ import java.nio.IntBuffer
  * @author Colton Daily
  * @date 12/27/2021
  */
-class OpenALAudioContext : Disposable {
+class OpenALAudioContext : Releasable {
     val device = try {
         val byteBuffer: ByteBuffer? = null
         ALC10.alcOpenDevice(byteBuffer)
@@ -101,7 +101,7 @@ class OpenALAudioContext : Disposable {
         AL10.alDeleteBuffers(bufferID)
     }
 
-    override fun dispose() {
+    override fun release() {
         sources.forEach {
             if (AL10.alGetSourcei(it, AL10.AL_BUFFER) == it) {
                 AL10.alSourceStop(it)

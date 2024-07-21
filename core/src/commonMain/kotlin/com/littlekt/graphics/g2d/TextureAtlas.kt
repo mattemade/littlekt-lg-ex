@@ -1,6 +1,6 @@
 package com.littlekt.graphics.g2d
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.file.atlas.AtlasInfo
 import com.littlekt.file.atlas.AtlasPage
 import com.littlekt.graphics.Texture
@@ -12,7 +12,7 @@ import com.littlekt.util.internal.compareName
  * @author Colton Daily
  * @date 11/27/2021
  */
-class TextureAtlas internal constructor(private val textures: Map<String, Texture>, info: AtlasInfo) : Disposable {
+class TextureAtlas internal constructor(private val textures: Map<String, Texture>, info: AtlasInfo) : Releasable {
     constructor(textures: Map<String, Texture>) : this(textures, AtlasInfo(AtlasPage.Meta(), listOf()))
 
     /**
@@ -64,7 +64,7 @@ class TextureAtlas internal constructor(private val textures: Map<String, Textur
         }
     }
 
-    override fun dispose() {
-        textures.values.forEach { it.dispose() }
+    override fun release() {
+        textures.values.forEach { it.release() }
     }
 }

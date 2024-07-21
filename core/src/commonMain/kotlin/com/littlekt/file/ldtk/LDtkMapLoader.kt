@@ -1,6 +1,6 @@
 package com.littlekt.file.ldtk
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.file.vfs.VfsFile
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.g2d.TextureAtlas
@@ -18,7 +18,7 @@ class LDtkMapLoader(
     private val mapData: LDtkMapData,
     atlas: TextureAtlas? = null,
     tilesetBorder: Int = 2,
-) : Disposable {
+) : Releasable {
     private val levelLoader = LDtkLevelLoader(mapData, atlas, tilesetBorder)
     private val enums = mapData.defs.enums.associateBy(keySelector = { it.identifier }) { enum ->
         val values =
@@ -84,7 +84,7 @@ class LDtkMapLoader(
         }
     }
 
-    override fun dispose() {
-        levelLoader.dispose()
+    override fun release() {
+        levelLoader.release()
     }
 }

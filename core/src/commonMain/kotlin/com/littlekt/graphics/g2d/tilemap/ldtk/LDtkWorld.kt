@@ -1,6 +1,6 @@
 package com.littlekt.graphics.g2d.tilemap.ldtk
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.file.ldtk.LDtkEntityDefinition
 import com.littlekt.file.ldtk.LDtkWorldLayout
 import com.littlekt.graphics.g2d.Batch
@@ -19,7 +19,7 @@ class LDtkWorld(
     val tilesets: Map<Int, LDtkTileset>,
     val enums: Map<String, LDtkEnum>,
     val entities: Map<String, LDtkEntityDefinition>
-) : TileMap(), Disposable {
+) : TileMap(), Releasable {
     val levelsMap: Map<String, LDtkLevel> by lazy { levels.associateBy { it.identifier } }
 
     internal var onDispose = {}
@@ -31,7 +31,7 @@ class LDtkWorld(
 
     operator fun get(level: String) = levelsMap[level] ?: error("Level: '$level' does not exist in this map!")
 
-    override fun dispose() {
+    override fun release() {
         onDispose()
     }
 

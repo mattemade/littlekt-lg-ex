@@ -16,7 +16,6 @@ import com.littlekt.graphics.slice
 import com.littlekt.math.MutableVec4i
 import com.littlekt.util.MutableTextureAtlas
 import com.littlekt.util.internal.SingletonBase
-import kotlinx.serialization.decodeFromString
 import kotlin.math.max
 
 
@@ -64,8 +63,8 @@ internal class InternalResources private constructor(private val context: Contex
             add(fontTexture.slice(), "defaultFont")
         }.toImmutable()
 
-        tilesTexture.dispose()
-        fontTexture.dispose()
+        tilesTexture.release()
+        fontTexture.release()
 
         defaultFont = readBitmapFontTxt(
             defaultFontTxt.decodeFromBase64().decodeToString(), mutableMapOf(

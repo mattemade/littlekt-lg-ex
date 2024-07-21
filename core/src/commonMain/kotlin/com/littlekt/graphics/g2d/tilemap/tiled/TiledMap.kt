@@ -1,6 +1,6 @@
 package com.littlekt.graphics.g2d.tilemap.tiled
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.graph.node.resource.HAlign
 import com.littlekt.graph.node.resource.VAlign
 import com.littlekt.graphics.g2d.Batch
@@ -29,7 +29,7 @@ class TiledMap(
     val tileHeight: Int,
     val tileSets: List<TiledTileset>,
     private val textures: MutableList<Texture>
-) : TileMap(), Disposable {
+) : TileMap(), Releasable {
     val layersByName by lazy { layers.associateBy { it.name } }
     val layersById by lazy { layers.associateBy { it.id } }
 
@@ -60,8 +60,8 @@ class TiledMap(
 
     operator fun get(layer: String) = layer(layer)
 
-    override fun dispose() {
-        textures.forEach { it.dispose() }
+    override fun release() {
+        textures.forEach { it.release() }
         textures.clear()
     }
 

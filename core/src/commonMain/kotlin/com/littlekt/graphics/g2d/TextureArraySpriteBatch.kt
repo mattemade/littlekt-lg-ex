@@ -867,11 +867,11 @@ class TextureArraySpriteBatch(
         shader.uProjTrans?.apply(shader, combinedMatrix)
     }
 
-    override fun dispose() {
+    override fun release() {
         gl.bindDefaultTexture(TextureTarget._2D_ARRAY)
         gl.deleteTexture(textureArrayHandle)
-        copyFrameBuffer.dispose()
-        mesh.dispose()
-        shader.dispose()
+        copyFrameBuffer.release()
+        mesh.release()
+        shader.release()
     }
 }

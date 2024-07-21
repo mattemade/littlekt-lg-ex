@@ -69,7 +69,7 @@ class WebAudioStream(val assetPath: String) : AudioStream {
         stop()
     }
 
-    override fun dispose() {
+    override fun release() {
         stop()
     }
 

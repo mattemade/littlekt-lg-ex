@@ -10,7 +10,7 @@ import kotlin.time.Duration
  * @author Colton Daily
  * @date 12/26/2021
  */
-abstract class Scene(val context: Context) : Disposable {
+abstract class Scene(val context: Context) : Releasable {
     /**
      * Invoked when a [Scene] is first shown.
      */
@@ -31,7 +31,7 @@ abstract class Scene(val context: Context) : Disposable {
      */
     open suspend fun Context.hide() = Unit
 
-    final override fun dispose() {
+    final override fun release() {
         context.dispose()
     }
 

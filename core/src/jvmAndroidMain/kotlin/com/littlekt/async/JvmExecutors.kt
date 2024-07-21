@@ -1,6 +1,6 @@
 package com.littlekt.async
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
  * @author Colton Daily
  * @date 1/10/2022
  */
-actual class AsyncExecutor actual constructor(actual val maxConcurrent: Int) : Disposable {
+actual class AsyncExecutor actual constructor(actual val maxConcurrent: Int) : Releasable {
     private val executor = Executors.newFixedThreadPool(maxConcurrent) {
         Thread(it, "AsyncExecutor-Thread").apply { isDaemon = true }
     }
@@ -22,7 +22,7 @@ actual class AsyncExecutor actual constructor(actual val maxConcurrent: Int) : D
         return AsyncResult(executor.submit(Callable { action.invoke() }))
     }
 
-    actual override fun dispose() {
+    actual override fun release() {
         executor.shutdown()
         try {
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)

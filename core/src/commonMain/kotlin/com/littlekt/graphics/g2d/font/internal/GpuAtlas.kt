@@ -17,7 +17,7 @@ internal class GpuAtlas {
     var textureData = PixmapTextureData(pixmap, false)
         set(value) {
             field = value
-            texture.dispose()
+            texture.release()
             texture = Texture(field)
         }
     var texture = Texture(textureData)

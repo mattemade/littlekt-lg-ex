@@ -683,8 +683,8 @@ class SpriteBatch(
         shader.uTexture?.apply(shader)
     }
 
-    override fun dispose() {
-        mesh.dispose()
-        shader.dispose()
+    override fun release() {
+        mesh.release()
+        shader.release()
     }
 }

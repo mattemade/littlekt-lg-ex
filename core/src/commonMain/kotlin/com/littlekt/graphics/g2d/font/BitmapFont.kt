@@ -14,7 +14,7 @@ import kotlin.math.max
  * The text is drawn using a [SpriteBatch]. The text can also be cached in a [FontCache] to render static text without
  * having to compute the geometry of each glyph every frame. The [BitmapFontCache] can be used specifically for this class.
  *
- * The textures required for a [BitmapFont] are managed and may be disposed by directly calling the [dispose] method
+ * The textures required for a [BitmapFont] are managed and may be disposed by directly calling the [release] method
  * on the [BitmapFont] object.
  * @author Colt Daily
  * @date 1/5/22
@@ -119,9 +119,9 @@ class BitmapFont(
         cache.draw(batch)
     }
 
-    override fun dispose() {
+    override fun release() {
         textures.forEach {
-            it.dispose()
+            it.release()
         }
     }
 

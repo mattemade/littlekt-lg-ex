@@ -72,7 +72,7 @@ class VectorFont(private val font: TtfFont) : Preparable {
      */
     fun resize(width: Int, height: Int, context: Context) {
         if (!prepared) return
-        fbo.dispose()
+        fbo.release()
         fbo = FrameBuffer(
             width, height
         ).apply { prepare(context) }

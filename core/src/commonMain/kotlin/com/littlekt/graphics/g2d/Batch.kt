@@ -1,6 +1,6 @@
 package com.littlekt.graphics.g2d
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.Texture
 import com.littlekt.graphics.gl.BlendFactor
@@ -16,7 +16,7 @@ import kotlin.contracts.contract
  * @author Colton Daily
  * @date 2/8/2022
  */
-interface Batch : Disposable {
+interface Batch : Releasable {
     val drawing: Boolean
     var color: Color
     var colorBits: Float

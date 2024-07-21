@@ -1,13 +1,13 @@
 package com.littlekt.graphics.g2d.font
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 
 /**
  * An interface for describing and creating fonts in order to render their glyphs.
  * @author Colton Daily
  * @date 1/2/2022
  */
-interface Font : Disposable {
+interface Font : Releasable {
     /**
      * The font metrics of this [Font]
      */
@@ -93,5 +93,5 @@ interface Font : Disposable {
      */
     operator fun get(char: Char) = glyphMetrics[char.code]
 
-    override fun dispose() = Unit
+    override fun release() = Unit
 }
