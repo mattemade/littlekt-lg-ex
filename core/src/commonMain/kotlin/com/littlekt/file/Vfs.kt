@@ -41,7 +41,7 @@ abstract class Vfs(
         isLenient = true
     }
 
-    protected val job = Job()
+    internal val job = Job()
 
     override val coroutineContext: CoroutineContext = job
 
