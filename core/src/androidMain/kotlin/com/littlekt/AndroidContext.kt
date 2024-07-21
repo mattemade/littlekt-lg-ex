@@ -172,7 +172,7 @@ class AndroidContext(override val configuration: AndroidConfiguration) : Context
     override fun destroy() {
         KtScope.launch {
             disposeCalls.fastForEach { dispose -> dispose() }
-            audioContext.dispose()
+            audioContext.release()
         }
     }
 

@@ -72,7 +72,7 @@ class PixelSmoothCameraTest(context: Context) : ContextListener(context) {
         onResize { width, height ->
             pxHeight = height / (height / targetHeight)
             pxWidth = (width / (height / pxHeight))
-            fbo.dispose()
+            fbo.release()
             fbo = FrameBuffer(
                 pxWidth.nextPowerOfTwo,
                 pxHeight.nextPowerOfTwo,

@@ -59,8 +59,8 @@ class ViewportsTest(context: Context) : ContextListener(context) {
         }
 
         // we need to dispose of them if we aren't using them since the atlas generates new textures
-        cavernasTexture.dispose()
-        background.dispose()
+        cavernasTexture.release()
+        background.release()
 
         val maps = mutableListOf<TiledMap>()
         resourcesVfs["tiled/ortho-tiled-world.tmj"].readTiledMap(atlas).also { maps += it }

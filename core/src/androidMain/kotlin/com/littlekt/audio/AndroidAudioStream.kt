@@ -52,7 +52,7 @@ class AndroidAudioStream(private val audioContext: AndroidAudioContext, private 
         wasPlaying = false
     }
 
-    override fun dispose() {
+    override fun release() {
         try {
             player.release()
         } catch (throwable: Throwable) {

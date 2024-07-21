@@ -11,5 +11,5 @@ expect class Cursor(pixmap: Pixmap, xHotspot: Int = 0, yHotSpot: Int = 0) : Rele
     val xHotspot: Int
     val yHotSpot: Int
 
-    override fun dispose()
+    override fun release()
 }

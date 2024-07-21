@@ -9,7 +9,7 @@ import com.littlekt.Releasable
 expect class AsyncExecutor(maxConcurrent: Int) : Releasable {
     val maxConcurrent: Int
     fun <T> submit(action: () -> T): AsyncResult<T>
-    override fun dispose()
+    override fun release()
 }
 
 /**

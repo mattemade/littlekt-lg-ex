@@ -4,7 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.SoundPool
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 import com.littlekt.async.KtScope
 import com.littlekt.util.fastForEach
 import com.littlekt.util.internal.lock
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
  * @author Colt Daily
  * @date 2/13/22
  */
-class AndroidAudioContext(private val androidCtx: Context) : Disposable {
+class AndroidAudioContext(private val androidCtx: Context) : Releasable {
 
     internal val streams = mutableListOf<AndroidAudioStream>()
 
@@ -71,10 +71,10 @@ class AndroidAudioContext(private val androidCtx: Context) : Disposable {
         }
     }
 
-    override fun dispose() {
+    override fun release() {
         lock(streams) {
             streams.fastForEach {
-                it.dispose()
+                it.release()
             }
         }
         soundPool.release()

@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.kotlinx.serialization)
-    id("littlekt.convention.publication")
+    alias(libs.plugins.kotlin.serialization)
+    id("module.publication")
 }
 
 repositories {

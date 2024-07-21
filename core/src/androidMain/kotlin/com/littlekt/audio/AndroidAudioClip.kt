@@ -44,7 +44,7 @@ class AndroidAudioClip(private val soundPool: SoundPool, private val soundId: In
         soundPool.autoPause()
     }
 
-    override fun dispose() {
+    override fun release() {
         soundPool.unload(soundId)
     }
 }

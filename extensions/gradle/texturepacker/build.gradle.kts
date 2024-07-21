@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm")
     java
     `java-gradle-plugin`
-    id("littlekt.convention.publication")
+    id("module.publication")
 }
 val littleKtVersion: String by project
 group = "com.littlekt.gradle"

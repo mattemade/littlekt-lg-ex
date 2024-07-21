@@ -157,8 +157,8 @@ class DisplayTest(context: Context) : Game<Scene>(context) {
             .toImmutable()
 
         // we need to dispose of them if we aren't using them since the atlas generates new textures
-        cavernasTexture.dispose()
-        background.dispose()
+        cavernasTexture.release()
+        background.release()
 
         val slices: Array<Array<TextureSlice>> by assetProvider.prepare { texture.slice(16, 16) }
         val person by assetProvider.prepare { slices[0][0] }
@@ -815,11 +815,11 @@ class DisplayTest(context: Context) : Game<Scene>(context) {
             }
         }
         onDispose {
-            scene.dispose()
-            mesh.dispose()
-            texture.dispose()
-            shader.dispose()
-            batch.dispose()
+            scene.release()
+            mesh.release()
+            texture.release()
+            shader.release()
+            batch.release()
         }
     }
 }

@@ -1,18 +1,18 @@
 package com.littlekt.async
 
-import com.littlekt.Disposable
+import com.littlekt.Releasable
 
 /**
  * @author Colton Daily
  * @date 1/10/2022
  */
-actual class AsyncExecutor actual constructor(actual val maxConcurrent: Int) : Disposable {
+actual class AsyncExecutor actual constructor(actual val maxConcurrent: Int) : Releasable {
 
     actual fun <T> submit(action: () -> T): AsyncResult<T> {
         return AsyncResult(action.invoke())
     }
 
-    actual override fun dispose() = Unit
+    actual override fun release() = Unit
 }
 
 /**

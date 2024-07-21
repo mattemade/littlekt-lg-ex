@@ -5,8 +5,8 @@ import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.kotlinx.serialization)
-    id("littlekt.convention.publication")
+    alias(libs.plugins.kotlin.serialization)
+    id("module.publication")
 }
 
 kotlin {
@@ -66,50 +66,29 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                val lwjglModule = "${libs.lwjgl.asProvider().get().module}:${
-                    libs.lwjgl.asProvider().get().versionConstraint.requiredVersion
-                }"
-                val lwjglGlfwModule =
-                    "${libs.lwjgl.glfw.get().module}:${libs.lwjgl.glfw.get().versionConstraint.requiredVersion}"
-                val lwjglOpenGlModule = "${libs.lwjgl.opengl.get().module}:${
-                    libs.lwjgl.opengl.get().versionConstraint.requiredVersion
-                }"
-                val lwjglOpenAlModule = "${libs.lwjgl.openal.get().module}:${
-                    libs.lwjgl.openal.get().versionConstraint.requiredVersion
-                }"
-                implementation(libs.lwjgl)
-                implementation("$lwjglModule:natives-windows")
-                implementation("$lwjglModule:natives-windows-arm64")
-                implementation("$lwjglModule:natives-linux")
-                implementation("$lwjglModule:natives-linux-arm64")
-                implementation("$lwjglModule:natives-macos")
-                implementation("$lwjglModule:natives-macos-arm64")
-
-                implementation(libs.lwjgl.glfw)
-                implementation("$lwjglGlfwModule:natives-windows")
-                implementation("$lwjglGlfwModule:natives-windows-arm64")
-                implementation("$lwjglGlfwModule:natives-linux")
-                implementation("$lwjglGlfwModule:natives-linux-arm64")
-                implementation("$lwjglGlfwModule:natives-macos")
-                implementation("$lwjglGlfwModule:natives-macos-arm64")
-
-                implementation(libs.lwjgl.opengl)
-                implementation("$lwjglOpenGlModule:natives-windows")
-                implementation("$lwjglOpenGlModule:natives-windows-arm64")
-                implementation("$lwjglOpenGlModule:natives-linux")
-                implementation("$lwjglOpenGlModule:natives-linux-arm64")
-                implementation("$lwjglOpenGlModule:natives-macos")
-                implementation("$lwjglOpenGlModule:natives-macos-arm64")
-
-                implementation(libs.lwjgl.openal)
-                implementation("$lwjglOpenAlModule:natives-windows")
-                implementation("$lwjglOpenAlModule:natives-windows-arm64")
-                implementation("$lwjglOpenAlModule:natives-linux")
-                implementation("$lwjglOpenAlModule:natives-linux-arm64")
-                implementation("$lwjglOpenAlModule:natives-macos")
-                implementation("$lwjglOpenAlModule:natives-macos-arm64")
-
                 implementation(libs.mp3.decoder)
+
+                implementation(libs.lwjgl.core)
+                implementation(libs.lwjgl.glfw)
+                implementation(libs.lwjgl.opengl)
+                implementation(libs.lwjgl.openal)
+                implementation(libs.lwjgl.stb)
+
+                listOf(
+                    "natives-windows",
+                    "natives-windows-arm64",
+                    "natives-linux",
+                    "natives-linux-arm64",
+                    "natives-macos",
+                    "natives-macos-arm64"
+                )
+                    .forEach { platform ->
+                        runtimeOnly("${libs.lwjgl.core.get()}:$platform")
+                        runtimeOnly("${libs.lwjgl.glfw.get()}:$platform")
+                        runtimeOnly("${libs.lwjgl.opengl.get()}:$platform")
+                        runtimeOnly("${libs.lwjgl.openal.get()}:$platform")
+                        runtimeOnly("${libs.lwjgl.stb.get()}:$platform")
+                    }
             }
         }
         val jvmTest by getting
