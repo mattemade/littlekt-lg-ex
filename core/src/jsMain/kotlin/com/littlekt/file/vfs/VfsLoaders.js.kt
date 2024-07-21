@@ -3,7 +3,10 @@ package com.littlekt.file.vfs
 import com.littlekt.audio.AudioClip
 import com.littlekt.audio.AudioStream
 import com.littlekt.audio.WebAudioClip
+import com.littlekt.audio.WebAudioExClip
+import com.littlekt.audio.WebAudioEx
 import com.littlekt.audio.WebAudioStream
+import com.littlekt.audio.WebAudioExStream
 import com.littlekt.file.Base64.encodeToBase64
 import com.littlekt.file.ByteBufferImpl
 import com.littlekt.graphics.Pixmap
@@ -75,10 +78,12 @@ private suspend fun readPixmap(path: String): Pixmap {
  * @return the loaded audio clip
  */
 actual suspend fun VfsFile.readAudioClip(): AudioClip {
-    return if (isHttpUrl()) {
-        WebAudioClip(path)
+    val url = if (isHttpUrl()) path else "${vfs.baseDir}/$path"
+    val webAudio = WebAudioEx.create(vfs.job, url, vfs.logger)
+    return if (webAudio != null) {
+        WebAudioExClip(webAudio)
     } else {
-        WebAudioClip("${vfs.baseDir}/$path")
+        WebAudioClip(url)
     }
 }
 
@@ -88,9 +93,11 @@ actual suspend fun VfsFile.readAudioClip(): AudioClip {
  * @return a new [AudioStream]
  */
 actual suspend fun VfsFile.readAudioStream(): AudioStream {
-    return if (isHttpUrl()) {
-        WebAudioStream(path)
+    val url = if (isHttpUrl()) path else "${vfs.baseDir}/$path"
+    val webAudio = WebAudioEx.create(vfs.job, url, vfs.logger)
+    return if (webAudio != null) {
+        WebAudioExStream(webAudio)
     } else {
-        WebAudioStream("${vfs.baseDir}/$path")
+        WebAudioStream(url)
     }
 }

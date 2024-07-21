@@ -38,7 +38,7 @@ abstract class Vfs(val context: Context, val logger: Logger, var baseDir: String
         isLenient = true
     }
 
-    protected val job = Job()
+    internal val job = Job()
 
     override val coroutineContext: CoroutineContext = job
 

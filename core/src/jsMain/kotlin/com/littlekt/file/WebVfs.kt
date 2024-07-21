@@ -5,11 +5,13 @@ import com.littlekt.log.Logger
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.khronos.webgl.set
 import org.w3c.dom.*
+import org.w3c.dom.events.Event
 import org.w3c.xhr.ARRAYBUFFER
 import org.w3c.xhr.XMLHttpRequest
 import org.w3c.xhr.XMLHttpRequestResponseType
@@ -20,6 +22,30 @@ import org.w3c.xhr.XMLHttpRequestResponseType
  */
 class WebVfs(context: Context, logger: Logger, assetsBaseDir: String) :
     Vfs(context, logger, assetsBaseDir) {
+
+    companion object {
+        internal suspend fun <T> loadRaw(
+            job: Job,
+            url: String,
+            processRawData: (ArrayBuffer) -> T,
+            onError: (Event) -> Unit
+        ): T? {
+            val data = CompletableDeferred<T?>(job)
+            val req = XMLHttpRequest()
+            req.responseType = XMLHttpRequestResponseType.ARRAYBUFFER
+            req.onload = {
+                data.complete(processRawData(req.response as ArrayBuffer))
+            }
+            req.onerror = {
+                data.complete(null)
+                onError(it)
+            }
+            req.open("GET", url)
+            req.send()
+
+            return data.await()
+        }
+    }
 
     override suspend fun loadRawAsset(rawRef: RawAssetRef) =
         LoadedRawAsset(rawRef, loadRaw(rawRef.url))
@@ -32,23 +58,12 @@ class WebVfs(context: Context, logger: Logger, assetsBaseDir: String) :
         return SequenceStreamCreatedAsset(sequenceRef, stream)
     }
 
-    private suspend fun loadRaw(url: String): ByteBuffer? {
-        val data = CompletableDeferred<ByteBuffer?>(job)
-        val req = XMLHttpRequest()
-        req.responseType = XMLHttpRequestResponseType.ARRAYBUFFER
-        req.onload = {
-            val array = Uint8Array(req.response as ArrayBuffer)
-            data.complete(ByteBufferImpl(array))
-        }
-        req.onerror = {
-            data.complete(null)
-            logger.error { "Failed loading resource $url: $it" }
-        }
-        req.open("GET", url)
-        req.send()
-
-        return data.await()
-    }
+    private suspend fun loadRaw(url: String): ByteBuffer? =
+        Companion.loadRaw(
+            job = job,
+            url = url,
+            processRawData = { data -> ByteBufferImpl(Uint8Array(data)) },
+            onError = { event -> logger.error { "Failed loading resource $url: $event" } })
 
     override fun store(key: String, data: ByteArray): Boolean {
         return try {

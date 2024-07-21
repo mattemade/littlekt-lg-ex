@@ -1,5 +1,7 @@
 package com.littlekt
 
+import com.littlekt.audio.globalAudioContext
+
 /** Properties related to creating a [LittleKtApp] */
 actual class LittleKtProps {
     var width: Int = 960
@@ -17,6 +19,7 @@ actual class LittleKtProps {
 actual fun createLittleKtApp(action: LittleKtProps.() -> Unit): LittleKtApp {
     val props = LittleKtProps().apply(action)
     props.action()
+    globalAudioContext // just to trigger the initialization of AudioContext to enable sound in certain web browsers
     return LittleKtApp(
         WebGPUContext(
             JsConfiguration(props.title, props.canvasId, props.assetsDir, props.powerPreference)
