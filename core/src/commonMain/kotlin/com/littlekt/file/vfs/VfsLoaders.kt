@@ -1,7 +1,9 @@
 package com.littlekt.file.vfs
 
 import com.littlekt.audio.AudioClip
+import com.littlekt.audio.AudioClipEx
 import com.littlekt.audio.AudioStream
+import com.littlekt.audio.AudioStreamEx
 import com.littlekt.file.UnsupportedFileTypeException
 import com.littlekt.file.atlas.AtlasInfo
 import com.littlekt.file.atlas.AtlasPage
@@ -321,8 +323,22 @@ expect suspend fun VfsFile.readTexture(
 expect suspend fun VfsFile.readAudioClip(): AudioClip
 
 /**
+ * Loads audio from the path as an [AudioClipEx].
+ *
+ * @return the loaded audio clip
+ */
+expect suspend fun VfsFile.readAudioClipEx(): AudioClipEx
+
+/**
  * Streams audio from the path as an [AudioStream].
  *
  * @return a new [AudioStream]
  */
 expect suspend fun VfsFile.readAudioStream(): AudioStream
+
+/**
+ * Streams audio from the path as an [AudioStreamEx].
+ *
+ * @return a new [AudioStream]
+ */
+expect suspend fun VfsFile.readAudioStreamEx(): AudioStreamEx

@@ -1,0 +1,105 @@
+package com.littlekt.audio
+
+import com.littlekt.util.datastructure.BiMap
+import kotlin.math.max
+import kotlin.time.Duration
+
+internal class WebAudioClipEx(private val audio: WebAudioEx) : AudioClipEx {
+    override var volume: Float
+        get() = audio.volume
+        set(value) {
+            audio.volume = value
+        }
+    override val duration: Duration
+        get() = audio.duration
+
+    // don't care about ID overflow, it could only become a problem if someone play Int.MAX_VALUE*2 looping sounds
+    private var nextPipelineId = 0
+    private val activePipelines = BiMap<Int, WebAudioPipeline>()
+
+    override fun play(volume: Float, positionX: Float, positionY: Float, referenceDistance: Float, maxDistance: Float, rolloffFactor: Float, loop: Boolean): Int {
+        audio.preparePipeline()
+        val currentPipelineId = nextPipelineId++
+        activePipelines.put(currentPipelineId, audio.pipeline)
+        audio.play(volume, positionX, positionY, referenceDistance, maxDistance, rolloffFactor, loop)
+        if (!loop) {
+            audio.setOnEnded { pipeline ->
+                activePipelines.removeValue(pipeline)
+                pipeline.release()
+            }
+        }
+        return currentPipelineId
+    }
+
+    override fun play(volume: Float, loop: Boolean) {
+        play(volume, 0f, 0f, 10000f, 10000f, 0f, loop)
+    }
+
+    override fun stop() {
+        audio.stop()
+    }
+
+    override fun resume() {
+        audio.resume()
+    }
+
+    override fun pause() {
+        audio.pause()
+    }
+
+    override fun release() {
+        audio.release()
+        activePipelines.values.forEach { it.release() }
+        activePipelines.clear()
+    }
+
+    override fun setVolumeAll(volume: Float) {
+        activePipelines.values.forEach { it.gain.gain.value = max(0f, volume) }
+    }
+
+    override fun setVolume(id: Int, volume: Float) {
+        activePipelines.get(id)?.let { it.gain.gain.value = max(0f, volume) }
+    }
+
+    override fun setPositionAll(positionX: Float, positionY: Float) {
+        activePipelines.values.forEach {
+            it.panner.positionX.value = positionX
+            it.panner.positionY.value = positionY
+        }
+    }
+
+    override fun setPosition(id: Int, positionX: Float, positionY: Float) {
+        activePipelines.get(id)?.let {
+            it.panner.positionX.value = positionX
+            it.panner.positionY.value = positionY
+        }
+    }
+
+    override fun stopAll() {
+        activePipelines.values.forEach { pipeline ->
+            audio.stop(pipeline)
+            pipeline.release()
+        }
+        activePipelines.clear()
+    }
+
+    override fun stop(id: Int) {
+        activePipelines.removeKey(id)?.let { audio.stop(it) }
+    }
+
+    override fun pauseAll() {
+        activePipelines.values.forEach(audio::pause)
+    }
+
+    override fun pause(id: Int) {
+        activePipelines.get(id)?.let { audio.pause(it) }
+    }
+
+    override fun resumeAll() {
+        activePipelines.values.forEach(audio::resume)
+    }
+
+    override fun resume(id: Int) {
+        activePipelines.get(id)?.let { audio.resume(it) }
+    }
+}

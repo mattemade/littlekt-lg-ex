@@ -16,7 +16,7 @@ class OpenALAudioStream(
     private val reset: suspend () -> Unit,
     val channels: Int,
     val sampleRate: Int
-) : AudioStream {
+) : AudioStreamEx {
     private val NO_DEVICE
         get() = context.NO_DEVICE
 
@@ -58,7 +58,15 @@ class OpenALAudioStream(
         }
     }
 
-    override suspend fun play(volume: Float, loop: Boolean) = withDevice {
+    override suspend fun play(
+        volume: Float,
+        positionX: Float,
+        positionY: Float,
+        referenceDistance: Float,
+        maxDistance: Float,
+        rolloffFactor: Float,
+        loop: Boolean
+    ) = withDevice {
         if (sourceID == -1) {
             if (needsReset) {
                 reset()
@@ -105,6 +113,13 @@ class OpenALAudioStream(
             alSourcePlay(sourceID)
             isPlaying = true
         }
+    }
+
+    override suspend fun play(volume: Float, loop: Boolean) = play(volume, 0f, 0f, 10000f, 10000f, 0f, loop)
+
+    override fun setPosition( positionX: Float, positionY: Float) = withDevice {
+        if (sourceID == -1) return@withDevice
+        alSource3f(sourceID, AL_POSITION, positionX, positionY, 0f)
     }
 
     override fun stop() = withDevice {

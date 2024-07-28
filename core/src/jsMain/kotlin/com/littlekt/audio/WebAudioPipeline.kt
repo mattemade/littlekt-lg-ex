@@ -2,12 +2,17 @@ package com.littlekt.audio
 
 import com.littlekt.Releasable
 
-internal class WebAudioExPipeline(
+internal class WebAudioPipeline(
     jsSound: JsSound,
     audioContext: AudioContext
 ) : Releasable {
-    val gain: JsAudioGainNode = audioContext.createGain().apply {
+    val panner: JsAudioPannerNode = audioContext.createPanner().apply {
+        distanceModelType = DistanceModelType.linear
+        panningModelType = PanningModelType.HRTF
         connect(audioContext.destination)
+    }
+    val gain: JsAudioGainNode = audioContext.createGain().apply {
+        connect(panner)
     }
     val source: JsAudioBufferSourceNode = audioContext.createBufferSource().apply {
         buffer = jsSound
@@ -17,5 +22,6 @@ internal class WebAudioExPipeline(
     override fun release() {
         source.disconnect()
         gain.disconnect()
+        panner.disconnect()
     }
 }

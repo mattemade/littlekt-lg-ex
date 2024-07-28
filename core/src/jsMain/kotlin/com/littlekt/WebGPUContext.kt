@@ -29,6 +29,7 @@ class WebGPUContext(override val configuration: JsConfiguration) : Context() {
 
     override val stats: AppStats = AppStats()
     override val graphics: WebGPUGraphics = WebGPUGraphics(canvas)
+    override val audio: Audio = WebAudio()
     override val input: JsInput = JsInput(canvas)
     override val logger: Logger = Logger(configuration.title)
     override val vfs = WebVfs(this, logger, configuration.rootPath)

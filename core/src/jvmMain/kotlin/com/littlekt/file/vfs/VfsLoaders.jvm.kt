@@ -2,7 +2,9 @@ package com.littlekt.file.vfs
 
 import com.littlekt.LwjglContext
 import com.littlekt.audio.AudioClip
+import com.littlekt.audio.AudioClipEx
 import com.littlekt.audio.AudioStream
+import com.littlekt.audio.AudioStreamEx
 import com.littlekt.audio.OpenALAudioClip
 import com.littlekt.audio.OpenALAudioStream
 import com.littlekt.file.ByteBufferImpl
@@ -76,7 +78,14 @@ actual suspend fun VfsFile.readTexture(preferredFormat: TextureFormat): Texture 
  *
  * @return the loaded audio clip
  */
-actual suspend fun VfsFile.readAudioClip(): AudioClip {
+actual suspend fun VfsFile.readAudioClip(): AudioClip = readAudioClipEx()
+
+/**
+ * Loads audio from the path as an [AudioClipEx].
+ *
+ * @return the loaded audio clip
+ */
+actual suspend fun VfsFile.readAudioClipEx(): AudioClipEx {
     val asset = read()
     // TODO refactor the sound handling to check the actual file headers
     val (source, channels, sampleRate) =
@@ -100,15 +109,7 @@ actual suspend fun VfsFile.readAudioClip(): AudioClip {
  *
  * @return a new [AudioStream]
  */
-actual suspend fun VfsFile.readAudioStream(): AudioStream {
-    if (
-        pathInfo.extension == "mp3"
-    ) { // TODO refactor the sound handling to check the actual file headers
-        return createAudioStreamMp3()
-    }
-
-    return createAudioStreamWav()
-}
+actual suspend fun VfsFile.readAudioStream(): AudioStream = readAudioStreamEx()
 
 private suspend fun VfsFile.createAudioStreamMp3(): OpenALAudioStream {
     vfs.context as LwjglContext
@@ -155,4 +156,19 @@ private suspend fun VfsFile.createAudioStreamWav(): OpenALAudioStream {
         clip.format.channels,
         clip.format.sampleRate.toInt()
     )
+}
+
+/**
+ * Streams audio from the path as an [AudioStreamEx].
+ *
+ * @return a new [AudioStreamEx]
+ */
+actual suspend fun VfsFile.readAudioStreamEx(): AudioStreamEx {
+    if (
+        pathInfo.extension == "mp3"
+    ) { // TODO refactor the sound handling to check the actual file headers
+        return createAudioStreamMp3()
+    }
+
+    return createAudioStreamWav()
 }

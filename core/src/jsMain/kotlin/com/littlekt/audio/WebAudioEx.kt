@@ -5,12 +5,12 @@ import com.littlekt.file.WebVfs
 import com.littlekt.log.Logger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
-import kotlin.math.min
+import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 internal class WebAudioEx private constructor(
-    private val createPipeline: () -> WebAudioExPipeline,
+    private val createPipeline: () -> WebAudioPipeline,
 ) : Releasable {
 
     companion object {
@@ -35,8 +35,8 @@ internal class WebAudioEx private constructor(
                 },
             )?.let { arrayBuffer ->
                 audioContext.decodeAudioData(arrayBuffer, onLoad = { buffer ->
-                    val sourceGenerator: () -> WebAudioExPipeline = {
-                        WebAudioExPipeline(buffer, audioContext)
+                    val sourceGenerator: () -> WebAudioPipeline = {
+                        WebAudioPipeline(buffer, audioContext)
                     }
                     data.complete(WebAudioEx(sourceGenerator))
                 }, onError = { event ->
@@ -50,7 +50,7 @@ internal class WebAudioEx private constructor(
 
     internal var volume: Float = 1f
         set(value) {
-            val newValue = min(0f, value)
+            val newValue = max(0f, value)
             pipeline.gain.gain.value = newValue
             field = newValue
         }
@@ -63,7 +63,7 @@ internal class WebAudioEx private constructor(
     internal val playing: Boolean
         get() = isPlaying
 
-    internal var pipeline: WebAudioExPipeline = createPipeline()
+    internal var pipeline: WebAudioPipeline = createPipeline()
 
     internal val duration: Duration = pipeline.source.buffer.duration.seconds
 
@@ -72,32 +72,43 @@ internal class WebAudioEx private constructor(
         pipeline = createPipeline()
     }
 
-    fun setOnEnded(onEnded: (WebAudioExPipeline) -> Unit) {
+    fun setOnEnded(onEnded: (WebAudioPipeline) -> Unit) {
         val currentPipeline = pipeline
         currentPipeline.source.onended = {
             onEnded(currentPipeline)
         }
     }
 
-    fun play(volume: Float, loop: Boolean) {
-        pipeline.gain.gain.value = volume
+    fun play(volume: Float, positionX: Float, positionY: Float, referenceDistance: Float, maxDistance: Float, rolloffFactor: Float, loop: Boolean) {
+        this.volume = volume
+        pipeline.panner.positionX.value = positionX
+        pipeline.panner.positionY.value = positionY
+        pipeline.panner.refDistance = referenceDistance
+        pipeline.panner.maxDistance = maxDistance
+        pipeline.panner.rolloffFactor = rolloffFactor
         pipeline.source.loop = loop
         pipeline.source.playbackRate.value = 1f
         pipeline.source.start()
         isPlaying = true
     }
 
-    internal fun stop() {
+    internal fun stop() = stop(pipeline)
+
+    internal fun stop(pipeline: WebAudioPipeline) {
         pipeline.source.playbackRate.value = 0f
         isPlaying = false
     }
 
-    internal fun resume() {
+    internal fun resume() = resume(pipeline)
+
+    internal fun resume(pipeline: WebAudioPipeline) {
         pipeline.source.playbackRate.value = 1f
         isPlaying = true
     }
 
-    internal fun pause() {
+    internal fun pause() = pause(pipeline)
+
+    internal fun pause(pipeline: WebAudioPipeline) {
         pipeline.source.playbackRate.value = 0f
         isPlaying = false
     }

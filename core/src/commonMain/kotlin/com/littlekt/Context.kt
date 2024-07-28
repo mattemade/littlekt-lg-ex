@@ -60,6 +60,9 @@ abstract class Context {
     /** The graphics related properties and instances. */
     abstract val graphics: Graphics
 
+    /** The audio related properties. */
+    abstract val audio: Audio
+
     /** The [Input] of the context. */
     abstract val input: Input
 

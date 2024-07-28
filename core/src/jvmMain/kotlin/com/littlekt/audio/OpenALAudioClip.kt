@@ -1,11 +1,28 @@
 package com.littlekt.audio
 
 import com.littlekt.log.Logger
+import org.lwjgl.openal.AL10.AL_BUFFER
+import org.lwjgl.openal.AL10.AL_FALSE
+import org.lwjgl.openal.AL10.AL_FORMAT_MONO16
+import org.lwjgl.openal.AL10.AL_FORMAT_STEREO16
+import org.lwjgl.openal.AL10.AL_GAIN
+import org.lwjgl.openal.AL10.AL_LOOPING
+import org.lwjgl.openal.AL10.AL_MAX_DISTANCE
+import org.lwjgl.openal.AL10.AL_POSITION
+import org.lwjgl.openal.AL10.AL_REFERENCE_DISTANCE
+import org.lwjgl.openal.AL10.AL_ROLLOFF_FACTOR
+import org.lwjgl.openal.AL10.AL_SOURCE_RELATIVE
+import org.lwjgl.openal.AL10.AL_TRUE
+import org.lwjgl.openal.AL10.alBufferData
+import org.lwjgl.openal.AL10.alGenBuffers
+import org.lwjgl.openal.AL10.alSource3f
+import org.lwjgl.openal.AL10.alSourcePlay
+import org.lwjgl.openal.AL10.alSourcef
+import org.lwjgl.openal.AL10.alSourcei
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-import org.lwjgl.openal.AL10.*
 
 /**
  * @author Colton Daily
@@ -16,7 +33,7 @@ class OpenALAudioClip(
     pcm: ByteArray,
     val channels: Int,
     val sampleRate: Int
-) : AudioClip {
+) : AudioClipEx {
 
     private var bufferID = -1
 
@@ -52,21 +69,81 @@ class OpenALAudioClip(
     }
 
     override fun play(volume: Float, loop: Boolean) = withDevice {
+        play(volume, 0f, 0f, 10000f, 10000f, 0f, loop)
+    }
+
+    override fun play(
+        volume: Float,
+        positionX: Float,
+        positionY: Float,
+        referenceDistance: Float,
+        maxDistance: Float,
+        rolloffFactor: Float,
+        loop: Boolean
+    ): Int = withDeviceReturning {
         val sourceId = context.obtainSource()
 
-        if (sourceId == -1) return
+        if (sourceId == -1) return -1
+
+        if (channels > 1 && positionX != 0f && positionY != 0f) {
+            logger.error { "Multi-channel track does not support positioning" }
+        }
 
         alSourcei(sourceId, AL_BUFFER, bufferID)
         alSourcei(sourceId, AL_LOOPING, if (loop) AL_TRUE else AL_FALSE)
         alSourcef(sourceId, AL_GAIN, volume)
+        alSourcef(sourceId, AL_REFERENCE_DISTANCE, referenceDistance)
+        alSourcef(sourceId, AL_MAX_DISTANCE, maxDistance)
+        alSourcef(sourceId, AL_ROLLOFF_FACTOR, rolloffFactor)
+        alSourcei(sourceId, AL_SOURCE_RELATIVE, AL_FALSE)
+        alSource3f(sourceId, AL_POSITION, positionX, positionY, 0f)
         alSourcePlay(sourceId)
+        return sourceId
+    }
+
+    override fun setVolumeAll(volume: Float) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setVolume(id: Int, volume: Float) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setPositionAll(positionX: Float, positionY: Float) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setPosition(id: Int, positionX: Float, positionY: Float) {
+        alSource3f(id, AL_POSITION, positionX, positionY, 0f)
+    }
+
+    override fun stopAll() {
+        TODO("Not yet implemented")
+    }
+
+    override fun stop(id: Int) {
+        TODO("Not yet implemented")
     }
 
     override fun stop() = withDevice { context.stopSourceViaBufferID(bufferID) }
+    override fun pauseAll() {
+        TODO("Not yet implemented")
+    }
+
+    override fun pause(id: Int) {
+        TODO("Not yet implemented")
+    }
 
     override fun resume() = withDevice { context.resumeSourceViaBufferID(bufferID) }
 
     override fun pause() = withDevice { context.pauseSourceViaBufferID(bufferID) }
+    override fun resumeAll() {
+        TODO("Not yet implemented")
+    }
+
+    override fun resume(id: Int) {
+        TODO("Not yet implemented")
+    }
 
     override fun release() = withDevice {
         if (bufferID == -1) return
@@ -78,6 +155,11 @@ class OpenALAudioClip(
     private inline fun withDevice(block: () -> Unit) {
         if (NO_DEVICE) return
         block()
+    }
+
+    private inline fun withDeviceReturning(block: () -> Int): Int {
+        if (NO_DEVICE) return -1
+        return block()
     }
 
     companion object {

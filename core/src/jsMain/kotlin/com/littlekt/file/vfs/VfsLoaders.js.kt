@@ -1,12 +1,14 @@
 package com.littlekt.file.vfs
 
 import com.littlekt.audio.AudioClip
+import com.littlekt.audio.AudioClipEx
 import com.littlekt.audio.AudioStream
+import com.littlekt.audio.AudioStreamEx
 import com.littlekt.audio.WebAudioClip
-import com.littlekt.audio.WebAudioExClip
+import com.littlekt.audio.WebAudioClipEx
 import com.littlekt.audio.WebAudioEx
 import com.littlekt.audio.WebAudioStream
-import com.littlekt.audio.WebAudioExStream
+import com.littlekt.audio.WebAudioStreamEx
 import com.littlekt.file.Base64.encodeToBase64
 import com.littlekt.file.ByteBufferImpl
 import com.littlekt.graphics.Pixmap
@@ -81,10 +83,20 @@ actual suspend fun VfsFile.readAudioClip(): AudioClip {
     val url = if (isHttpUrl()) path else "${vfs.baseDir}/$path"
     val webAudio = WebAudioEx.create(vfs.job, url, vfs.logger)
     return if (webAudio != null) {
-        WebAudioExClip(webAudio)
+        WebAudioClipEx(webAudio)
     } else {
         WebAudioClip(url)
     }
+}
+
+/**
+ * Loads audio from the path as an [AudioClipEx].
+ *
+ * @return the loaded audio clip
+ */
+actual suspend fun VfsFile.readAudioClipEx(): AudioClipEx {
+    val url = if (isHttpUrl()) path else "${vfs.baseDir}/$path"
+    return WebAudioClipEx(WebAudioEx.create(vfs.job, url, vfs.logger)?: error("Could not create WebAudioEx"))
 }
 
 /**
@@ -96,8 +108,13 @@ actual suspend fun VfsFile.readAudioStream(): AudioStream {
     val url = if (isHttpUrl()) path else "${vfs.baseDir}/$path"
     val webAudio = WebAudioEx.create(vfs.job, url, vfs.logger)
     return if (webAudio != null) {
-        WebAudioExStream(webAudio)
+        WebAudioStreamEx(webAudio)
     } else {
         WebAudioStream(url)
     }
+}
+
+actual suspend fun VfsFile.readAudioStreamEx(): AudioStreamEx {
+    val url = if (isHttpUrl()) path else "${vfs.baseDir}/$path"
+    return WebAudioStreamEx(WebAudioEx.create(vfs.job, url, vfs.logger)?: error("Could not create WebAudioEx"))
 }
