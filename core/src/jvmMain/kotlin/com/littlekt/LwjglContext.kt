@@ -52,6 +52,7 @@ class LwjglContext(override val configuration: JvmConfiguration) : Context() {
         private set
 
     internal val audioContext = OpenALAudioContext()
+    override val audio: Audio = audioContext
 
     private val windowShouldClose: Boolean
         get() = GLFW.glfwWindowShouldClose(windowHandle)

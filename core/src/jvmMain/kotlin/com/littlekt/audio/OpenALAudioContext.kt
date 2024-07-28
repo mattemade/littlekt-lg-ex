@@ -1,35 +1,41 @@
 package com.littlekt.audio
 
+import com.littlekt.Audio
 import com.littlekt.Releasable
 import com.littlekt.util.fastForEach
-import org.lwjgl.openal.*
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
+import org.lwjgl.openal.*
+import org.lwjgl.openal.AL10.AL_POSITION
 
 /**
  * @author Colton Daily
  * @date 12/27/2021
  */
-class OpenALAudioContext : Releasable {
-    val device = try {
-        val byteBuffer: ByteBuffer? = null
-        ALC10.alcOpenDevice(byteBuffer)
-    } catch (ex: Exception) {
-        ex.printStackTrace()
-        -1
-    }
-    val context: Long = try {
-        val deviceCaps = ALC.createCapabilities(device)
-        val context = ALC10.alcCreateContext(device, null as IntBuffer?)
-        ALC10.alcMakeContextCurrent(context)
-        AL.createCapabilities(deviceCaps)
-        context
-    } catch (ex: Exception) {
-        ex.printStackTrace()
-        -1
-    }
+class OpenALAudioContext : Audio, Releasable {
+    val device =
+        try {
+            val byteBuffer: ByteBuffer? = null
+            ALC10.alcOpenDevice(byteBuffer)
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            -1
+        }
+    val context: Long =
+        try {
+            val deviceCaps = ALC.createCapabilities(device)
+            val context = ALC10.alcCreateContext(device, null as IntBuffer?)
+            ALC10.alcMakeContextCurrent(context)
+            AL.createCapabilities(deviceCaps)
+            AL11.alDistanceModel(AL11.AL_LINEAR_DISTANCE_CLAMPED)
+            context
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            -1
+        }
 
-    val NO_DEVICE get() = context == -1L || device == -1L
+    val NO_DEVICE
+        get() = context == -1L || device == -1L
 
     internal val audioStreams = mutableListOf<OpenALAudioStream>()
 
@@ -51,7 +57,8 @@ class OpenALAudioContext : Releasable {
     fun obtainSource(): Int {
         if (NO_DEVICE) return 0
 
-        return sources.asSequence()
+        return sources
+            .asSequence()
             .map { it to AL10.alGetSourcei(it, AL10.AL_SOURCE_STATE) }
             .firstOrNull { (_, state) -> state != AL10.AL_PLAYING && state != AL10.AL_PAUSED }
             ?.let { (sourceId, _) ->
@@ -59,7 +66,7 @@ class OpenALAudioContext : Releasable {
                 AL10.alSourcei(sourceId, AL10.AL_BUFFER, 0)
                 AL10.alSourcef(sourceId, AL10.AL_GAIN, 1f)
                 AL10.alSourcef(sourceId, AL10.AL_PITCH, 1f)
-                AL10.alSource3f(sourceId, AL10.AL_POSITION, 0f, 0f, 1f)
+                //AL10.alSource3f(sourceId, AL10.AL_POSITION, 0f, 0f, 1f)
                 AL10.alSourcei(sourceId, SOFTDirectChannels.AL_DIRECT_CHANNELS_SOFT, AL10.AL_TRUE)
                 sourceId
             } ?: -1
@@ -114,5 +121,9 @@ class OpenALAudioContext : Releasable {
         if (device != -1L) {
             ALC10.alcCloseDevice(device)
         }
+    }
+
+    override fun setListenerPosition(x: Float, y: Float, z: Float) {
+        AL10.alListener3f(AL_POSITION, x, y, z)
     }
 }

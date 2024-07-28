@@ -25,11 +25,16 @@ class WebGLContext(override val configuration: JsConfiguration) : Context() {
 
     override val stats: AppStats = AppStats()
     override val graphics: WebGLGraphics = WebGLGraphics(canvas, stats.engineStats)
+    override val audio: Audio = WebAudio()
     override val input: JsInput = JsInput(canvas)
     override val logger: Logger = Logger(configuration.title)
     override val vfs = WebVfs(this, logger, configuration.rootPath)
-    override val resourcesVfs: VfsFile get() = vfs.root
-    override val storageVfs: VfsFile get() = vfs.root
+    override val resourcesVfs: VfsFile
+        get() = vfs.root
+
+    override val storageVfs: VfsFile
+        get() = vfs.root
+
     override val platform: Platform = Platform.WEBGL
     override val clipboard: JsClipboard = JsClipboard()
 
@@ -55,13 +60,11 @@ class WebGLContext(override val configuration: JsConfiguration) : Context() {
                 }
             }
         }
-        window.requestAnimationFrame(::render)
+        window.requestAnimationFrame(::update)
     }
 
-    private fun render(now: Double) {
-        if (canvas.clientWidth != graphics.width ||
-            canvas.clientHeight != graphics.height
-        ) {
+    private fun update(now: Double) {
+        if (canvas.clientWidth != graphics.width || canvas.clientHeight != graphics.height) {
             graphics._width = canvas.clientWidth
             graphics._height = canvas.clientHeight
             canvas.width = canvas.clientWidth
@@ -97,16 +100,13 @@ class WebGLContext(override val configuration: JsConfiguration) : Context() {
         if (closed) {
             destroy()
         } else {
-            window.requestAnimationFrame(::render)
+            window.requestAnimationFrame(::update)
         }
-
     }
 
     private fun invokeAnyRunnable() {
         if (postRunnableCalls.isNotEmpty()) {
-            postRunnableCalls.fastForEach { postRunnable ->
-                postRunnable.invoke()
-            }
+            postRunnableCalls.fastForEach { postRunnable -> postRunnable.invoke() }
             postRunnableCalls.clear()
         }
     }
@@ -116,8 +116,6 @@ class WebGLContext(override val configuration: JsConfiguration) : Context() {
     }
 
     override fun destroy() {
-        KtScope.launch {
-            disposeCalls.fastForEach { dispose -> dispose() }
-        }
+        KtScope.launch { disposeCalls.fastForEach { release -> release() } }
     }
 }

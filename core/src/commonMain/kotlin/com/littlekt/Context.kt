@@ -12,22 +12,33 @@ import kotlin.time.Duration.Companion.microseconds
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * The context of the application. This contains instances and references to the **OpenGL** context and utilities
- * to assist in creating an OpenGL applicaiton.
+ * The context of the application. This contains instances and references to the **WebGPU** context
+ * and utilities to assist in creating an OpenGL application.
+ *
  * @author Colton Daily
  * @date 10/5/2021
  */
 abstract class Context {
 
+    /** Denotes the platform the context is currently running on. */
     enum class Platform {
+        /** Desktop (e.g JVM) */
         DESKTOP,
+
+        /** Web browser. */
         WEBGL,
         WEBGL2,
+
+        /** Android mobile platform. */
         ANDROID,
+
+        /** iOS mobile platform. */
         IOS;
 
         val isWebGl get() = this == WEBGL || this == WEBGL2
-        val isMobile get() = this == ANDROID || this == IOS
+        /** @return `true` if the value is either [ANDROID] or [IOS]. */
+        val isMobile: Boolean
+            get() = this == ANDROID || this == IOS
     }
 
     protected val renderCalls = mutableListOf<(Duration) -> Unit>()
@@ -40,68 +51,48 @@ abstract class Context {
     protected var dt: Duration = Duration.ZERO
     protected var available: Duration = Duration.ZERO
 
-    protected val counterTimePerFrame get() = (1_000_000.0 / stats.fps).microseconds
+    protected val counterTimePerFrame
+        get() = (1_000_000.0 / stats.fps).microseconds
 
-    /**
-     * The application runtime stats.
-     */
+    /** The application runtime stats. */
     abstract val stats: AppStats
 
-    /**
-     * The configuration this context used for creation
-     */
+    /** The configuration this context used for creation */
     abstract val configuration: ContextConfiguration
 
-    /**
-     * The graphics related properties and instances.
-     */
+    /** The graphics related properties and instances. */
     abstract val graphics: Graphics
 
-    /**
-     * The OpenGL instance to make GL calls.
-     */
+    /** The OpenGL instance to make GL calls. */
     open val gl: GL get() = graphics.gl
 
-    /**
-     * The [Input] of the context.
-     */
+    /** The audio related properties. */
+    abstract val audio: Audio
+
+    /** The [Input] of the context. */
     abstract val input: Input
 
-    /**
-     * The main [Logger] of the context.
-     */
+    /** The main [Logger] of the context. */
     abstract val logger: Logger
 
-    /**
-     * The virtual file system access property.
-     */
+    /** The virtual file system access property. */
     abstract val vfs: Vfs
 
-    /**
-     * A [VfsFile] used for accessing data based on the **resources** directory.
-     */
+    /** A [VfsFile] used for accessing data based on the **resources** directory. */
     abstract val resourcesVfs: VfsFile
 
-    /**
-     * A [VfsFile] used for storing and reading data based on the **storage** directory.
-     */
+    /** A [VfsFile] used for storing and reading data based on the **storage** directory. */
     abstract val storageVfs: VfsFile
 
-    /**
-     * The [Platform] this context is running on.
-     */
+    /** The [Platform] this context is running on. */
     abstract val platform: Platform
 
-    /**
-     * Clipboard instance for reading and copying to a clipboard.
-     */
+    /** Clipboard instance for reading and copying to a clipboard. */
     abstract val clipboard: Clipboard
 
     internal abstract fun start(build: (app: Context) -> ContextListener)
 
-    /**
-     * Closes and destroys this context.
-     */
+    /** Closes and destroys this context. */
     abstract fun close()
 
     internal abstract fun destroy()
@@ -138,12 +129,15 @@ abstract class Context {
 
     /**
      * Creates a new _resize_ callback that is invoked whenever the context is resized.
+     *
      * @return a lambda that can be invoked to remove the callback
      */
     open fun onResize(action: (width: Int, height: Int) -> Unit): RemoveContextCallback {
         resizeCalls += action
         return {
-            check(resizeCalls.contains(action)) { "the 'onResize' action has already been removed!" }
+            check(resizeCalls.contains(action)) {
+                "the 'onResize' action has already been removed!"
+            }
             resizeCalls -= action
         }
     }
@@ -162,15 +156,21 @@ abstract class Context {
 
     /**
      * Creates a new _postRunnable_ that is invoked one time after the next frame.
+     *
      * @return a lambda that can be invoked to remove the callback
      */
     open fun postRunnable(action: () -> Unit): RemoveContextCallback {
         postRunnableCalls += action
         return {
-            check(postRunnableCalls.contains(action)) { "the 'postRunnable' action has already been removed!" }
+            check(postRunnableCalls.contains(action)) {
+                "the 'postRunnable' action has already been removed!"
+            }
             postRunnableCalls -= action
         }
     }
+
+    companion object
 }
 
+/** A lambda that can be invoked to remove a callback from a [Context]. */
 typealias RemoveContextCallback = () -> Unit

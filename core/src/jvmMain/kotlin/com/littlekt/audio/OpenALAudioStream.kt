@@ -2,9 +2,9 @@ package com.littlekt.audio
 
 import com.littlekt.log.Logger
 import com.littlekt.util.seconds
+import java.nio.IntBuffer
 import org.lwjgl.BufferUtils
 import org.lwjgl.openal.AL10.*
-import java.nio.IntBuffer
 
 /**
  * @author Colton Daily
@@ -16,15 +16,17 @@ class OpenALAudioStream(
     private val reset: suspend () -> Unit,
     val channels: Int,
     val sampleRate: Int
-) : AudioStream {
-    private val NO_DEVICE get() = context.NO_DEVICE
+) : AudioStreamEx {
+    private val NO_DEVICE
+        get() = context.NO_DEVICE
 
     private val tempBytes = ByteArray(BUFFER_SIZE)
     private val tempBuffer = BufferUtils.createByteBuffer(BUFFER_SIZE)
 
     private var sourceID = -1
 
-    private val maxSecondsToBuffer = (BUFFER_SIZE.toFloat() / (BYTES_PER_SAMPLE * channels * sampleRate)).seconds
+    private val maxSecondsToBuffer =
+        (BUFFER_SIZE.toFloat() / (BYTES_PER_SAMPLE * channels * sampleRate)).seconds
     private val format = if (channels > 1) AL_FORMAT_STEREO16 else AL_FORMAT_MONO16
     private var buffers: IntBuffer? = null
     private var needsReset = false
@@ -68,14 +70,15 @@ class OpenALAudioStream(
             context.audioStreams += this
 
             if (buffers == null) {
-                buffers = BufferUtils.createIntBuffer(BUFFER_COUNT).also {
-                    alGetError()
-                    alGenBuffers(it)
-                    val errorCode = alGetError()
-                    if (errorCode != AL_NO_ERROR) {
-                        error("Unable to allocate audio buffers. AL Error: $errorCode")
+                buffers =
+                    BufferUtils.createIntBuffer(BUFFER_COUNT).also {
+                        alGetError()
+                        alGenBuffers(it)
+                        val errorCode = alGetError()
+                        if (errorCode != AL_NO_ERROR) {
+                            error("Unable to allocate audio buffers. AL Error: $errorCode")
+                        }
                     }
-                }
             }
             alSourcei(sourceID, AL_LOOPING, AL_FALSE)
 
@@ -139,9 +142,7 @@ class OpenALAudioStream(
             sourceID = -1
             isPlaying = false
         }
-        buffers?.let {
-            alDeleteBuffers(it)
-        } ?: return@withDevice
+        buffers?.let { alDeleteBuffers(it) } ?: return@withDevice
         buffers = null
     }
 

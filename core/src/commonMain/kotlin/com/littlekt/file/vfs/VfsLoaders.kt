@@ -1,11 +1,12 @@
 package com.littlekt.file.vfs
 
 import com.littlekt.audio.AudioClip
+import com.littlekt.audio.AudioClipEx
 import com.littlekt.audio.AudioStream
+import com.littlekt.audio.AudioStreamEx
 import com.littlekt.file.UnsupportedFileTypeException
 import com.littlekt.file.atlas.AtlasInfo
 import com.littlekt.file.atlas.AtlasPage
-import com.littlekt.file.createByteBuffer
 import com.littlekt.file.ldtk.LDtkMapData
 import com.littlekt.file.ldtk.LDtkMapLoader
 import com.littlekt.file.tiled.TiledMapData
@@ -22,41 +23,42 @@ import com.littlekt.graphics.gl.TexMagFilter
 import com.littlekt.graphics.gl.TexMinFilter
 import com.littlekt.math.MutableVec4i
 import com.littlekt.util.internal.unquote
-import com.littlekt.util.toString
 import kotlinx.serialization.decodeFromString
 import kotlin.math.max
 
 /**
- * @author Colton Daily
- * @date 12/20/2021
- */
-/**
  * Loads a [TextureAtlas] from the given path. Currently, supports only JSON atlas files.
+ *
  * @return the texture atlas
  */
 suspend fun VfsFile.readAtlas(): TextureAtlas {
     val data = readString()
-    val info = when {
-        data.startsWith("{") -> {
-            val page = vfs.json.decodeFromString<AtlasPage>(data)
-            val pages = mutableListOf(page)
-            page.meta.relatedMultiPacks.forEach {
-                pages += vfs.json.decodeFromString<AtlasPage>(parent[it].readString())
+    val info =
+        when {
+            data.startsWith("{") -> {
+                val page = vfs.json.decodeFromString<AtlasPage>(data)
+                val pages = mutableListOf(page)
+                page.meta.relatedMultiPacks.forEach {
+                    pages += vfs.json.decodeFromString<AtlasPage>(parent[it].readString())
+                }
+                AtlasInfo(page.meta, pages)
             }
-            AtlasInfo(page.meta, pages)
+            data.startsWith('\n') -> TODO("Implement text atlas format")
+            data.startsWith("\r\n") -> TODO("Implement text atlas format")
+            else ->
+                throw UnsupportedFileTypeException("This atlas format is not supported! ($path)")
         }
 
-        data.startsWith('\n') -> TODO("Implement text atlas format")
-        data.startsWith("\r\n") -> TODO("Implement text atlas format")
-        else -> throw UnsupportedFileTypeException("This atlas format is not supported! ($path)")
-    }
-
-    val textures = info.pages.associate {
-        it.meta.image to VfsFile(vfs, it.meta.image).readTexture()
-    }
+    val textures =
+        info.pages.associate { it.meta.image to VfsFile(vfs, it.meta.image).readTexture() }
     return TextureAtlas(textures, info)
 }
 
+/**
+ * Loads a [TtfFont] from the given path.
+ *
+ * @return the loaded ttf font.
+ */
 suspend fun VfsFile.readTtfFont(chars: String = CharacterSets.LATIN_ALL): TtfFont {
     val data = read()
     return TtfFont(chars).also { it.load(data) }
@@ -64,12 +66,13 @@ suspend fun VfsFile.readTtfFont(chars: String = CharacterSets.LATIN_ALL): TtfFon
 
 /**
  * Reads a bitmap font.
+ *
  * @param filter the filter to assign any [Texture] that gets loaded
  * @param mipmaps whether the loaded [Texture] should use mipmaps
- * @param preloadedTextures instead of loading a [Texture] when parsing the bitmap font, this will use an existing
- * [TextureSlice]. This is useful if the bitmap font texture already exists in an atlas. Each slice in the list
- * is considered a page in the bitmap font. Disposing a [BitmapFont] that uses preloaded textures will not dispose
- * of the textures.
+ * @param preloadedTextures instead of loading a [Texture] when parsing the bitmap font, this will
+ *   use an existing [TextureSlice]. This is useful if the bitmap font texture already exists in an
+ *   atlas. Each slice in the list is considered a page in the bitmap font. Disposing a [BitmapFont]
+ *   that uses preloaded textures will not dispose of the textures.
  */
 suspend fun VfsFile.readBitmapFont(
     filter: TexMagFilter = TexMagFilter.NEAREST,
@@ -85,7 +88,15 @@ suspend fun VfsFile.readBitmapFont(
         }
     }
     if (data.startsWith("info")) {
-        return readBitmapFontTxt(data, this, textures, preloadedTextures, preloadedTextures.isEmpty(), filter, mipmaps)
+        return readBitmapFontTxt(
+            data,
+            this,
+            textures,
+            preloadedTextures,
+            preloadedTextures.isEmpty(),
+            filter,
+            mipmaps
+        )
     } else {
         TODO("Unsupported font type.")
     }
@@ -109,10 +120,35 @@ private suspend fun readBitmapFontTxt(
     val lines = data.split("\n")
     val padding = MutableVec4i(0)
 
-    val capChars = charArrayOf(
-        'M', 'N', 'B', 'D', 'C', 'E', 'F', 'K', 'A', 'G', 'H', 'I', 'J', 'L', 'O', 'P', 'Q', 'R', 'S',
-        'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
-    )
+    val capChars =
+        charArrayOf(
+            'M',
+            'N',
+            'B',
+            'D',
+            'C',
+            'E',
+            'F',
+            'K',
+            'A',
+            'G',
+            'H',
+            'I',
+            'J',
+            'L',
+            'O',
+            'P',
+            'Q',
+            'R',
+            'S',
+            'T',
+            'U',
+            'V',
+            'W',
+            'X',
+            'Y',
+            'Z'
+        )
     var capHeightFound = false
     var capHeight = 1
 
@@ -138,7 +174,6 @@ private suspend fun readBitmapFontTxt(
                     )
                 }
             }
-
             line.startsWith("page") -> {
                 val id = map["id"]?.toInt() ?: 0
                 val file = map["file"]?.unquote() ?: error("Page without file")
@@ -146,13 +181,11 @@ private suspend fun readBitmapFontTxt(
                     textures[id] = fontFile.parent[file].readTexture(magFilter = filter, mipmaps = mipmaps)
                 }
             }
-
             line.startsWith("common ") -> {
                 lineHeight = map["lineHeight"]?.toFloatOrNull() ?: 16f
                 base = map["base"]?.toFloatOrNull()
                 pages = map["pages"]?.toIntOrNull() ?: 1
             }
-
             line.startsWith("char ") -> {
                 val page = map["page"]?.toIntOrNull() ?: 0
                 val id = map["id"]?.toIntOrNull() ?: 0
@@ -167,50 +200,52 @@ private suspend fun readBitmapFontTxt(
                         capHeight = max(capHeight, height)
                     }
                 }
-                val slice = when {
-                    loadTextures -> {
-                        TextureSlice(
-                            textures[page] ?: textures.values.first(),
-                            map["x"]?.toIntOrNull() ?: 0,
-                            map["y"]?.toIntOrNull() ?: 0,
-                            width,
-                            height
-                        )
+                val slice =
+                    when {
+                        loadTextures -> {
+                            TextureSlice(
+                                textures[page] ?: textures.values.first(),
+                                map["x"]?.toIntOrNull() ?: 0,
+                                map["y"]?.toIntOrNull() ?: 0,
+                                width,
+                                height
+                            )
+                        }
+                        preloadedTextures.isNotEmpty() -> {
+                            TextureSlice(
+                                preloadedTextures[page],
+                                map["x"]?.toIntOrNull() ?: 0,
+                                map["y"]?.toIntOrNull() ?: 0,
+                                width,
+                                height
+                            )
+                        }
+                        else -> {
+                            throw IllegalStateException(
+                                "Unable to load any textures for ${fontFile.baseName}. If they are preloaded, make sure to pass that in 'readBitmapFont()'."
+                            )
+                        }
                     }
-
-                    preloadedTextures.isNotEmpty() -> {
-                        TextureSlice(
-                            preloadedTextures[page],
-                            map["x"]?.toIntOrNull() ?: 0,
-                            map["y"]?.toIntOrNull() ?: 0,
-                            width,
-                            height
-                        )
-                    }
-
-                    else -> {
-                        throw IllegalStateException("Unable to load any textures for ${fontFile.baseName}. If they are preloaded, make sure to pass that in 'readBitmapFont()'.")
-                    }
-                }
-                glyphs += BitmapFont.Glyph(
-                    fontSize = fontSize,
-                    id = id,
-                    slice = slice,
-                    xoffset = map["xoffset"]?.toIntOrNull() ?: 0,
-                    yoffset = map["yoffset"]?.toIntOrNull() ?: 0,
-                    xadvance = map["xadvance"]?.toIntOrNull() ?: 0,
-                    width = width,
-                    height = height,
-                    page = page
-                )
+                glyphs +=
+                    BitmapFont.Glyph(
+                        fontSize = fontSize,
+                        id = id,
+                        slice = slice,
+                        xoffset = map["xoffset"]?.toIntOrNull() ?: 0,
+                        yoffset = map["yoffset"]?.toIntOrNull() ?: 0,
+                        xadvance = map["xadvance"]?.toIntOrNull() ?: 0,
+                        width = width,
+                        height = height,
+                        page = page
+                    )
             }
-
             line.startsWith("kerning ") -> {
-                kernings += Kerning(
-                    first = map["first"]?.toIntOrNull() ?: 0,
-                    second = map["second"]?.toIntOrNull() ?: 0,
-                    amount = map["amount"]?.toIntOrNull() ?: 0
-                )
+                kernings +=
+                    Kerning(
+                        first = map["first"]?.toIntOrNull() ?: 0,
+                        second = map["second"]?.toIntOrNull() ?: 0,
+                        amount = map["amount"]?.toIntOrNull() ?: 0
+                    )
             }
         }
     }
@@ -231,27 +266,33 @@ private suspend fun readBitmapFontTxt(
 }
 
 /**
- * Reads the [VfsFile] as a [LDtkMapLoader]. This will read the LDtk file and create a loader to allow flexible loading
- * of [LDtkWorld] or [LDtkLevel]. This loader should be cached and reused when loading separate levels.
- * @param atlas an atlas the has the preloaded textures for both tilesets and image layers. **Note**: that if the
- * [Texture] for a tileset has a border thickness set, that value must be used for [tilesetBorder]. If no border is set,
- * then [tilesetBorder] must be marked as `0`.
- * @param tilesetBorder the border thickness of each slice when loading the tileset to prevent bleeding. This is used when
- * slicing tileset textures from an atlas or when loading externally.
+ * Reads the [VfsFile] as a [LDtkMapLoader]. This will read the LDtk file and create a loader to
+ * allow flexible loading of [LDtkWorld] or [LDtkLevel]. This loader should be cached and reused
+ * when loading separate levels.
+ *
+ * @param atlas an atlas the has the preloaded textures for both tilesets and image layers.
+ *   **Note**: that if the [Texture] for a tileset has a border thickness set, that value must be
+ *   used for [tilesetBorder]. If no border is set, then [tilesetBorder] must be marked as `0`.
+ * @param tilesetBorder the border thickness of each slice when loading the tileset to prevent
+ *   bleeding. This is used when slicing tileset textures from an atlas or when loading externally.
  * @return the loaded LDtk map
  */
-suspend fun VfsFile.readLDtkMapLoader(atlas: TextureAtlas? = null, tilesetBorder: Int = 2): LDtkMapLoader {
+suspend fun VfsFile.readLDtkMapLoader(
+    atlas: TextureAtlas? = null,
+    tilesetBorder: Int = 2
+): LDtkMapLoader {
     val mapData = decodeFromString<LDtkMapData>()
     return LDtkMapLoader(this, mapData, atlas, tilesetBorder)
 }
 
 /**
  * Reads the [VfsFile] as a [TiledMap]. Any loaders and assets will be cached for reuse/reloading.
- * @param atlas an atlas the has the preloaded textures for both tilesets and image layers. **Note**: that if the
- * [Texture] for a tileset has a border thickness set, that value must be used for [tilesetBorder]. If no border is set,
- * then [tilesetBorder] must be marked as `0`.
- * @param tilesetBorder the border thickness of each slice when loading the tileset to prevent bleeding. This is used when
- * slicing tileset textures from an atlas or when loading externally.
+ *
+ * @param atlas an atlas the has the preloaded textures for both tilesets and image layers.
+ *   **Note**: that if the [Texture] for a tileset has a border thickness set, that value must be
+ *   used for [tilesetBorder]. If no border is set, then [tilesetBorder] must be marked as `0`.
+ * @param tilesetBorder the border thickness of each slice when loading the tileset to prevent
+ *   bleeding. This is used when slicing tileset textures from an atlas or when loading externally.
  * @return the loaded Tiled map
  */
 suspend fun VfsFile.readTiledMap(
@@ -264,8 +305,19 @@ suspend fun VfsFile.readTiledMap(
     return loader.loadMap()
 }
 
+/** Reads Base64 encoded ByteArray for embedded images. */
+internal expect suspend fun ByteArray.readPixmap(): Pixmap
+
+/**
+ * Loads an image from the path as a [Pixmap].
+ *
+ * @return the loaded texture
+ */
+expect suspend fun VfsFile.readPixmap(): Pixmap
+
 /**
  * Loads an image from the path as a [Texture]. This will call [Texture.prepare] before returning!
+ *
  * @return the loaded texture
  */
 expect suspend fun VfsFile.readTexture(
@@ -275,29 +327,32 @@ expect suspend fun VfsFile.readTexture(
 ): Texture
 
 /**
- * Reads Base64 encoded ByteArray for embedded images.
- */
-internal expect suspend fun ByteArray.readPixmap(): Pixmap
-
-/**
- * Loads an image from the path as a [Pixmap].
- * @return the loaded texture
- */
-expect suspend fun VfsFile.readPixmap(): Pixmap
-
-/**
  * Loads audio from the path as an [AudioClip].
+ *
  * @return the loaded audio clip
  */
 expect suspend fun VfsFile.readAudioClip(): AudioClip
 
 /**
+ * Loads audio from the path as an [AudioClipEx].
+ *
+ * @return the loaded audio clip
+ */
+expect suspend fun VfsFile.readAudioClipEx(): AudioClipEx
+
+/**
  * Streams audio from the path as an [AudioStream].
+ *
  * @return a new [AudioStream]
  */
 expect suspend fun VfsFile.readAudioStream(): AudioStream
 
 /**
- * Write pixmap to disk.
+ * Streams audio from the path as an [AudioStreamEx].
+ *
+ * @return a new [AudioStream]
  */
+expect suspend fun VfsFile.readAudioStreamEx(): AudioStreamEx
+
+/** Write pixmap to disk. */
 expect suspend fun VfsFile.writePixmap(pixmap: Pixmap)
