@@ -14,6 +14,10 @@ internal class WebAudioStreamEx(private val audio: WebAudioEx) : AudioStreamEx {
     override val playing: Boolean
         get() = audio.playing
 
+    private var isPaused: Boolean = false
+    override val paused: Boolean
+        get() = isPaused
+
     override suspend fun play(
         volume: Float,
         positionX: Float,
@@ -32,10 +36,12 @@ internal class WebAudioStreamEx(private val audio: WebAudioEx) : AudioStreamEx {
             rolloffFactor,
             loop
         )
+        isPaused = false
     }
 
     override suspend fun play(volume: Float, loop: Boolean) {
         audio.play(volume, 0f, 0f, 10000f, 10000f, 0f, loop)
+        isPaused = false
     }
 
     override fun setPosition(positionX: Float, positionY: Float) {
@@ -45,14 +51,17 @@ internal class WebAudioStreamEx(private val audio: WebAudioEx) : AudioStreamEx {
 
     override fun stop() {
         audio.stop()
+        isPaused = false
     }
 
     override fun resume() {
         audio.resume()
+        isPaused = false
     }
 
     override fun pause() {
         audio.pause()
+        isPaused = true
     }
 
     override fun release() {
