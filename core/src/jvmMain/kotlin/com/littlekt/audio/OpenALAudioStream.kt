@@ -51,6 +51,14 @@ class OpenALAudioStream(
             }
             return isPlaying
         }
+    private var isPaused = false
+    override val paused: Boolean
+        get() {
+            if (NO_DEVICE || sourceID == -1) {
+                return false
+            }
+            return isPaused
+        }
 
     init {
         if (NO_DEVICE) {
@@ -113,6 +121,7 @@ class OpenALAudioStream(
             alSourcePlay(sourceID)
             isPlaying = true
         }
+        isPaused = false
     }
 
     override suspend fun play(volume: Float, loop: Boolean) = play(volume, 0f, 0f, 10000f, 10000f, 0f, loop)
@@ -132,12 +141,14 @@ class OpenALAudioStream(
 
         sourceID = -1
         isPlaying = false
+        isPaused = false
     }
 
     override fun resume() = withDevice {
         if (sourceID != -1) {
             alSourcePlay(sourceID)
             isPlaying = true
+            isPaused = false
         }
     }
 
@@ -146,6 +157,7 @@ class OpenALAudioStream(
             alSourcePause(sourceID)
         }
         isPlaying = false
+        isPaused = true
     }
 
     override fun release() = withDevice {

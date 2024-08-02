@@ -2,6 +2,8 @@ package com.littlekt.audio
 
 interface AudioStreamEx : AudioStream {
 
+    val paused: Boolean
+
     /**
      * Play this spatial audio stream.
      *
