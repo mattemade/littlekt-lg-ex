@@ -12,22 +12,41 @@ import com.littlekt.math.geom.degrees
 import com.littlekt.util.calculateViewBounds
 
 /**
+ * A base Tiled layer.
+ *
  * @author Colton Daily
  * @date 2/28/2022
  */
 abstract class TiledLayer(
+    /** The Tiled layer type. */
     val type: String,
+    /** The name of this layer. */
     val name: String,
+    /** This layers identifier. */
     val id: Int,
-    val visible: Boolean,
+    /** If this layer is visible or hidden. */
+    var visible: Boolean,
+    /** The width of this layer in cells. */
     val width: Int,
+    /** The height of this layer in cells. */
     val height: Int,
+    /** The pixel offset in the x-axis. */
     val offsetX: Float,
+    /** The pixel offset in the y-axis. */
     val offsetY: Float,
+    /** The width of a single tile cell. */
     val tileWidth: Int,
+    /** The height of a single tile cell. */
     val tileHeight: Int,
+    /** The tint color of the layer. */
     val tintColor: Color?,
+    /** The opacity of the layer. */
     val opacity: Float,
+    /**
+     * A map of properties. Access by using property name string value.
+     *
+     * @see [TiledMap.Property]
+     */
     val properties: Map<String, TiledMap.Property>
 ) : TileLayer() {
 
@@ -43,6 +62,7 @@ abstract class TiledLayer(
     final override fun render(batch: Batch, viewBounds: Rect, x: Float, y: Float, scale: Float) =
         render(batch, viewBounds, x, y, scale, displayObjects = false)
 
+    /** Render this layer with within the given viewbounds. */
     abstract fun render(
         batch: Batch,
         viewBounds: Rect,
@@ -52,21 +72,25 @@ abstract class TiledLayer(
         displayObjects: Boolean = false
     )
 
-    /**
-     * @return true if grid-based coordinates are within layer bounds.
-     */
+    /** @return true if grid-based coordinates are within layer bounds. */
     fun isCoordValid(cx: Int, cy: Int): Boolean {
         return cx in 0 until width && cy >= 0 && cy < height
     }
 
+    /** Calculate the x-cell from a 1D coord. */
     fun getCellX(coordId: Int): Int {
         return coordId - coordId / width * width
     }
 
+    /** Calculate the y-cell from a 1D coord. */
     fun getCellY(coordId: Int): Int {
         return coordId / width
     }
 
+    /**
+     * Calculate the coord ID (1D) of the given x,y cell. Assume `0,0` is bottom left and
+     * `width,height` is top right. This will perform the flip to match Tiled's coordinate system.
+     */
     fun getCoordId(cx: Int, cy: Int) = cx + cy * width
 
     internal fun Int.bitsToTileData(result: TileData): TileData {
