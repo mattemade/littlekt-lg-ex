@@ -8,12 +8,14 @@ import kotlin.math.atan2
 import kotlin.math.max
 
 /**
- * An [InputProcessor] that handles [Key], [GameButton], and [GameAxis] inputs and converts them into a single input signal
- * to be used similarly as [Input] except with a custom [InputSignal] type.
+ * An [InputProcessor] that handles [Key], [GameButton], and [GameAxis] inputs and converts them
+ * into a single input signal to be used similarly as [Input] except with a custom [InputSignal]
+ * type.
  *
- * Bindings can be added to [addBinding] for multiple input sources. These bindings then can be added as an axis or a vector.
- * The input signal can then be checked like [Input] normally would be using input methods this class provides.
- * Additionally, the strength, distances, and angles of each input can be calculated.
+ * Bindings can be added to [addBinding] for multiple input sources. These bindings then can be
+ * added as an axis or a vector. The input signal can then be checked like [Input] normally would be
+ * using input methods this class provides. Additionally, the strength, distances, and angles of
+ * each input can be calculated.
  *
  * @param input the current input of the context
  * @see addBinding
@@ -33,7 +35,8 @@ class InputMapController<InputSignal>(
     private val keyBindingsWithModifiers =
         mutableMapOf<InputSignal, KeyBindingWithModifiers<InputSignal>>()
     private val keyToType = mutableMapOf<Key, MutableList<InputSignal>>()
-    private val keyModifiersToType = mutableMapOf<Key, MutableList<KeyBindingWithModifiers<InputSignal>>>()
+    private val keyModifiersToType =
+        mutableMapOf<Key, MutableList<KeyBindingWithModifiers<InputSignal>>>()
     private val buttonBindings = mutableMapOf<InputSignal, List<GameButton>>()
     private val buttonToType = mutableMapOf<GameButton, MutableList<InputSignal>>()
     private val axisBindings = mutableMapOf<InputSignal, List<GameAxis>>()
@@ -48,13 +51,21 @@ class InputMapController<InputSignal>(
 
     private val tempVec2f = MutableVec2f()
 
-    private val shift get() = input.isKeyPressed(Key.SHIFT_LEFT) || input.isKeyPressed(Key.SHIFT_RIGHT)
-    private val ctrl get() = input.isKeyPressed(Key.CTRL_LEFT) || input.isKeyPressed(Key.CTRL_RIGHT)
-    private val alt get() = input.isKeyPressed(Key.ALT_LEFT) || input.isKeyPressed(Key.ALT_RIGHT)
-    private val anyModifierPressed get() = shift || ctrl || alt
+    private val shift
+        get() = input.isKeyPressed(Key.SHIFT_LEFT) || input.isKeyPressed(Key.SHIFT_RIGHT)
+
+    private val ctrl
+        get() = input.isKeyPressed(Key.CTRL_LEFT) || input.isKeyPressed(Key.CTRL_RIGHT)
+
+    private val alt
+        get() = input.isKeyPressed(Key.ALT_LEFT) || input.isKeyPressed(Key.ALT_RIGHT)
+
+    private val anyModifierPressed
+        get() = shift || ctrl || alt
 
     enum class InputMode {
-        KEYBOARD, GAMEPAD
+        KEYBOARD,
+        GAMEPAD
     }
 
     fun addInputMapProcessor(processor: InputMapProcessor<InputSignal>) {
@@ -67,8 +78,35 @@ class InputMapController<InputSignal>(
 
     /**
      * Create a binding of multiple keys and buttons into a single [InputSignal].
+     *
+     * Examples:
+     *
+     * **Add a key binding that will trigger whenever any of the following keys are pressed: SPACE,
+     * W, or ARROW_UP**
+     *
+     * ```
+     * controller.addBinding(GameInput.JUMP, keys = listOf(Key.SPACE, Key.W, Key.ARROW_UP))
+     * ```
+     *
+     * **Add a key binding that will trigger whenever ALL of the following keys are pressed: CTRL +
+     * SHIFT + S**
+     *
+     * ```
+     * controller.addBinding(GameInput.SAVE, keys = listOf(Key.S), keyModifiers = listOf(KeyModifier.SHIFT, KeyModifier.CTRL))
+     * ```
+     *
+     * **Add a key binding that will trigger whenever ALL of the following keys are pressed: CTRL +
+     * SHIFT + S + R**
+     *
+     * ```
+     * controller.addBinding(GameInput.RESTART, keys = listOf(Key.S, Key.R), keyModifiers = listOf(KeyModifier.SHIFT, KeyModifier.CTRL))
+     * ```
+     *
      * @param type the [InputSignal] that is triggered by one of the keys or buttons
      * @param keys a list of [Key] types that triggers the [InputSignal]
+     * @param keyModifiers a list of [KeyModifier] that are used in combination with [keys]. When
+     *   this list is NOT empty then all of items in [keys] and [keyModifiers] must be pressed in
+     *   order for [type] to trigger.
      * @param buttons a list of [GameButton] types that triggers the [InputSignal]
      * @param axes a list of [GameAxis] types that triggers the [InputSignal]
      * @see [Key]
@@ -84,39 +122,26 @@ class InputMapController<InputSignal>(
     ) {
         if (keyModifiers.isEmpty()) {
             keyBindings[type] = keys.toList()
-            keys.forEach {
-                keyToType.getOrPut(it) { mutableListOf() }.add(type)
-            }
+            keys.forEach { keyToType.getOrPut(it) { mutableListOf() }.add(type) }
         } else {
-            val modifier = keyBindingsWithModifiers.getOrPut(type) {
-                KeyBindingWithModifiers(
-                    type,
-                    keys.toList(),
-                    keyModifiers.toList()
-                )
-            }
-            keys.forEach {
-                keyModifiersToType.getOrPut(it) { mutableListOf() }.add(modifier)
-            }
+            val modifier =
+                keyBindingsWithModifiers.getOrPut(type) {
+                    KeyBindingWithModifiers(type, keys.toList(), keyModifiers.toList())
+                }
+            keys.forEach { keyModifiersToType.getOrPut(it) { mutableListOf() }.add(modifier) }
         }
         buttonBindings[type] = buttons.toList()
-        buttons.forEach {
-            buttonToType.getOrPut(it) { mutableListOf() }.add(type)
-        }
+        buttons.forEach { buttonToType.getOrPut(it) { mutableListOf() }.add(type) }
         axisBindings[type] = axes.toList()
-        axes.forEach {
-            axisToType.getOrPut(it) { mutableListOf() }.add(type)
-        }
+        axes.forEach { axisToType.getOrPut(it) { mutableListOf() }.add(type) }
         pointerBindings[type] = pointers.toList()
-        pointers.forEach {
-            pointerToType.getOrPut(it) { mutableListOf() }.add(type)
-        }
+        pointers.forEach { pointerToType.getOrPut(it) { mutableListOf() }.add(type) }
     }
 
     /**
-     * Create an axis from two [InputSignal] bindings. In order to have a proper axis, the two signals must have
-     * been bound in [addBinding]. The axis is calculated as follows: `positive - negative`.
-     * Note: this will replace any existing axis if it exists.
+     * Create an axis from two [InputSignal] bindings. In order to have a proper axis, the two
+     * signals must have been bound in [addBinding]. The axis is calculated as follows: `positive -
+     * negative`. Note: this will replace any existing axis if it exists.
      *
      * @param type the [InputSignal] that refers to this axis.
      * @param positive the positive [InputSignal] of this axis.
@@ -128,10 +153,10 @@ class InputMapController<InputSignal>(
     }
 
     /**
-     * Create a vector from four [InputSignal] bindings. Think of it as two axes in as a single result.
-     * In order to have a proper vector, the four signals must have been bound in [addBinding].
-     * The vector is calculated as follows: `positiveX - negativeX` and `positiveY - negativeY`.
-     * Note: this will replace any existing vector if it exists.
+     * Create a vector from four [InputSignal] bindings. Think of it as two axes in as a single
+     * result. In order to have a proper vector, the four signals must have been bound in
+     * [addBinding]. The vector is calculated as follows: `positiveX - negativeX` and `positiveY -
+     * negativeY`. Note: this will replace any existing vector if it exists.
      *
      * @param type the [InputSignal] that refers to this axis.
      * @param positiveX the positive `X` axis [InputSignal] of this vector.
@@ -150,21 +175,25 @@ class InputMapController<InputSignal>(
         vectors[type] = InputVector(positiveX, positiveY, negativeX, negativeY)
     }
 
-    val isTouching get() = input.isTouching
-    val justTouched get() = input.justTouched
+    val isTouching: Boolean
+        get() = input.isTouching
+
+    val justTouched: Boolean
+        get() = input.justTouched
 
     /**
-     * Checks to see if the [InputSignal] is currently down for all inputs. This does not trigger for [GameAxis].
+     * Checks to see if the [InputSignal] is currently down for all inputs. This does not trigger
+     * for [GameAxis].
+     *
      * @return `true` if down; `false` otherwise
      */
     fun down(type: InputSignal): Boolean {
         return if (mode == InputMode.GAMEPAD) {
             getGamepadButtonEvent(type) { input.isGamepadButtonPressed(it) }
         } else {
-            return getKeyEvent(
-                type,
-                singleKey = { key -> input.isKeyPressed(key) }
-            ) { modifiers, keys ->
+            return getKeyEvent(type, singleKey = { key -> input.isKeyPressed(key) }) {
+                modifiers,
+                keys ->
                 modifiers.forEach { keyModifier ->
                     var modHandled = false
                     keyModifier.keys.forEach {
@@ -188,21 +217,19 @@ class InputMapController<InputSignal>(
         }
     }
 
-
     /**
-     * Checks to see if the [InputSignal] is just pressed for all inputs. This does not trigger for [GameAxis].
+     * Checks to see if the [InputSignal] is just pressed for all inputs. This does not trigger for
+     * [GameAxis].
+     *
      * @return `true` if just pressed; `false` otherwise
      */
     fun pressed(type: InputSignal): Boolean {
         return if (mode == InputMode.GAMEPAD) {
             getGamepadButtonEvent(type) { input.isGamepadButtonJustPressed(it) }
         } else {
-            return getKeyEvent(
-                type,
-                singleKey = { key ->
-                    input.isKeyJustPressed(key)
-                }
-            ) { modifiers, keys ->
+            return getKeyEvent(type, singleKey = { key -> input.isKeyJustPressed(key) }) {
+                modifiers,
+                keys ->
                 var anyJustPressed = false
                 modifiers.forEach { keyModifier ->
                     var modHandled = false
@@ -233,19 +260,18 @@ class InputMapController<InputSignal>(
     }
 
     /**
-     * Checks to see if the [InputSignal] is just released for all inputs. This does not trigger for [GameAxis].
+     * Checks to see if the [InputSignal] is just released for all inputs. This does not trigger for
+     * [GameAxis].
+     *
      * @return `true` if just released; `false` otherwise
      */
     fun released(type: InputSignal): Boolean {
         return if (mode == InputMode.GAMEPAD) {
             getGamepadButtonEvent(type) { input.isGamepadButtonJustReleased(it) }
         } else {
-            return getKeyEvent(
-                type,
-                singleKey = { key ->
-                    input.isKeyJustReleased(key)
-                }
-            ) { modifiers, keys ->
+            return getKeyEvent(type, singleKey = { key -> input.isKeyJustReleased(key) }) {
+                modifiers,
+                keys ->
                 var anyJustReleased = false
                 modifiers.forEach { keyModifier ->
                     var modHandled = false
@@ -328,14 +354,15 @@ class InputMapController<InputSignal>(
                     if (handled) return true
                 }
             }
-        } else {
-            keyToType[key]?.forEach {
-                processors.forEach { processor ->
-                    val handled = processor.onActionDown(it)
-                    if (handled) return true
-                }
+        }
+
+        keyToType[key]?.forEach {
+            processors.forEach { processor ->
+                val handled = processor.onActionDown(it)
+                if (handled) return true
             }
         }
+
         return false
     }
 
@@ -421,7 +448,8 @@ class InputMapController<InputSignal>(
     }
 
     private inline fun getButtonStrength(
-        type: InputSignal, predicate: (strength: Float, isAxis: Boolean) -> Boolean,
+        type: InputSignal,
+        predicate: (strength: Float, isAxis: Boolean) -> Boolean,
     ): Float {
         if (input.connectedGamepads.isNotEmpty()) {
             input.gamepads.fastForEach { gamepad ->
@@ -445,7 +473,9 @@ class InputMapController<InputSignal>(
     }
 
     private inline fun getButtonAxisStrength(
-        type: InputSignal, positive: Boolean, predicate: (strength: Float, isAxis: Boolean) -> Boolean,
+        type: InputSignal,
+        positive: Boolean,
+        predicate: (strength: Float, isAxis: Boolean) -> Boolean,
     ): Float {
         if (input.connectedGamepads.isNotEmpty()) {
             input.gamepads.fastForEach { gamepad ->
@@ -487,16 +517,19 @@ class InputMapController<InputSignal>(
         singleKey: (Key) -> Boolean,
         modifierKey: (List<KeyModifier>, List<Key>) -> Boolean,
     ): Float {
+        if (anyModifierPressed) {
+            keyBindingsWithModifiers[type]?.let outside@{ binding ->
+                if (binding.modifiers.isNotEmpty() && binding.keys.isNotEmpty()) {
+                    if (modifierKey(binding.modifiers, binding.keys)) {
+                        return 1f
+                    }
+                }
+            }
+        }
+
         keyBindings[type]?.fastForEach {
             if (singleKey(it)) {
                 return 1f
-            }
-        }
-        keyBindingsWithModifiers[type]?.let outside@{ binding ->
-            if (binding.modifiers.isNotEmpty() && binding.keys.isNotEmpty()) {
-                if (modifierKey(binding.modifiers, binding.keys)) {
-                    return 1f
-                }
             }
         }
         return 0f
@@ -511,22 +544,21 @@ class InputMapController<InputSignal>(
             keyBindingsWithModifiers[type]?.let outside@{ binding ->
                 return modifierKey(binding.modifiers, binding.keys)
             }
-        } else {
-            keyBindings[type]?.fastForEach {
-                if (singleKey(it)) {
-                    return true
-                }
-            }
-            keyBindingsWithModifiers[type]?.let outside@{ binding ->
-                if (binding.modifiers.isNotEmpty() && binding.keys.isNotEmpty()) {
-                    return modifierKey(binding.modifiers, binding.keys)
-                }
+        }
+
+        keyBindings[type]?.fastForEach {
+            if (singleKey(it)) {
+                return true
             }
         }
+
         return false
     }
 
-    private inline fun getPointerEvent(type: InputSignal, predicate: (Pointer) -> Boolean): Boolean {
+    private inline fun getPointerEvent(
+        type: InputSignal,
+        predicate: (Pointer) -> Boolean
+    ): Boolean {
         pointerBindings[type]?.fastForEach {
             if (predicate(it)) {
                 return true
@@ -542,15 +574,18 @@ class InputMapController<InputSignal>(
             val predicate = { strength: Float, isAxis: Boolean ->
                 (isAxis && abs(strength) >= deadZone) || !isAxis && strength != 0f
             }
-            getButtonAxisStrength(positive, true, predicate) - getButtonAxisStrength(positive, false, predicate)
+            getButtonAxisStrength(positive, true, predicate) -
+                getButtonAxisStrength(negative, false, predicate)
         }
     }
 
     /**
-     * Returns the strength of this [InputSignal]. [GameButton] and [Key] will return as either `-1`, `0`, or `1`.
-     * A [GameAxis] will return anything between `-1` to `1`.
+     * Returns the strength of this [InputSignal]. [GameButton] and [Key] will return as either
+     * `-1`, `0`, or `1`. A [GameAxis] will return anything between `-1` to `1`.
+     *
      * @param type the [InputSignal] strength to check
-     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other than `0`.
+     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other
+     *   than `0`.
      * @return a value between `-1` to `1`
      * @see Key
      * @see GameButton
@@ -588,14 +623,16 @@ class InputMapController<InputSignal>(
     }
 
     /**
-     * Returns the strength of this [InputSignal] as an axis. This will take the positive axis and subtract it by
-     * the negative axis. This is the same as doing `strength(positive) - strength(negative)`.
-     * Requires an axis to have been added with the specified [type].
+     * Returns the strength of this [InputSignal] as an axis. This will take the positive axis and
+     * subtract it by the negative axis. This is the same as doing `strength(positive) -
+     * strength(negative)`. Requires an axis to have been added with the specified [type].
      *
-     * **Note:** This does take into account that a single [GameAxis] can return negative and positive values
-     * which is no different than just using [strength] for the [GameAxis].
+     * **Note:** This does take into account that a single [GameAxis] can return negative and
+     * positive values which is no different than just using [strength] for the [GameAxis].
+     *
      * @param type the [InputSignal] strength to check
-     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other than `0`.
+     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other
+     *   than `0`.
      * @return a value between `-1` to `1`
      * @see addAxis
      * @see strength
@@ -605,18 +642,20 @@ class InputMapController<InputSignal>(
      * @see axisDeadZone
      */
     fun axis(type: InputSignal, deadZone: Float = axisDeadZone): Float {
-        return axes[type]?.let {
-            strengthAxis(it.positive, it.negative, deadZone)
-        } ?: 0f
+        return axes[type]?.let { strengthAxis(it.positive, it.negative, deadZone) } ?: 0f
     }
 
     /**
-     * Returns the strength of this [InputSignal] as a vector. This will take the positive **X** and **Y** axes and subtract it by
-     * the negative **X** and **Y** axes. Requires a vector to have been added with the specified [type].
+     * Returns the strength of this [InputSignal] as a vector. This will take the positive **X** and
+     * **Y** axes and subtract it by the negative **X** and **Y** axes. Requires a vector to have
+     * been added with the specified [type].
      *
-     * **Note:** This is the same as using [axis] for both **X** and **Y** axes and setting them to a vector.
+     * **Note:** This is the same as using [axis] for both **X** and **Y** axes and setting them to
+     * a vector.
+     *
      * @param type the [InputSignal] strength to check
-     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other than `0`.
+     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other
+     *   than `0`.
      * @return a [Vec2f] with [Vec2f.x] and [Vec2f.y] set with values between `-1` to `1`
      * @see addVector
      * @see axis
@@ -636,16 +675,22 @@ class InputMapController<InputSignal>(
 
     /**
      * Takes the absolute value of the [strength] of this [InputSignal]
+     *
      * @param type the input signal
-     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other than `0`.
+     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other
+     *   than `0`.
      * @return the calculated distance
      */
-    fun dist(type: InputSignal, deadZone: Float = axisDeadZone): Float = abs(strength(type, deadZone))
+    fun dist(type: InputSignal, deadZone: Float = axisDeadZone): Float =
+        abs(strength(type, deadZone))
 
     /**
-     * Calculates the distance between each axes in this vector [InputSignal] and returns the highest distance.
+     * Calculates the distance between each axes in this vector [InputSignal] and returns the
+     * highest distance.
+     *
      * @param vector the vector input signal
-     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other than `0`.
+     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other
+     *   than `0`.
      * @return the highest distance calculated between both axes in the vector
      * @see dist
      */
@@ -657,6 +702,7 @@ class InputMapController<InputSignal>(
 
     /**
      * Calculates the distance between each axes [InputSignal] and returns the highest distance.
+     *
      * @return the highest distance calculated between both axes
      * @see dist
      */
@@ -664,9 +710,12 @@ class InputMapController<InputSignal>(
         max(abs(axis(xAxis, deadZone)), abs(axis(yAxis, deadZone)))
 
     /**
-     * Calculates the angle of a vector [InputSignal]. Requires a vector to have been added with the specified [vector].
+     * Calculates the angle of a vector [InputSignal]. Requires a vector to have been added with the
+     * specified [vector].
+     *
      * @param vector the input signal
-     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other than `0`.
+     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other
+     *   than `0`.
      * @return the angle between both axes in the vector
      * @see addVector
      */
@@ -677,11 +726,13 @@ class InputMapController<InputSignal>(
         } ?: 0f
 
     /**
-     * Calculates the angle between both [InputSignal] axes. Requires the axes to have been added with the specified
-     * [axis] and [yAxis].
+     * Calculates the angle between both [InputSignal] axes. Requires the axes to have been added
+     * with the specified [axis] and [yAxis].
+     *
      * @param xAxis the **X** axis input signal
      * @param yAxis the **Y** axis input signal
-     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other than `0`.
+     * @param deadZone the threshold a [GameAxis] needs to surpass in order to return a value other
+     *   than `0`.
      * @return the angle between both axes in the vector
      * @see addVector
      */
@@ -697,7 +748,12 @@ class InputMapController<InputSignal>(
 
 private data class InputAxis<T>(val positive: T, val negative: T)
 
-private data class InputVector<T>(val positiveX: T, val positiveY: T, val negativeX: T, val negativeY: T)
+private data class InputVector<T>(
+    val positiveX: T,
+    val positiveY: T,
+    val negativeX: T,
+    val negativeY: T
+)
 
 private data class KeyBindingWithModifiers<T>(
     val input: T,
