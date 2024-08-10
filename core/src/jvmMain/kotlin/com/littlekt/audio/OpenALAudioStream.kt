@@ -2,9 +2,34 @@ package com.littlekt.audio
 
 import com.littlekt.log.Logger
 import com.littlekt.util.seconds
-import java.nio.IntBuffer
 import org.lwjgl.BufferUtils
-import org.lwjgl.openal.AL10.*
+import org.lwjgl.openal.AL10.AL_BUFFER
+import org.lwjgl.openal.AL10.AL_BUFFERS_PROCESSED
+import org.lwjgl.openal.AL10.AL_BUFFERS_QUEUED
+import org.lwjgl.openal.AL10.AL_FALSE
+import org.lwjgl.openal.AL10.AL_FORMAT_MONO16
+import org.lwjgl.openal.AL10.AL_FORMAT_STEREO16
+import org.lwjgl.openal.AL10.AL_GAIN
+import org.lwjgl.openal.AL10.AL_INVALID_VALUE
+import org.lwjgl.openal.AL10.AL_LOOPING
+import org.lwjgl.openal.AL10.AL_NO_ERROR
+import org.lwjgl.openal.AL10.AL_PLAYING
+import org.lwjgl.openal.AL10.AL_POSITION
+import org.lwjgl.openal.AL10.AL_SOURCE_STATE
+import org.lwjgl.openal.AL10.alBufferData
+import org.lwjgl.openal.AL10.alDeleteBuffers
+import org.lwjgl.openal.AL10.alGenBuffers
+import org.lwjgl.openal.AL10.alGetError
+import org.lwjgl.openal.AL10.alGetSourcei
+import org.lwjgl.openal.AL10.alSource3f
+import org.lwjgl.openal.AL10.alSourcePause
+import org.lwjgl.openal.AL10.alSourcePlay
+import org.lwjgl.openal.AL10.alSourceQueueBuffers
+import org.lwjgl.openal.AL10.alSourceStop
+import org.lwjgl.openal.AL10.alSourceUnqueueBuffers
+import org.lwjgl.openal.AL10.alSourcef
+import org.lwjgl.openal.AL10.alSourcei
+import java.nio.IntBuffer
 
 /**
  * @author Colton Daily
@@ -124,9 +149,10 @@ class OpenALAudioStream(
         isPaused = false
     }
 
-    override suspend fun play(volume: Float, loop: Boolean) = play(volume, 0f, 0f, 10000f, 10000f, 0f, loop)
+    override suspend fun play(volume: Float, loop: Boolean) =
+        play(volume, 0f, 0f, 10000f, 10000f, 0f, loop)
 
-    override fun setPosition( positionX: Float, positionY: Float) = withDevice {
+    override fun setPosition(positionX: Float, positionY: Float) = withDevice {
         if (sourceID == -1) return@withDevice
         alSource3f(sourceID, AL_POSITION, positionX, positionY, 0f)
     }
