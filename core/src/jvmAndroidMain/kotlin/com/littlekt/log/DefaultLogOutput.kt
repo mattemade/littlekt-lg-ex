@@ -5,6 +5,6 @@ package com.littlekt.log
  * @date 11/25/2021
  */
 actual object DefaultLogOutput : com.littlekt.log.Logger.Output {
-    override fun output(logger: _root_ide_package_.com.littlekt.log.Logger, level: _root_ide_package_.com.littlekt.log.Logger.Level, msg: Any?) =
+    actual override fun output(logger: _root_ide_package_.com.littlekt.log.Logger, level: _root_ide_package_.com.littlekt.log.Logger.Level, msg: Any?) =
         _root_ide_package_.com.littlekt.log.Logger.ConsoleLogOutput.output(logger, level, msg)
 }

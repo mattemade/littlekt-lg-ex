@@ -3,16 +3,16 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 
 plugins {
-    alias(libs.plugins.android.library)
+    //alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
     id("module.publication")
 }
 
 kotlin {
-    androidTarget {
+    /*androidTarget {
         publishLibraryVariants("release", "debug")
-    }
+    }*/
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = "17"
@@ -41,7 +41,7 @@ kotlin {
         }
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
+    /*@OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         compilations.all {
             kotlinOptions {
@@ -49,7 +49,7 @@ kotlin {
             }
         }
         binaries.executable()
-    }
+    }*/
 
     sourceSets {
         val commonMain by getting {
@@ -94,21 +94,21 @@ kotlin {
         val jvmTest by getting
         val jsMain by getting
         val jsTest by getting
-        val wasmJsMain by getting
+        /*val wasmJsMain by getting
         val wasmJsTest by getting
         val androidMain by getting {
             dependencies {
                 implementation(libs.kotlinx.coroutines.android)
             }
         }
-        val androidUnitTest by getting
+        val androidUnitTest by getting*/
 
         val jvmAndroidMain = maybeCreate("jvmAndroidMain")
 
         jvmAndroidMain.dependsOn(commonMain)
-        androidMain.dependsOn(jvmAndroidMain)
+        //androidMain.dependsOn(jvmAndroidMain)
         jvmMain.dependsOn(jvmAndroidMain)
-        androidUnitTest.dependsOn(commonTest)
+        //androidUnitTest.dependsOn(commonTest)
         jvmTest.dependsOn(commonTest)
         jsTest.dependsOn(commonTest)
 
@@ -122,7 +122,7 @@ kotlin {
     }
 }
 
-android {
+/*android {
     namespace = "com.littlekt.core"
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     compileSdk = (findProperty("android.compileSdk") as String).toInt()
@@ -135,4 +135,4 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-}
+}*/

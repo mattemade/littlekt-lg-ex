@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 
 plugins {
-    alias(libs.plugins.android.application)
+    //alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -14,7 +14,7 @@ repositories {
 }
 
 kotlin {
-    androidTarget()
+    //androidTarget()
     jvm {
         compilations {
             val main by getting
@@ -111,10 +111,10 @@ kotlin {
         }
         val jsTest by getting
 
-        val wasmJsMain by getting
+        /*val wasmJsMain by getting
         val wasmJsTest by getting
 
-        val androidMain by getting
+        val androidMain by getting*/
 
         all {
             languageSettings.apply {
@@ -130,6 +130,7 @@ kotlin {
     }
 }
 
+/*
 android {
     namespace = "com.littlekt.samples"
     sourceSets["main"].apply {
@@ -146,4 +147,4 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-}
+}*/
