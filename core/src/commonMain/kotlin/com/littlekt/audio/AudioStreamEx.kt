@@ -19,8 +19,8 @@ interface AudioStreamEx : AudioStream {
         volume: Float = this.volume,
         positionX: Float = 0f,
         positionY: Float = 0f,
-        referenceDistance: Float = 0f,
-        maxDistance: Float = 0f,
+        referenceDistance: Float = 10000f,
+        maxDistance: Float = 10000f,
         rolloffFactor: Float = 0f,
         loop: Boolean = false
     )
