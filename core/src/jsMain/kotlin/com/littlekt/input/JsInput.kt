@@ -25,6 +25,9 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
     private var _deltaY = 0f
     private val touchedPointers = mutableListOf<Pointer>()
 
+    /** Holds the references to active touch identifiers indexed by assigned pointer number. */
+    private val touchIdentifiers = IntArray(20) { -1 }
+
     private val _inputProcessors = mutableListOf<InputProcessor>()
     override val inputProcessors: List<InputProcessor>
         get() = _inputProcessors
@@ -36,7 +39,6 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
         get() = _connectedGamepads
     override val catchKeys: MutableList<Key> = mutableListOf()
 
-    private val touchIdentifiers = mutableListOf<Int>(-1, -1, -1, -1, -1)
 
     init {
         document.addEventListener("keydown", ::keyDown, false)
@@ -94,8 +96,8 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
             val rect = canvas.getBoundingClientRect()
             val x = touchEvent.clientX.toFloat() - rect.left.toFloat()
             val y = touchEvent.clientY.toFloat() - rect.top.toFloat()
-            val pointerIndex = touchIdentifiers.indexOfFirst { it == -1 }
-            if (pointerIndex < 5) {
+            val pointerIndex = touchIdentifiers.indexOf(-1)
+            if (pointerIndex >= 0) {
                 touchIdentifiers[pointerIndex] = touchEvent.identifier
                 inputCache.onTouchDown(x, y, pointerIndex.getPointer)
             }
@@ -111,8 +113,8 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
             val rect = canvas.getBoundingClientRect()
             val x = touchEvent.clientX.toFloat() - rect.left.toFloat()
             val y = touchEvent.clientY.toFloat() - rect.top.toFloat()
-            val pointerIndex = touchIdentifiers.indexOfFirst { it == touchEvent.identifier }
-            if (pointerIndex >= 0 && pointerIndex < 5) {
+            val pointerIndex = touchIdentifiers.indexOf(touchEvent.identifier)
+            if (pointerIndex >= 0) {
                 inputCache.onMove(x, y, pointerIndex.getPointer)
             }
         }
@@ -127,12 +129,11 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
             val rect = canvas.getBoundingClientRect()
             val x = touchEvent.clientX.toFloat() - rect.left.toFloat()
             val y = touchEvent.clientY.toFloat() - rect.top.toFloat()
-            val pointerIndex = touchIdentifiers.indexOfFirst { it == touchEvent.identifier }
-            if (pointerIndex >= 0 && pointerIndex < 5) {
+            val pointerIndex = touchIdentifiers.indexOf(touchEvent.identifier)
+            if (pointerIndex >= 0) {
                 touchIdentifiers[pointerIndex] = -1
                 inputCache.onTouchUp(x, y, pointerIndex.getPointer)
             }
-
         }
     }
 
