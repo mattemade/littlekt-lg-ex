@@ -2,6 +2,7 @@ package com.littlekt.graphics.g2d
 
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.Textures
+import com.littlekt.math.clamp
 import com.littlekt.math.geom.Angle
 import com.littlekt.math.geom.radians
 import com.littlekt.util.fastForEach
@@ -164,11 +165,11 @@ class ParticleSimulator(maxParticles: Int) {
             scaleDeltaY *= scaleFrictPow
 
             // color
-            val colorR = color.r + particle.colorRdelta * tmod
-            val colorG = color.g + particle.colorGdelta * tmod
-            val colorB = color.b + particle.colorBdelta * tmod
-            val colorA = color.a + particle.alphaDelta * tmod
-            if (colorR != 0f || colorG != 0f || colorB != 0f || colorA != 0f) {
+            val colorR = (color.r + particle.colorRdelta * tmod).clamp(0f, 1f)
+            val colorG = (color.g + particle.colorGdelta * tmod).clamp(0f, 1f)
+            val colorB = (color.b + particle.colorBdelta * tmod).clamp(0f, 1f)
+            val colorA = (color.a + particle.alphaDelta * tmod).clamp(0f, 1f)
+            if (colorR != color.r || colorG != color.g || colorB != color.b || colorA != color.a) {
                 color.set(colorR, colorG, colorB, colorA)
             }
 
