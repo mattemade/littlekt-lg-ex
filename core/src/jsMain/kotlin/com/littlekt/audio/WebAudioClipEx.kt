@@ -63,16 +63,12 @@ internal class WebAudioClipEx(private val audio: WebAudioEx) : AudioClipEx {
 
     override fun setPositionAll(positionX: Float, positionY: Float) {
         activePipelines.values.forEach {
-            it.panner.positionX.value = positionX
-            it.panner.positionY.value = positionY
+            it.panner.setPositionCompat(positionX, positionY)
         }
     }
 
     override fun setPosition(id: Int, positionX: Float, positionY: Float) {
-        activePipelines.get(id)?.let {
-            it.panner.positionX.value = positionX
-            it.panner.positionY.value = positionY
-        }
+        activePipelines.get(id)?.panner?.setPositionCompat(positionX, positionY)
     }
 
     override fun stopAll() {
@@ -84,7 +80,10 @@ internal class WebAudioClipEx(private val audio: WebAudioEx) : AudioClipEx {
     }
 
     override fun stop(id: Int) {
-        activePipelines.removeKey(id)?.let { audio.stop(it) }
+        activePipelines.removeKey(id)?.let {
+            audio.stop(it)
+            it.release()
+        }
     }
 
     override fun pauseAll() {

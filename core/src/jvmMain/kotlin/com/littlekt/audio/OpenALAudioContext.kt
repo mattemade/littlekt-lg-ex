@@ -123,7 +123,17 @@ class OpenALAudioContext : Audio, Releasable {
         }
     }
 
+    override fun isReady(): Boolean = true
+
     override fun setListenerPosition(x: Float, y: Float, z: Float) {
         AL10.alListener3f(AL_POSITION, x, y, z)
+    }
+
+    override fun suspend() {
+        TODO("Not yet implemented")
+    }
+
+    override fun resume() {
+        TODO("Not yet implemented")
     }
 }

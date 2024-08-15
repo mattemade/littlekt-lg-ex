@@ -18,6 +18,10 @@ internal class WebAudioStreamEx(private val audio: WebAudioEx) : AudioStreamEx {
     override val paused: Boolean
         get() = isPaused
 
+    init {
+        audio.preparePipeline()
+    }
+
     override suspend fun play(
         volume: Float,
         positionX: Float,
@@ -45,8 +49,7 @@ internal class WebAudioStreamEx(private val audio: WebAudioEx) : AudioStreamEx {
     }
 
     override fun setPosition(positionX: Float, positionY: Float) {
-        audio.pipeline.panner.positionX.value = positionX
-        audio.pipeline.panner.positionY.value = positionY
+        audio.pipeline.panner.setPositionCompat(positionX, positionY)
     }
 
     override fun stop() {

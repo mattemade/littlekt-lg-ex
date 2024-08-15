@@ -11,6 +11,7 @@ import kotlin.time.Duration.Companion.seconds
 
 internal class WebAudioEx private constructor(
     private val createPipeline: () -> WebAudioPipeline,
+    private val durationProvider: () -> Duration
 ) : Releasable {
 
     companion object {
@@ -38,7 +39,11 @@ internal class WebAudioEx private constructor(
                     val sourceGenerator: () -> WebAudioPipeline = {
                         WebAudioPipeline(buffer, audioContext)
                     }
-                    data.complete(WebAudioEx(sourceGenerator))
+                    data.complete(
+                        WebAudioEx(
+                            createPipeline = sourceGenerator,
+                            durationProvider = { buffer.duration.seconds })
+                    )
                 }, onError = { event ->
                     logger.error { "Failed decoding audio data $url: $event" }
                     data.complete(null)
@@ -63,12 +68,11 @@ internal class WebAudioEx private constructor(
     internal val playing: Boolean
         get() = isPlaying
 
-    internal var pipeline: WebAudioPipeline = createPipeline()
+    internal lateinit var pipeline: WebAudioPipeline
 
-    internal val duration: Duration = pipeline.source.buffer.duration.seconds
+    internal val duration: Duration by lazy { durationProvider() }
 
     fun preparePipeline() {
-        pipeline.release()
         pipeline = createPipeline()
     }
 
@@ -79,10 +83,17 @@ internal class WebAudioEx private constructor(
         }
     }
 
-    fun play(volume: Float, positionX: Float, positionY: Float, referenceDistance: Float, maxDistance: Float, rolloffFactor: Float, loop: Boolean) {
+    fun play(
+        volume: Float,
+        positionX: Float,
+        positionY: Float,
+        referenceDistance: Float,
+        maxDistance: Float,
+        rolloffFactor: Float,
+        loop: Boolean
+    ) {
         this.volume = volume
-        pipeline.panner.positionX.value = positionX
-        pipeline.panner.positionY.value = positionY
+        pipeline.panner.setPositionCompat(positionX, positionY)
         pipeline.panner.refDistance = referenceDistance
         pipeline.panner.maxDistance = maxDistance
         pipeline.panner.rolloffFactor = rolloffFactor
