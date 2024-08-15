@@ -30,6 +30,7 @@ open class TextureSlice(
     private var _v2 = 0f
     private var _width = 0
     private var _height = 0
+    private val derivedSlices = mutableMapOf<String, TextureSlice>()
 
     var u: Float
         get() = _u
@@ -123,6 +124,13 @@ open class TextureSlice(
     }
 
     fun setSlice(slice: TextureSlice) {
+        derivedSlices.values.forEach {
+            val x = it.x - x
+            val y = it.y - y
+            val width = it.width
+            val height = it.height
+            it.setSlice(slice, x, y, width, height)
+        }
         texture = slice.texture
         setSlice(slice.u, slice.v, slice.u2, slice.v2)
     }
@@ -143,6 +151,11 @@ open class TextureSlice(
         v = v2
         v2 = temp
     }
+
+    fun slice(x: Int, y: Int, width: Int, height: Int): TextureSlice =
+        derivedSlices.getOrPut("$x,$y,$width,$height") {
+            TextureSlice(texture, this.x + x, this.y + y, width, height)
+        }
 
     /**
      * Slice this [TextureSlice] into smaller slices.

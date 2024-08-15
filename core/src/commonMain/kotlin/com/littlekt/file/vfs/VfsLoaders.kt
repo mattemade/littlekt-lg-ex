@@ -212,8 +212,7 @@ private suspend fun readBitmapFontTxt(
                             )
                         }
                         preloadedTextures.isNotEmpty() -> {
-                            TextureSlice(
-                                preloadedTextures[page],
+                            preloadedTextures[page].slice(
                                 map["x"]?.toIntOrNull() ?: 0,
                                 map["y"]?.toIntOrNull() ?: 0,
                                 width,

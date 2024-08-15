@@ -140,8 +140,7 @@ internal class InternalResources private constructor(private val context: Contex
                     glyphs += BitmapFont.Glyph(
                         fontSize = fontSize,
                         id = id,
-                        slice = TextureSlice(
-                            texture,
+                        slice = texture.slice(
                             map["x"]?.toIntOrNull() ?: 0,
                             map["y"]?.toIntOrNull() ?: 0,
                             width,

@@ -58,23 +58,23 @@ class NinePatch(private val slice: TextureSlice, val left: Int, val right: Int, 
         val middleHeight = slice.height - top - bottom
 
         if (top > 0) {
-            if (left > 0) patches[TOP_LEFT] = TextureSlice(slice, 0, 0, left, top)
-            if (middleWidth > 0) patches[TOP_CENTER] = TextureSlice(slice, left, 0, middleWidth, top)
-            if (right > 0) patches[TOP_RIGHT] = TextureSlice(slice, left + middleWidth, 0, right, top)
+            if (left > 0) patches[TOP_LEFT] = slice.slice(0, 0, left, top)
+            if (middleWidth > 0) patches[TOP_CENTER] = slice.slice(left, 0, middleWidth, top)
+            if (right > 0) patches[TOP_RIGHT] = slice.slice(left + middleWidth, 0, right, top)
         }
 
         if (middleHeight > 0) {
-            if (left > 0) patches[MIDDLE_LEFT] = TextureSlice(slice, 0, top, left, middleHeight)
-            if (middleWidth > 0) patches[MIDDLE_CENTER] = TextureSlice(slice, left, top, middleWidth, middleHeight)
-            if (right > 0) patches[MIDDLE_RIGHT] = TextureSlice(slice, left + middleWidth, top, right, middleHeight)
+            if (left > 0) patches[MIDDLE_LEFT] = slice.slice(0, top, left, middleHeight)
+            if (middleWidth > 0) patches[MIDDLE_CENTER] = slice.slice(left, top, middleWidth, middleHeight)
+            if (right > 0) patches[MIDDLE_RIGHT] = slice.slice(left + middleWidth, top, right, middleHeight)
         }
 
         if (bottom > 0) {
-            if (left > 0) patches[BOTTOM_LEFT] = TextureSlice(slice, 0, top + middleHeight, left, bottom)
+            if (left > 0) patches[BOTTOM_LEFT] = slice.slice(0, top + middleHeight, left, bottom)
             if (middleWidth > 0) patches[BOTTOM_CENTER] =
-                TextureSlice(slice, left, top + middleHeight, middleWidth, bottom)
+                slice.slice(left, top + middleHeight, middleWidth, bottom)
             if (right > 0) patches[BOTTOM_RIGHT] =
-                TextureSlice(slice, left + middleWidth, top + middleHeight, right, bottom)
+                slice.slice(left + middleWidth, top + middleHeight, right, bottom)
         }
 
         // if split only vertically, move splits from right to center
