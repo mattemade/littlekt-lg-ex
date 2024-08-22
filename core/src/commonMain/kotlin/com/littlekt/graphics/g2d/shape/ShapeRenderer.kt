@@ -33,7 +33,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
     /**
      * The default thickness, in world units, of lines and outlines when drawing when thickness is not specified
      */
-    var thickness: Int = 1
+    var thickness: Float = 1f
 
     /**
      * The [SideEstimator] used to calculate the number of sides. Defaults to [DefaultSideEstimator].
@@ -94,7 +94,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         v2: Vec2f,
         color: Color,
         color2: Color = color,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         snap: Boolean = this.snap,
     ) = line(v1.x, v1.y, v2.x, v2.y, color, color2, thickness, snap)
 
@@ -116,7 +116,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         y2: Float,
         color: Color,
         color2: Color = color,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         snap: Boolean = this.snap,
     ) {
         line(x, y, x2, y2, color.toFloatBits(), color2.toFloatBits(), thickness, snap)
@@ -136,7 +136,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         v2: Vec2f,
         colorBits: Float = this.colorBits,
         colorBits2: Float = colorBits,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         snap: Boolean = this.snap,
     ) = line(v1.x, v1.y, v2.x, v2.y, colorBits, colorBits2, thickness, snap)
 
@@ -158,7 +158,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         y2: Float,
         colorBits: Float = this.colorBits,
         colorBits2: Float = colorBits,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         snap: Boolean = this.snap,
     ) {
         lineDrawer.line(x, y, x2, y2, thickness, snap, colorBits, colorBits2)
@@ -185,7 +185,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
      */
     fun path(
         pathPoints: List<Vec2f>,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.SMOOTH else JoinType.NONE,
         open: Boolean = true,
         color: Float = colorBits,
@@ -208,7 +208,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
      */
     fun path(
         pathPoints: FloatArray,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.SMOOTH else JoinType.NONE,
         start: Int = 0,
         end: Int = pathPoints.size,
@@ -234,7 +234,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         center: Vec2f,
         radius: Float,
         rotation: Angle = 0.radians,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.SMOOTH else JoinType.NONE,
         color: Float = colorBits,
     ) = circle(center.x, center.y, radius, rotation, thickness, joinType, color)
@@ -254,7 +254,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         y: Float,
         radius: Float,
         rotation: Angle = 0.radians,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.SMOOTH else JoinType.NONE,
         color: Float = colorBits,
     ) {
@@ -276,7 +276,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         rx: Float,
         ry: Float = rx,
         rotation: Angle = 0.radians,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.SMOOTH else JoinType.NONE,
         color: Float = colorBits,
     ) = ellipse(center.x, center.y, rx, ry, rotation, thickness, joinType, color)
@@ -294,7 +294,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         center: Vec2f,
         radius: Vec2f,
         rotation: Angle = 0.radians,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.SMOOTH else JoinType.NONE,
         color: Float = colorBits,
     ) = ellipse(center.x, center.y, radius.x, radius.y, rotation, thickness, joinType, color)
@@ -317,7 +317,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         rx: Float,
         ry: Float = rx,
         rotation: Angle = 0.radians,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.SMOOTH else JoinType.NONE,
         color: Float = colorBits,
     ) {
@@ -420,7 +420,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         v1: Vec2f,
         v2: Vec2f,
         v3: Vec3f,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.POINTY else JoinType.NONE,
         color: Float = colorBits,
     ) = triangle(v1.x, v1.y, v2.x, v2.y, v3.x, v3.y, thickness, joinType, color)
@@ -444,7 +444,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         y2: Float,
         x3: Float,
         y3: Float,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.POINTY else JoinType.NONE,
         color: Float = colorBits,
     ) {
@@ -525,7 +525,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         width: Float,
         height: Float,
         rotation: Angle = 0.radians,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = JoinType.POINTY,
         color: Float = colorBits,
     ) = rectangle(position.x, position.y, width, height, rotation, thickness, joinType, color)
@@ -541,7 +541,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
     fun rectangle(
         rect: Rect,
         rotation: Angle = 0.radians,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = JoinType.POINTY,
         color: Float = colorBits,
     ) = rectangle(rect.x, rect.y, rect.width, rect.height, rotation, thickness, joinType, color)
@@ -563,7 +563,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         width: Float,
         height: Float,
         rotation: Angle = 0.radians,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = JoinType.POINTY,
         color: Float = colorBits,
     ) {
@@ -707,7 +707,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         scaleX: Float,
         scaleY: Float = scaleX,
         rotation: Angle = 0.radians,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.POINTY else JoinType.NONE,
         color: Float = colorBits,
     ) = polygon(center.x, center.y, sides, scaleX, scaleY, rotation, thickness, joinType, color)
@@ -731,7 +731,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         scaleX: Float,
         scaleY: Float = scaleX,
         rotation: Angle = 0.radians,
-        thickness: Int = this.thickness,
+        thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.POINTY else JoinType.NONE,
         color: Float = colorBits,
     ) {
@@ -810,7 +810,7 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         filledPolygonDrawer.polygon(vertices, triangles)
     }
 
-    private fun isJoinNecessary(thickness: Int) = thickness > 3 * batchManager.pixelSize
+    private fun isJoinNecessary(thickness: Float) = thickness > 3 * batchManager.pixelSize
     private fun isJoinNecessary() = isJoinNecessary(thickness)
     private fun estimateSidesRequired(rx: Float, ry: Float) =
         sideEstimator.estimateSidesRequired(batchManager.pixelSize, rx, ry)

@@ -20,7 +20,7 @@ internal class PathDrawer(batchManager: BatchManager, private val lineDrawer: Li
 
     fun path(
         userPath: List<Vec2f>,
-        thickness: Int,
+        thickness: Float,
         joinType: JoinType,
         open: Boolean = true,
     ) {
@@ -34,7 +34,7 @@ internal class PathDrawer(batchManager: BatchManager, private val lineDrawer: Li
 
     fun path(
         userPath: FloatArray,
-        thickness: Int,
+        thickness: Float,
         joinType: JoinType,
         start: Int = 0,
         end: Int = userPath.size,
@@ -76,14 +76,14 @@ internal class PathDrawer(batchManager: BatchManager, private val lineDrawer: Li
         path.clear()
     }
 
-    fun drawPathNoJoin(path: FloatArray, size: Int, thickness: Int, open: Boolean) {
+    fun drawPathNoJoin(path: FloatArray, size: Int, thickness: Float, open: Boolean) {
         val n = if (open) size - 2 else size
         for (i in 0 until n step 2) {
             lineDrawer.line(path[i], path[i + 1], path[(i + 2) % size], path[(i + 3) % size], thickness, false)
         }
     }
 
-    fun drawPathWithJoin(path: FloatArray, size: Int, thickness: Int, open: Boolean, pointyJoin: Boolean) {
+    fun drawPathWithJoin(path: FloatArray, size: Int, thickness: Float, open: Boolean, pointyJoin: Boolean) {
         val halfThickness = 0.5f * thickness
         val cBits = batchManager.colorBits
         batchManager.ensureSpaceForQuad()

@@ -476,7 +476,7 @@ open class Control : CanvasItem() {
                 width,
                 height,
                 globalRotation,
-                1,
+                1f,
                 color = debugColor.toFloatBits()
             )
         } else {
@@ -530,7 +530,7 @@ open class Control : CanvasItem() {
                 maxX - minX,
                 maxY - minY,
                 Angle.ZERO,
-                1,
+                1f,
                 color = debugColor.toFloatBits()
             )
         }

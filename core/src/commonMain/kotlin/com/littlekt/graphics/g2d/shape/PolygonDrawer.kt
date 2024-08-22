@@ -21,7 +21,7 @@ internal class PolygonDrawer(batchManager: BatchManager, private val lineDrawer:
         scaleX: Float,
         scaleY: Float,
         rotation: Angle,
-        thickness: Int,
+        thickness: Float,
         joinType: JoinType,
         startAngle: Angle,
         radians: Float,
@@ -53,7 +53,7 @@ internal class PolygonDrawer(batchManager: BatchManager, private val lineDrawer:
     fun drawPolygonWithNoJoin(
         center: Vec2f,
         sides: Int,
-        thickness: Int,
+        thickness: Float,
         rotation: Angle,
         radius: Vec2f,
         startAngle: Angle,
