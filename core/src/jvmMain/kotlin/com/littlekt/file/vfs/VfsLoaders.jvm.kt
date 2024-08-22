@@ -10,7 +10,7 @@ import com.littlekt.audio.OpenALAudioClip
 import com.littlekt.audio.OpenALAudioStream
 import com.littlekt.file.ImageUtils
 import com.littlekt.file.JvmByteSequenceStream
-import com.littlekt.file.createByteBuffer
+import com.littlekt.file.PixmapIO
 import com.littlekt.graphics.Pixmap
 import com.littlekt.graphics.Texture
 import com.littlekt.graphics.gl.PixmapTextureData
@@ -21,7 +21,6 @@ import com.littlekt.log.Logger
 import fr.delthas.javamp3.Sound
 import java.io.ByteArrayInputStream
 import java.io.File
-import java.io.FileOutputStream
 import javax.imageio.ImageIO
 import javax.sound.sampled.AudioSystem
 
@@ -168,7 +167,7 @@ actual suspend fun VfsFile.readAudioStreamEx(): AudioStreamEx {
 
 actual suspend fun VfsFile.writePixmap(pixmap: Pixmap) {
     // TODO write to an actual png vs bmp - currently bmps write bottom to top while pixmaps pixels are top to bottom
-    val buffer = pixmap.pixels
+    /*val buffer = pixmap.pixels
     val width = pixmap.width
     val height = pixmap.height
     val bmpBuffer = createByteBuffer(54 + buffer.capacity)
@@ -194,5 +193,8 @@ actual suspend fun VfsFile.writePixmap(pixmap: Pixmap) {
     }
     runCatching {
         FileOutputStream(File(path)).use { it.write(bmpBuffer.toArray()) }
-    }.getOrThrow()
+    }.getOrThrow()*/
+
+    val file = File(path)
+    PixmapIO.writePNG(file, pixmap, Pixmap.Format.RGBA8888)
 }

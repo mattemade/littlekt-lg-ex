@@ -114,8 +114,9 @@ class BitmapFont(
         targetWidth: Float = 0f,
         align: HAlign = HAlign.LEFT,
         wrap: Boolean = false,
+        scale: Float = 1f,
     ) {
-        cache.setText(text, x, y, 1f, 1f, rotation, color, targetWidth, align, wrap)
+        cache.setText(text, x, y, scale, scale, rotation, color, targetWidth, align, wrap)
         cache.draw(batch)
     }
 

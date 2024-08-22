@@ -768,6 +768,19 @@ class WebGL(
         gl.drawElements(mode, count, type, offset)
     }
 
+    override fun drawElementsInstanced(
+        mode: Int,
+        count: Int,
+        type: Int,
+        offset: Int,
+        instanceCount: Int
+    ) {
+        engineStats.calls++
+        engineStats.drawCalls++
+        engineStats.vertices += count
+        gl.drawElementsInstanced(mode, count, type, offset, instanceCount)
+    }
+
     override fun drawBuffers(size: Int, buffers: IntBuffer) {
         engineStats.calls++
         buffers as IntBufferImpl

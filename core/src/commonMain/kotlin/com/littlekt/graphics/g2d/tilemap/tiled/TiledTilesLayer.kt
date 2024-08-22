@@ -119,10 +119,11 @@ class TiledTilesLayer(
                     val tileData = tileData[cid].bitsToTileData(flipData)
                     tiles[tileData.id]?.let {
                         val slice = it.updateFramesAndGetSlice()
+                        val height = it.height * scale
                         batch.draw(
                             slice = slice,
                             x = cx * tileWidth + offsetX + x + it.offsetX * scale,
-                            y = cy * tileHeight + offsetY + y + it.offsetY * scale,
+                            y = (cy + 1) * tileHeight - height + offsetY + y + it.offsetY * scale,
                             originX = 0f,
                             originY = 0f,
                             scaleX = scale,

@@ -78,6 +78,7 @@ abstract class FragmentShaderModel : GlslGenerator(), FragmentShader {
 
 abstract class VertexShaderModel : GlslGenerator(), VertexShader {
     var gl_Position by BuiltinVarDelegate()
+    val gl_InstanceID  by BuiltinIntDelegate()
 
     override var source: String = ""
 

@@ -3,10 +3,15 @@ package com.littlekt.audio
 import com.littlekt.Audio
 import com.littlekt.Releasable
 import com.littlekt.util.fastForEach
+import org.lwjgl.openal.AL
+import org.lwjgl.openal.AL10
+import org.lwjgl.openal.AL10.AL_POSITION
+import org.lwjgl.openal.AL11
+import org.lwjgl.openal.ALC
+import org.lwjgl.openal.ALC10
+import org.lwjgl.openal.SOFTDirectChannels
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
-import org.lwjgl.openal.*
-import org.lwjgl.openal.AL10.AL_POSITION
 
 /**
  * @author Colton Daily
@@ -129,11 +134,7 @@ class OpenALAudioContext : Audio, Releasable {
         AL10.alListener3f(AL_POSITION, x, y, z)
     }
 
-    override fun suspend() {
-        TODO("Not yet implemented")
-    }
+    override fun suspend() {}
 
-    override fun resume() {
-        TODO("Not yet implemented")
-    }
+    override fun resume() {}
 }

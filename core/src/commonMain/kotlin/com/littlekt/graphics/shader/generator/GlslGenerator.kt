@@ -801,6 +801,7 @@ abstract class GlslGenerator : GlslProvider {
     fun vec4(genValue: (() -> Vec4)? = null) = ConstructorDelegate(Vec4(this), null, genValue)
     fun vec4(vec3: Vec3, w: Float) = ConstructorDelegate(Vec4(this), ("vec4(${vec3.value}, ${w.str()})"))
     fun vec4(vec3: Vec3, w: GLFloat) = ConstructorDelegate(Vec4(this), ("vec4(${vec3.value}, ${w.value})"))
+    fun vec4(x: GLFloat, vec3: Vec3) = ConstructorDelegate(Vec4(this), ("vec4(${x.value}, ${vec3.value})"))
     fun vec4(vec2: Vec2, z: Float, w: Float) =
         ConstructorDelegate(Vec4(this), ("vec4(${vec2.value}, ${z.str()}, ${w.str()})"))
 

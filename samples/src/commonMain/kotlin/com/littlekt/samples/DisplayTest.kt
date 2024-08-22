@@ -8,6 +8,7 @@ import com.littlekt.file.vfs.readAtlas
 import com.littlekt.file.vfs.readBitmapFont
 import com.littlekt.file.vfs.readPixmap
 import com.littlekt.file.vfs.readTexture
+import com.littlekt.file.vfs.writePixmap
 import com.littlekt.graph.SceneGraph
 import com.littlekt.graph.createDefaultSceneGraphController
 import com.littlekt.graph.node.resource.HAlign
@@ -762,6 +763,7 @@ class DisplayTest(context: Context) : Game<Scene>(context) {
                 } else {
                     rootControl.theme = null
                 }
+                vfs.launch { vfs["atlas2.png"].writePixmap(texture.textureData.pixmap) }
             }
 
             if (input.isKeyPressed(Key.Z)) {

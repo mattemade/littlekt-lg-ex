@@ -255,6 +255,9 @@ interface GL {
     fun drawElements(mode: Int, count: Int, type: Int, offset: Int)
     fun drawElements(mode: DrawMode, count: Int, type: IndexType, offset: Int) =
         drawElements(mode.glFlag, count, type.glFlag, offset)
+    fun drawElementsInstanced(mode: Int, count: Int, type: Int, offset: Int, instanceCount: Int)
+    fun drawElementsInstanced(mode: DrawMode, count: Int, type: IndexType, offset: Int, instanceCount: Int) =
+        drawElementsInstanced(mode.glFlag, count, type.glFlag, offset, instanceCount)
 
     fun drawBuffers(size: Int, buffers: IntBuffer)
     fun drawBuffers(buffers: IntBuffer) = drawBuffers(buffers.limit, buffers)

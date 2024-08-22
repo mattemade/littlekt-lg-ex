@@ -728,6 +728,19 @@ class LwjglGL(private val engineStats: EngineStats, private val graphics: Graphi
         glDrawElements(mode, count, type, offset.toLong())
     }
 
+    override fun drawElementsInstanced(
+        mode: Int,
+        count: Int,
+        type: Int,
+        offset: Int,
+        instanceCount: Int
+    ) {
+        engineStats.calls++
+        engineStats.drawCalls++
+        engineStats.vertices += count
+        GL31.glDrawElementsInstanced(mode, count, type, offset.toLong(), instanceCount)
+    }
+
     override fun drawBuffers(size: Int, buffers: IntBuffer) {
         engineStats.calls++
         buffers as IntBufferImpl
