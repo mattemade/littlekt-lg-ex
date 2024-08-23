@@ -101,4 +101,12 @@ internal class WebAudioClipEx(private val audio: WebAudioEx) : AudioClipEx {
     override fun resume(id: Int) {
         activePipelines.get(id)?.let { audio.resume(it) }
     }
+
+    override fun setPlaybackRateAll(playbackRate: Float) {
+        activePipelines.values.forEach { audio.setPlaybackRate(it, playbackRate) }
+    }
+
+    override fun setPlaybackRate(id: Int, playbackRate: Float) {
+        activePipelines.get(id)?.let { audio.setPlaybackRate(it, playbackRate) }
+    }
 }

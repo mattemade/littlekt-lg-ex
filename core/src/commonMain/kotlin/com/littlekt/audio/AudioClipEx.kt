@@ -37,4 +37,7 @@ interface AudioClipEx : AudioClip {
     fun pause(id: Int)
     fun resumeAll()
     fun resume(id: Int)
+
+    fun setPlaybackRateAll(playbackRate: Float)
+    fun setPlaybackRate(id: Int, playbackRate: Float)
 }

@@ -102,15 +102,15 @@ class OpenALAudioClip(
     }
 
     override fun setVolumeAll(volume: Float) {
-        TODO("Not yet implemented")
+        
     }
 
     override fun setVolume(id: Int, volume: Float) {
-        TODO("Not yet implemented")
+        
     }
 
     override fun setPositionAll(positionX: Float, positionY: Float) {
-        TODO("Not yet implemented")
+        
     }
 
     override fun setPosition(id: Int, positionX: Float, positionY: Float) {
@@ -118,31 +118,39 @@ class OpenALAudioClip(
     }
 
     override fun stopAll() {
-        TODO("Not yet implemented")
+        
     }
 
     override fun stop(id: Int) {
-        TODO("Not yet implemented")
+        
     }
 
     override fun stop() = withDevice { context.stopSourceViaBufferID(bufferID) }
     override fun pauseAll() {
-        TODO("Not yet implemented")
+        
     }
 
     override fun pause(id: Int) {
-        TODO("Not yet implemented")
+        
     }
 
     override fun resume() = withDevice { context.resumeSourceViaBufferID(bufferID) }
 
     override fun pause() = withDevice { context.pauseSourceViaBufferID(bufferID) }
     override fun resumeAll() {
-        TODO("Not yet implemented")
+        
     }
 
     override fun resume(id: Int) {
-        TODO("Not yet implemented")
+        
+    }
+
+    override fun setPlaybackRateAll(playbackRate: Float) {
+        
+    }
+
+    override fun setPlaybackRate(id: Int, playbackRate: Float) {
+        
     }
 
     override fun release() = withDevice {

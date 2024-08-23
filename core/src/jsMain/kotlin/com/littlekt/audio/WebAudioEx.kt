@@ -124,6 +124,10 @@ internal class WebAudioEx private constructor(
         isPlaying = false
     }
 
+    internal fun setPlaybackRate(pipeline: WebAudioPipeline, playbackRate: Float) {
+        pipeline.source.playbackRate.value = playbackRate
+    }
+
     override fun release() {
         pipeline.release()
     }
