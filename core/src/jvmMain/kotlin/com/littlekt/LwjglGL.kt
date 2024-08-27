@@ -577,6 +577,11 @@ class LwjglGL(private val engineStats: EngineStats, private val graphics: Graphi
         glVertexAttribPointer(index, size, type, normalized, stride, offset.toLong())
     }
 
+    override fun vertexAttribDivisor(index: Int, divisor: Int) {
+        engineStats.calls++
+        GL40.glVertexAttribDivisor(index, divisor)
+    }
+
     override fun enableVertexAttribArray(index: Int) {
         engineStats.calls++
         glEnableVertexAttribArray(index)

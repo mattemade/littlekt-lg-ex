@@ -116,9 +116,36 @@ interface Batch : Releasable {
         flipY: Boolean = false,
     )
 
-    fun draw(texture: Texture, spriteVertices: FloatArray, offset: Int = 0, count: Int = spriteVertices.size)
+    fun draw(
+        texture: Texture,
+        spriteVertices: FloatArray,
+        offset: Int = 0,
+        count: Int = spriteVertices.size
+    )
+
+    fun drawInstanced(
+        slice: TextureSlice,
+        x: Float,
+        y: Float,
+        originX: Float = 0f,
+        originY: Float = 0f,
+        width: Float = slice.width.toFloat(),
+        height: Float = slice.height.toFloat(),
+        scaleX: Float = 1f,
+        scaleY: Float = 1f,
+        rotation: Angle = Angle.ZERO,
+        colorBits: Float = this.colorBits,
+        srcX: Int = slice.x,
+        srcY: Int = slice.y,
+        srcWidth: Int = slice.width,
+        srcHeight: Int = slice.height,
+        flipX: Boolean = false,
+        flipY: Boolean = false,
+        instances: Int,
+    )
+
     fun end()
-    fun flush()
+    fun flush(instances: Int = 0)
 
     fun setBlendFunction(src: BlendFactor, dst: BlendFactor)
     fun setBlendFunctionSeparate(

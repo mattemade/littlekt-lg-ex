@@ -589,6 +589,11 @@ class WebGL(
         gl.vertexAttribPointer(index, size, type, normalized, stride, offset)
     }
 
+    override fun vertexAttribDivisor(index: Int, divisor: Int) {
+        engineStats.calls++
+        gl.vertexAttribDivisor(index, divisor)
+    }
+
     override fun enableVertexAttribArray(index: Int) {
         engineStats.calls++
         gl.enableVertexAttribArray(index)

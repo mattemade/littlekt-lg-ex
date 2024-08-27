@@ -1,11 +1,30 @@
 package com.littlekt.graphics.g2d
 
 import com.littlekt.Context
-import com.littlekt.graphics.*
-import com.littlekt.graphics.gl.*
+import com.littlekt.graphics.Color
+import com.littlekt.graphics.FrameBuffer
+import com.littlekt.graphics.GL
+import com.littlekt.graphics.Texture
+import com.littlekt.graphics.VertexAttrUsage
+import com.littlekt.graphics.VertexAttribute
+import com.littlekt.graphics.gl.BlendFactor
+import com.littlekt.graphics.gl.DataType
+import com.littlekt.graphics.gl.DrawMode
+import com.littlekt.graphics.gl.FrameBufferRenderBufferAttachment
+import com.littlekt.graphics.gl.GlTexture
+import com.littlekt.graphics.gl.State
+import com.littlekt.graphics.gl.TexMagFilter
+import com.littlekt.graphics.gl.TexMinFilter
+import com.littlekt.graphics.gl.TexParameter
+import com.littlekt.graphics.gl.TexWrap
+import com.littlekt.graphics.gl.TextureFormat
+import com.littlekt.graphics.gl.TextureTarget
+import com.littlekt.graphics.mesh
 import com.littlekt.graphics.shader.ShaderProgram
 import com.littlekt.graphics.shader.shaders.TextureArrayFragmentShader
 import com.littlekt.graphics.shader.shaders.TextureArrayVertexShader
+import com.littlekt.graphics.toFloatBits
+import com.littlekt.graphics.use
 import com.littlekt.math.Mat4
 import com.littlekt.math.geom.Angle
 import com.littlekt.math.geom.cosine
@@ -59,7 +78,11 @@ class TextureArraySpriteBatch(
     override var colorBits = color.toFloatBits()
 
     val defaultShader =
-        ShaderProgram(TextureArrayVertexShader(), TextureArrayFragmentShader()).also { it.prepare(context) }
+        ShaderProgram(TextureArrayVertexShader(), TextureArrayFragmentShader()).also {
+            it.prepare(
+                context
+            )
+        }
     override var shader: ShaderProgram<*, *> = defaultShader
         set(value) {
             if (_drawing) {
@@ -119,7 +142,9 @@ class TextureArraySpriteBatch(
     private val mesh = mesh(
         context.gl,
         listOf(
-            VertexAttribute.POSITION_2D, VertexAttribute.COLOR_PACKED, VertexAttribute.TEX_COORDS(0),
+            VertexAttribute.POSITION_2D,
+            VertexAttribute.COLOR_PACKED,
+            VertexAttribute.TEX_COORDS(0),
             textureIndexAttribute
         ),
         maxVertices
@@ -158,7 +183,8 @@ class TextureArraySpriteBatch(
     private var blendSrcFuncAlpha = prevBlendSrcFuncAlpha
     private var blendDstFuncAlpha = prevBlendDstFuncAlpha
 
-    private val copyFrameBuffer = FrameBuffer(maxTextureWidth, maxTextureHeight).also { it.prepare(context) }
+    private val copyFrameBuffer =
+        FrameBuffer(maxTextureWidth, maxTextureHeight).also { it.prepare(context) }
 
     init {
         // 32767 is max vertex index, so 32767 / 4 vertices per sprite = 8191 sprites max
@@ -178,8 +204,16 @@ class TextureArraySpriteBatch(
             maxTextureSlots,
             DataType.UNSIGNED_BYTE
         )
-        gl.texParameteri(TextureTarget._2D_ARRAY, TexParameter.MAG_FILTER, textureArrayMagFilter.glFlag)
-        gl.texParameteri(TextureTarget._2D_ARRAY, TexParameter.MIN_FILTER, textureArrayMinFilter.glFlag)
+        gl.texParameteri(
+            TextureTarget._2D_ARRAY,
+            TexParameter.MAG_FILTER,
+            textureArrayMagFilter.glFlag
+        )
+        gl.texParameteri(
+            TextureTarget._2D_ARRAY,
+            TexParameter.MIN_FILTER,
+            textureArrayMinFilter.glFlag
+        )
 
         gl.texParameteri(TextureTarget._2D_ARRAY, TexParameter.WRAP_S, TexWrap.REPEAT.glFlag)
         gl.texParameteri(TextureTarget._2D_ARRAY, TexParameter.WRAP_T, TexWrap.REPEAT.glFlag)
@@ -687,6 +721,29 @@ class TextureArraySpriteBatch(
         }
     }
 
+    override fun drawInstanced(
+        slice: TextureSlice,
+        x: Float,
+        y: Float,
+        originX: Float,
+        originY: Float,
+        width: Float,
+        height: Float,
+        scaleX: Float,
+        scaleY: Float,
+        rotation: Angle,
+        colorBits: Float,
+        srcX: Int,
+        srcY: Int,
+        srcWidth: Int,
+        srcHeight: Int,
+        flipX: Boolean,
+        flipY: Boolean,
+        instances: Int
+    ) {
+
+    }
+
     override fun end() {
         if (!_drawing) {
             throw IllegalStateException("TextureArraySpriteBatch.begin must be called before end.")
@@ -705,7 +762,7 @@ class TextureArraySpriteBatch(
         }
     }
 
-    override fun flush() {
+    override fun flush(instances: Int) {
         if (idx == 0) {
             return
         }

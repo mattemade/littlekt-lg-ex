@@ -44,7 +44,7 @@ class ShaderProgram<V : VertexShader, F : FragmentShader>(
 
     private var vertexShaderReference: GlShader? = null
     private var fragmentShaderReference: GlShader? = null
-    private var programGl: GlShaderProgram? = null
+    var programGl: GlShaderProgram? = null
 
     private val attributes = mutableMapOf<String, Int>()
     private val uniforms = mutableMapOf<String, UniformLocation>()
@@ -71,6 +71,12 @@ class ShaderProgram<V : VertexShader, F : FragmentShader>(
         val programGl = gl.createProgram().also { programGl = it }
         gl.attachShader(programGl, vertexShaderReference)
         gl.attachShader(programGl, fragmentShaderReference)
+
+
+        // TODO: glBindAttribLocation here, before linking
+
+
+
         gl.linkProgram(programGl)
 
         if (!gl.getProgramParameterB(programGl, GetProgram.LINK_STATUS)) {
@@ -110,9 +116,11 @@ class ShaderProgram<V : VertexShader, F : FragmentShader>(
             params.clear()
             params[0] = 1
             type.clear()
-            val name = gl.getActiveUniform(programGl, i, params, type)
-            val location = gl.getUniformLocation(programGl, name)
-            uniforms[name] = location
+            val name = gl.getActiveUniform(programGl, i, params, type).substringBefore('[')
+            if (!uniforms.containsKey(name)) {
+                val location = gl.getUniformLocation(programGl, name)
+                uniforms[name] = location
+            }
         }
     }
 

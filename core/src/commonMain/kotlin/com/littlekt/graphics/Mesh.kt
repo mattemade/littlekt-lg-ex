@@ -164,6 +164,7 @@ class Mesh(
         drawMode: DrawMode = DrawMode.TRIANGLES,
         offset: Int = 0,
         count: Int = defaultCount,
+        instances: Int = 0
     ) {
         if (geometry.dirty) {
             if (geometry.verticesDirty) {
@@ -192,7 +193,11 @@ class Mesh(
             if (count + offset > indices.maxNumIndices) {
                 throw RuntimeException("Mesh attempting to access memory outside of the index buffer (count: $count, offset: $offset, max: $numIndices)")
             }
-            gl.drawElements(drawMode, count, IndexType.UNSIGNED_SHORT, offset * 2)
+            if (instances > 0) {
+                gl.drawElementsInstanced(drawMode, count, IndexType.UNSIGNED_SHORT, offset * 2, instances)
+            } else {
+                gl.drawElements(drawMode, count, IndexType.UNSIGNED_SHORT, offset * 2)
+            }
         } else {
             gl.drawArrays(drawMode, offset, count)
         }

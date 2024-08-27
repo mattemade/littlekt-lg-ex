@@ -203,6 +203,7 @@ interface GL {
     fun depthMask(flag: Boolean)
     fun depthRangef(zNear: Float, zFar: Float)
     fun vertexAttribPointer(index: Int, size: Int, type: Int, normalized: Boolean, stride: Int, offset: Int)
+    fun vertexAttribDivisor(index: Int, divisor: Int)
     fun vertexAttribPointer(
         index: Int,
         size: Int,

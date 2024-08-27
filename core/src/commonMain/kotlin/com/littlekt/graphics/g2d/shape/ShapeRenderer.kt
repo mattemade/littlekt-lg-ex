@@ -325,6 +325,32 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
     }
 
     /**
+     * Draws an ellipse as a stretched regular polygon estimating the number of sides required
+     * (see [estimateSidesRequired]) to appear smooth enough based on the pixel size that has been set.
+     * @param x the x-coord of the center point
+     * @param y the y-coord of the center point
+     * @param rx the horizontal radius
+     * @param ry the vertical radius
+     * @param rotation the rotation of the ellipse
+     * @param thickness the thickness of the line in world units
+     * @param joinType the type of join, see [JoinType]
+     * @param color the packed color to draw the outline. See [Color.toFloatBits].
+     */
+    fun ellipse(
+        x: Float,
+        y: Float,
+        rx: Float,
+        ry: Float = rx,
+        rotation: Angle = 0.radians,
+        thickness: Float = this.thickness,
+        joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.SMOOTH else JoinType.NONE,
+        color: Float = colorBits,
+        startAngle: Angle,
+        radians: Float,
+    ) {
+        polygon(x, y, estimateSidesRequired(rx, ry), rx, ry, rotation, thickness, joinType, color, startAngle, radians)
+    }
+    /**
      * Draws a filled circle as a stretched regular polygon estimating the number of sides required
      * (see [estimateSidesRequired]) to appear smooth enough based on the pixel size that has been set.
      * @param center the center point
@@ -734,13 +760,38 @@ class ShapeRenderer(val batch: Batch, val slice: TextureSlice = Textures.white) 
         thickness: Float = this.thickness,
         joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.POINTY else JoinType.NONE,
         color: Float = colorBits,
+    ) = polygon(x, y, sides, scaleX, scaleY, rotation, thickness, joinType, color, 0.radians, PI2_F)
+
+    /**
+     * Draws a regular polygon by drawing lines between the vertices
+     * @param x the x-coord of the center point
+     * @param y the y-coord of the center point
+     * @param sides the number of sides
+     * @param scaleX the horizontal scale
+     * @param scaleY the vertical scale
+     * @param rotation the rotation
+     * @param thickness the thickness of the line in world units
+     * @param joinType the type of join, see [JoinType]
+     * @param color the packed color to draw the outline. See [Color.toFloatBits].
+     */
+    fun polygon(
+        x: Float,
+        y: Float,
+        sides: Int,
+        scaleX: Float,
+        scaleY: Float = scaleX,
+        rotation: Angle = 0.radians,
+        thickness: Float = this.thickness,
+        joinType: JoinType = if (isJoinNecessary(thickness)) JoinType.POINTY else JoinType.NONE,
+        color: Float = colorBits,
+        startAngle: Angle,
+        radians: Float,
     ) {
         val old = colorBits
         colorBits = color
-        polygonDrawer.polygon(x, y, sides, scaleX, scaleY, rotation, thickness, joinType, 0.radians, PI2_F)
+        polygonDrawer.polygon(x, y, sides, scaleX, scaleY, rotation, thickness, joinType, startAngle, radians)
         colorBits = old
     }
-
     /**
      * Draws a filled polygon.
      *

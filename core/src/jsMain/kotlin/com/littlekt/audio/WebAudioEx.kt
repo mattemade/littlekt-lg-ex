@@ -93,6 +93,7 @@ internal class WebAudioEx private constructor(
         loop: Boolean
     ) {
         this.volume = volume
+        pipeline.panner.setOrientationCompat(0f, 0f, -1f) // face from the screen
         pipeline.panner.setPositionCompat(positionX, positionY)
         pipeline.panner.refDistance = referenceDistance
         pipeline.panner.maxDistance = maxDistance

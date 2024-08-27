@@ -41,8 +41,14 @@ internal external class JsAudioPannerNode : JsAudioNode, JsSoundDestination {
     val positionX: JsAudioParam<Float>?
     val positionY: JsAudioParam<Float>?
 
+    val orientationX: JsAudioParam<Float>?
+    val orientationY: JsAudioParam<Float>?
+    val orientationZ: JsAudioParam<Float>?
+
     // deprecated, but usable in firefox
     fun setPosition(x: Float, y: Float)
+    // deprecated, but usable in firefox
+    fun setOrientation(x: Float, y: Float, z: Float)
 
     var refDistance: Float = definedExternally
     var maxDistance: Float = definedExternally
@@ -59,6 +65,16 @@ internal fun JsAudioPannerNode.setPositionCompat(x: Float, y: Float) {
     }
     this.positionX.value = x
     this.positionY.value = y
+}
+internal fun JsAudioPannerNode.setOrientationCompat(x: Float, y: Float, z: Float) {
+    if (orientationX == null || orientationY == null || orientationZ == null) {
+        // firefox hack
+        setOrientation(x, y, z)
+        return
+    }
+    this.orientationX.value = x
+    this.orientationY.value = y
+    this.orientationZ.value = z
 }
 
 internal external class JsAudioBufferSourceNode : JsAudioNode {
