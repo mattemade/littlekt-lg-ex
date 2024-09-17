@@ -17,16 +17,15 @@ internal class WebAudioClipEx(private val audio: WebAudioEx) : AudioClipEx {
     private var nextPipelineId = 0
     private val activePipelines = BiMap<Int, WebAudioPipeline>()
 
-    override fun play(volume: Float, positionX: Float, positionY: Float, referenceDistance: Float, maxDistance: Float, rolloffFactor: Float, loop: Boolean): Int {
+    override fun play(volume: Float, positionX: Float, positionY: Float, referenceDistance: Float, maxDistance: Float, rolloffFactor: Float, loop: Boolean, onEnded: ((Int) -> Unit)?): Int {
         audio.preparePipeline()
         val currentPipelineId = nextPipelineId++
         activePipelines.put(currentPipelineId, audio.pipeline)
         audio.play(volume, positionX, positionY, referenceDistance, maxDistance, rolloffFactor, loop)
-        if (!loop) {
-            audio.setOnEnded { pipeline ->
-                activePipelines.removeValue(pipeline)
-                pipeline.release()
-            }
+        audio.setOnEnded { pipeline ->
+            activePipelines.removeValue(pipeline)
+            pipeline.release()
+            onEnded?.invoke(currentPipelineId)
         }
         return currentPipelineId
     }
@@ -108,5 +107,9 @@ internal class WebAudioClipEx(private val audio: WebAudioEx) : AudioClipEx {
 
     override fun setPlaybackRate(id: Int, playbackRate: Float) {
         activePipelines.get(id)?.let { audio.setPlaybackRate(it, playbackRate) }
+    }
+
+    override fun setLoop(id: Int, loop: Boolean) {
+        activePipelines.get(id)?.let { audio.setLoop(it, loop) }
     }
 }

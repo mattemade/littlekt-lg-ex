@@ -23,7 +23,8 @@ interface AudioClipEx : AudioClip {
         referenceDistance: Float = 1f,
         maxDistance: Float = 10000f,
         rolloffFactor: Float = 1f,
-        loop: Boolean = false
+        loop: Boolean = false,
+        onEnded: ((Int) -> Unit)? = null
     ): Int
 
     fun setVolumeAll(volume: Float)
@@ -40,4 +41,6 @@ interface AudioClipEx : AudioClip {
 
     fun setPlaybackRateAll(playbackRate: Float)
     fun setPlaybackRate(id: Int, playbackRate: Float)
+
+    fun setLoop(id: Int, loop: Boolean)
 }

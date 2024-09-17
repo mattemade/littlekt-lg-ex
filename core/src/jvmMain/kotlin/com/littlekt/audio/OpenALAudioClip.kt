@@ -79,7 +79,8 @@ class OpenALAudioClip(
         referenceDistance: Float,
         maxDistance: Float,
         rolloffFactor: Float,
-        loop: Boolean
+        loop: Boolean,
+        onEnded: ((Int) -> Unit)?
     ): Int = withDeviceReturning {
         val sourceId = context.obtainSource()
 
@@ -151,6 +152,10 @@ class OpenALAudioClip(
 
     override fun setPlaybackRate(id: Int, playbackRate: Float) {
         
+    }
+
+    override fun setLoop(id: Int, loop: Boolean) {
+
     }
 
     override fun release() = withDevice {
