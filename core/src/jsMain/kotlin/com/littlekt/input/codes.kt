@@ -225,11 +225,6 @@ internal val KeyboardEvent.jsKey: Key
 
 
 internal val Int.getPointer: Pointer
-    get() = when (this) {
-        0 -> Pointer.POINTER1
-        1 -> Pointer.POINTER2
-        2 -> Pointer.POINTER3
-        else -> Pointer.POINTER1
-    }
+    get() = Pointer.entries.getOrElse(this) { Pointer.POINTER1 }
 
 internal val Short.getPointer: Pointer get() = this.toInt().getPointer
