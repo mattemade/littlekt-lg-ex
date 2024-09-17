@@ -99,9 +99,16 @@ internal external class JsAudioListener {
     val positionX: JsAudioParam<Float>?
     val positionY: JsAudioParam<Float>?
     val positionZ: JsAudioParam<Float>?
+    val forwardX: JsAudioParam<Float>?
+    val forwardY: JsAudioParam<Float>?
+    val forwardZ: JsAudioParam<Float>?
+    val upX: JsAudioParam<Float>?
+    val upY: JsAudioParam<Float>?
+    val upZ: JsAudioParam<Float>?
 
     // deprecated, but usable in firefox
     fun setPosition(x: Float, y: Float, z: Float)
+    fun setOrientation(x: Float, y: Float, z: Float, upX: Float, upY: Float, upZ: Float)
 }
 
 internal fun JsAudioListener.setPositionCompat(x: Float, y: Float, z: Float) {
@@ -113,6 +120,20 @@ internal fun JsAudioListener.setPositionCompat(x: Float, y: Float, z: Float) {
     this.positionX.value = x
     this.positionY.value = y
     this.positionZ.value = z
+}
+
+internal fun JsAudioListener.setOrientationCompat(x: Float, y: Float, z: Float, uX: Float, uY: Float, uZ: Float) {
+    if (forwardX == null || forwardY == null || forwardZ == null || upX == null || upY == null || upZ == null) {
+        // firefox hack
+        setOrientation(x, y, z, uX, uY, uZ)
+        return
+    }
+    this.forwardX.value = x
+    this.forwardY.value = y
+    this.forwardZ.value = z
+    this.upX.value = uX
+    this.upY.value = uY
+    this.upZ.value = uZ
 }
 
 internal external class AudioContext {
