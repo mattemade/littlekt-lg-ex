@@ -253,6 +253,10 @@ interface GL {
 
     fun drawArrays(mode: Int, offset: Int, count: Int)
     fun drawArrays(mode: DrawMode, offset: Int, count: Int) = drawArrays(mode.glFlag, offset, count)
+    fun drawArraysInstanced(mode: Int, offset: Int, count: Int, instanceCount: Int)
+    fun drawArraysInstanced(mode: DrawMode, offset: Int, count: Int, instanceCount: Int) =
+        drawArraysInstanced(mode.glFlag, offset, count, instanceCount)
+
     fun drawElements(mode: Int, count: Int, type: Int, offset: Int)
     fun drawElements(mode: DrawMode, count: Int, type: IndexType, offset: Int) =
         drawElements(mode.glFlag, count, type.glFlag, offset)

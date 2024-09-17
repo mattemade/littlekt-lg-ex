@@ -766,6 +766,13 @@ class WebGL(
         gl.drawArrays(mode, offset, count)
     }
 
+    override fun drawArraysInstanced(mode: Int, offset: Int, count: Int, instanceCount: Int) {
+        engineStats.calls++
+        engineStats.drawCalls++
+        engineStats.vertices += count
+        gl.drawArraysInstanced(mode, offset, count, instanceCount)
+    }
+
     override fun drawElements(mode: Int, count: Int, type: Int, offset: Int) {
         engineStats.calls++
         engineStats.drawCalls++

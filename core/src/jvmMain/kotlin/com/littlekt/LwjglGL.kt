@@ -9,6 +9,7 @@ import com.littlekt.math.Mat3
 import com.littlekt.math.Mat4
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL30.*
+import org.lwjgl.opengl.GL31.glDrawArraysInstanced
 import java.nio.ByteBuffer as NioByteBuffer
 
 /**
@@ -724,6 +725,13 @@ class LwjglGL(private val engineStats: EngineStats, private val graphics: Graphi
         engineStats.drawCalls++
         engineStats.vertices += count
         glDrawArrays(mode, offset, count)
+    }
+
+    override fun drawArraysInstanced(mode: Int, offset: Int, count: Int, instanceCount: Int) {
+        engineStats.calls++
+        engineStats.drawCalls++
+        engineStats.vertices += count
+        glDrawArraysInstanced(mode, offset, count, instanceCount)
     }
 
     override fun drawElements(mode: Int, count: Int, type: Int, offset: Int) {
