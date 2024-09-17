@@ -11,6 +11,7 @@ import com.littlekt.file.ldtk.LDtkMapData
 import com.littlekt.file.ldtk.LDtkMapLoader
 import com.littlekt.file.tiled.TiledMapData
 import com.littlekt.file.tiled.TiledMapLoader
+import com.littlekt.file.tiled.TiledTilesetData
 import com.littlekt.graphics.Pixmap
 import com.littlekt.graphics.Texture
 import com.littlekt.graphics.g2d.TextureAtlas
@@ -23,7 +24,6 @@ import com.littlekt.graphics.gl.TexMagFilter
 import com.littlekt.graphics.gl.TexMinFilter
 import com.littlekt.math.MutableVec4i
 import com.littlekt.util.internal.unquote
-import kotlinx.serialization.decodeFromString
 import kotlin.math.max
 
 /**
@@ -284,6 +284,7 @@ suspend fun VfsFile.readLDtkMapLoader(
     return LDtkMapLoader(this, mapData, atlas, tilesetBorder)
 }
 
+private val sharedTileSets = mutableMapOf<String, TiledTilesetData>()
 /**
  * Reads the [VfsFile] as a [TiledMap]. Any loaders and assets will be cached for reuse/reloading.
  *
@@ -300,7 +301,7 @@ suspend fun VfsFile.readTiledMap(
     mipmaps: Boolean = true,
 ): TiledMap {
     val mapData = decodeFromString<TiledMapData>()
-    val loader = TiledMapLoader(parent, mapData, atlas, tilesetBorder, mipmaps)
+    val loader = TiledMapLoader(parent, mapData, atlas, tilesetBorder, mipmaps, sharedTileSets)
     return loader.loadMap()
 }
 

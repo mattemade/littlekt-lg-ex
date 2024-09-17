@@ -34,7 +34,8 @@ internal constructor(
     private val mapData: TiledMapData,
     private val atlas: TextureAtlas? = null,
     private val tilesetBorder: Int = 2,
-    private val mipmaps: Boolean = true
+    private val mipmaps: Boolean = true,
+    private val sharedTileSets: MutableMap<String, TiledTilesetData> = mutableMapOf()
 ) {
     private val textures = mutableListOf<Texture>()
 
@@ -154,7 +155,7 @@ internal constructor(
     }
 
     private suspend fun loadTileSet(gid: Int, source: String): TiledTileset {
-        val tilesetData = root[source].decodeFromString<TiledTilesetData>()
+        val tilesetData = sharedTileSets.getOrPut(source) { root[source].decodeFromString<TiledTilesetData>() }
         // attempt to get texture from atlas and slice it directly without adding any bordering
         val slices =
             atlas
