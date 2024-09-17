@@ -1,6 +1,7 @@
 package com.littlekt
 
 import com.littlekt.audio.globalAudioContext
+import com.littlekt.audio.setPositionCompat
 
 class WebAudio: Audio {
 
@@ -9,14 +10,7 @@ class WebAudio: Audio {
 
     override fun setListenerPosition(x: Float, y: Float, z: Float) {
         globalAudioContext?.listener?.apply {
-            if (positionX == null || positionY == null || positionZ == null) {
-                // firefox hack
-                setPosition(x, y, z)
-                return@apply
-            }
-            positionX.value = x
-            positionY.value = y
-            positionZ.value = z
+            setPositionCompat(x, y, z)
         }
     }
 
