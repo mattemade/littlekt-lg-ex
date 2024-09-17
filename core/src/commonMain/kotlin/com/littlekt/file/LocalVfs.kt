@@ -28,8 +28,6 @@ abstract class LocalVfs(context: Context, logger: Logger, baseDir: String) :
         isLenient = true
     }
 
-    protected val job = Job()
-
     override val coroutineContext: CoroutineContext = job
 
     private val awaitedAssetsChannel = Channel<AwaitedAsset>()

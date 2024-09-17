@@ -6,6 +6,7 @@ import com.littlekt.file.vfs.lightCombine
 import com.littlekt.file.vfs.pathInfo
 import com.littlekt.log.Logger
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
@@ -22,6 +23,7 @@ abstract class Vfs(val context: Context, val logger: Logger, val baseDir: String
         get() = VfsFile(this, baseDir)
 
     abstract val json: Json
+    internal val job = Job()
 
     protected open val absolutePath: String
         get() = ""

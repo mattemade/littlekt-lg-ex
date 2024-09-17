@@ -3,8 +3,10 @@ package com.littlekt.file
 import com.littlekt.Context
 import com.littlekt.log.Logger
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.Uint8Array
+import org.w3c.dom.events.Event
 import org.w3c.xhr.ARRAYBUFFER
 import org.w3c.xhr.XMLHttpRequest
 import org.w3c.xhr.XMLHttpRequestResponseType
@@ -43,5 +45,29 @@ class WebLocalVfs(context: Context, logger: Logger, assetsBaseDir: String) :
         req.send()
 
         return data.await()
+    }
+
+    companion object {
+        internal suspend fun <T> loadRaw(
+            job: Job,
+            url: String,
+            processRawData: (ArrayBuffer) -> T,
+            onError: (Event) -> Unit
+        ): T? {
+            val data = CompletableDeferred<T?>(job)
+            val req = XMLHttpRequest()
+            req.responseType = XMLHttpRequestResponseType.ARRAYBUFFER
+            req.onload = {
+                data.complete(processRawData(req.response as ArrayBuffer))
+            }
+            req.onerror = {
+                data.complete(null)
+                onError(it)
+            }
+            req.open("GET", url)
+            req.send()
+
+            return data.await()
+        }
     }
 }

@@ -1,7 +1,7 @@
 package com.littlekt.audio
 
 import com.littlekt.Releasable
-import com.littlekt.file.WebVfs
+import com.littlekt.file.WebLocalVfs
 import com.littlekt.log.Logger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -25,7 +25,7 @@ internal class WebAudioEx private constructor(
                 return null
             }
             val data = CompletableDeferred<WebAudioEx?>(job)
-            WebVfs.loadRaw(
+            WebLocalVfs.loadRaw(
                 job = job,
                 url = url,
                 processRawData = { it },

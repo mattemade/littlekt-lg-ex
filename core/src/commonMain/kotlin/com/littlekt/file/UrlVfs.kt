@@ -25,8 +25,6 @@ abstract class UrlVfs(context: Context, logger: Logger) : Vfs(context, logger, "
         isLenient = true
     }
 
-    protected val job = Job()
-
     override val coroutineContext: CoroutineContext = job
 
     private val awaitedAssetsChannel = Channel<AwaitedAsset>()
