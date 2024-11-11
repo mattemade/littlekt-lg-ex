@@ -24,7 +24,14 @@ class WebGLGraphics(val canvas: HTMLCanvasElement, engineStats: EngineStats) : G
     internal var _height: Int = 0
     private var platform: Context.Platform = Context.Platform.WEBGL2
 
-    private val ctxOptions: dynamic = jsObject { stencil = true }
+    private val ctxOptions: dynamic = jsObject {
+        powerPreference = "high-performance"
+        antialias = false // TODO: make configurable
+        depth = false // TODO: make configurable
+        stencil = false // TODO: make configurable
+        alpha = false // disable blending with page // TODO: make configurable
+        // premultiplied = true // ignored if alpha is false
+    }
 
     init {
         var webGlCtx = canvas.getContext("webgl2", ctxOptions)
