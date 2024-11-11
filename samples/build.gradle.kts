@@ -75,7 +75,7 @@ kotlin {
         }
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
+/*    @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         binaries.executable()
         browser {
@@ -90,7 +90,7 @@ kotlin {
                     )
             })
         }
-    }
+    }*/
 
     sourceSets {
         val commonMain by getting {
