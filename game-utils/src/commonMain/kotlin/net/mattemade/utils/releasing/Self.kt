@@ -4,7 +4,7 @@ import com.littlekt.GameAsset
 import com.littlekt.PreparableGameAsset
 import com.littlekt.Releasable
 
-internal class Self : Releasing {
+class Self : Releasing {
     private val disposables = mutableSetOf<Releasable>()
     private val contextReleasers = mutableMapOf<Any, (Any?) -> Unit>()
 

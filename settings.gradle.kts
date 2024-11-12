@@ -26,4 +26,5 @@ include("extensions:tools")
 
 include("extensions:gradle:texturepacker")
 
+include(":game-utils")
 include(":game")

@@ -68,40 +68,17 @@ kotlin {
         }
     }
     js {
-        binaries.executable()
-        browser {
-            testTask { useKarma { useChromeHeadless() } }
-            commonWebpackConfig {
-                devServer =
-                    (devServer
-                        ?: org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
-                            .DevServer())
-                        .copy(
-                            open = mapOf("app" to mapOf("name" to "chrome")),
-                        )
-            }
-        }
-        binaries.withType<JsIrBinary>().all {
-            this.linkTask.configure {
-                kotlinOptions {
-                    sourceMap = false
-                }
-            }
-        }
-
+        binaries.library()
         this.attributes.attribute(KotlinPlatformType.attribute, KotlinPlatformType.js)
-
-        compilations.all { kotlinOptions.sourceMap = false }
     }
 
     sourceSets {
         val commonMain by getting {
             dependencies {
                 implementation(project(":core"))
-                implementation(project(":game-utils"))
                 implementation(libs.kotlinx.coroutines.core)
-                implementation("com.soywiz.korlibs.kbox2d:kbox2d:3.3.0")
-                implementation("co.touchlab:stately-concurrent-collections:2.0.0")
+                api("com.soywiz.korlibs.kbox2d:kbox2d:3.3.0")
+                api("co.touchlab:stately-concurrent-collections:2.0.0")
             }
         }
         val commonTest by getting {
