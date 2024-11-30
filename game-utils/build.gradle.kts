@@ -1,4 +1,5 @@
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.jetbrains.kotlin.gradle.plugin.KotlinJsCompilerType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.targets.js.ir.JsIrBinary
 
@@ -67,16 +68,21 @@ kotlin {
             }
         }
     }
-    js {
-        binaries.library()
+    js(KotlinJsCompilerType.IR) {
+        browser {
+            binaries.executable()
+        }
         this.attributes.attribute(KotlinPlatformType.attribute, KotlinPlatformType.js)
+        compilations.all {
+            kotlinOptions.sourceMap = true
+        }
     }
 
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":core"))
-                implementation(libs.kotlinx.coroutines.core)
+                api(project(":core"))
+                api(libs.kotlinx.coroutines.core)
                 api("com.soywiz.korlibs.kbox2d:kbox2d:3.3.0")
                 api("co.touchlab:stately-concurrent-collections:2.0.0")
             }
@@ -88,11 +94,14 @@ kotlin {
         }
         val jvmMain by getting
         val jvmTest by getting
-        val jsMain by getting {
-            dependencies {
-                implementation(libs.kotlinx.html.js)
+        val jsMain by getting
+        val jsTest by getting
+        all {
+            languageSettings.apply {
+                progressiveMode = true
+                optIn("kotlin.contracts.ExperimentalContracts")
+                optIn("kotlin.time.ExperimentalTime")
             }
         }
-        val jsTest by getting
     }
 }
