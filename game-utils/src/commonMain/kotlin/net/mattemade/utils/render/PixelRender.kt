@@ -17,21 +17,25 @@ import kotlin.time.Duration
 
 class PixelRender(
     private val context: Context,
-    private val target: FrameBuffer,
+    targetWidth: Int,
+    targetHeight: Int,
     worldWidth: Int,
     worldHeight: Int,
     private val preRenderCall: (dt: Duration, camera: Camera) -> Unit,
     private val renderCall: (dt: Duration, camera: Camera, batch: Batch) -> Unit,
     private val clear: Boolean = false,
-    private val blending: Boolean = false
+    private val blending: Boolean = false,
+    private val allowFiltering: Boolean = false,
 ) : Releasing by Self() {
 
+    private val target = context.createPixelFrameBuffer(targetWidth, targetHeight, allowFiltering = allowFiltering)
     private val batch = SpriteBatch(context).releasing()
     private val targetViewport =
         ScalingViewport(scaler = Scaler.Fit(), worldWidth, worldHeight).apply {
             update(target.width, target.height, context, false)
         }
     private val targetCamera = targetViewport.camera
+    val texture = target.textures[0]
 
     fun render(dt: Duration) {
         preRenderCall(dt, targetCamera)

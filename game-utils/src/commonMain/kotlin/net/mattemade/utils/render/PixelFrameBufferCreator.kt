@@ -5,14 +5,14 @@ import com.littlekt.graphics.FrameBuffer
 import com.littlekt.graphics.gl.TexMagFilter
 import com.littlekt.graphics.gl.TexMinFilter
 
-fun Context.createPixelFrameBuffer(width: Int, height: Int) =
+fun Context.createPixelFrameBuffer(width: Int, height: Int, allowFiltering: Boolean = false) =
     FrameBuffer(
         width,
         height,
         listOf(
             FrameBuffer.TextureAttachment(
-                minFilter = TexMinFilter.NEAREST,
-                magFilter = TexMagFilter.NEAREST
+                minFilter = if (allowFiltering) TexMinFilter.LINEAR else TexMinFilter.NEAREST,
+                magFilter = if (allowFiltering) TexMagFilter.LINEAR else TexMagFilter.NEAREST,
             )
         )
     ).also {
