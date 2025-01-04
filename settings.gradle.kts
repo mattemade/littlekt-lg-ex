@@ -28,3 +28,4 @@ include("extensions:gradle:texturepacker")
 
 include(":game-utils")
 include(":game")
+include(":bossrush")
