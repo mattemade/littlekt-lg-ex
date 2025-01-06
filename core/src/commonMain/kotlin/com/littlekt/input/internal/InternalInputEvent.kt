@@ -17,6 +17,8 @@ internal class InternalInputEvent(
     var queueTime: Long = 0,
     var x: Float = 0f,
     var y: Float = 0f,
+    var moveX: Float = 0f,
+    var moveY: Float = 0f,
     var type: InternalInputEventType = InternalInputEventType.KEY_DOWN
 ) {
     val isPointerEvent: Boolean

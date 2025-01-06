@@ -70,7 +70,7 @@ interface InputProcessor {
      * @param screenY the y-coordinate of the event based on screen
      * @return true if event is handled; false otherwise
      */
-    fun mouseMoved(screenX: Float, screenY: Float): Boolean = false
+    fun mouseMoved(screenX: Float, screenY: Float, movementX: Float, movementY: Float): Boolean = false
 
     /**
      * Invoked when the mouse is scrolled.
@@ -125,7 +125,7 @@ class InputProcessBuilder {
     private val touchDown = mutableListOf<(Float, Float, Pointer) -> Boolean>()
     private val touchUp = mutableListOf<(Float, Float, Pointer) -> Boolean>()
     private val touchDragged = mutableListOf<(Float, Float, Pointer) -> Boolean>()
-    private val mouseMoved = mutableListOf<(Float, Float) -> Boolean>()
+    private val mouseMoved = mutableListOf<(Float, Float, Float, Float) -> Boolean>()
     private val scrolled = mutableListOf<(Float, Float) -> Boolean>()
     private val gameButtonPressed = mutableListOf<(GameButton, Float, Int) -> Boolean>()
     private val gameButtonReleased = mutableListOf<(GameButton, Int) -> Boolean>()
@@ -209,13 +209,13 @@ class InputProcessBuilder {
         }
     }
 
-    fun onMouseMovedHandle(action: (screenX: Float, screenY: Float) -> Boolean) {
+    fun onMouseMovedHandle(action: (screenX: Float, screenY: Float, movementX: Float, movementY: Float) -> Boolean) {
         mouseMoved += action
     }
 
-    fun onMouseMoved(action: (screenX: Float, screenY: Float) -> Unit) {
-        mouseMoved += { screenX, screenY ->
-            action(screenX, screenY)
+    fun onMouseMoved(action: (screenX: Float, screenY: Float, movementX: Float, movementY: Float) -> Unit) {
+        mouseMoved += { screenX, screenY, movementX, movementY ->
+            action(screenX, screenY, movementX, movementY)
             false
         }
     }
@@ -319,9 +319,9 @@ class InputProcessBuilder {
             return handled
         }
 
-        override fun mouseMoved(screenX: Float, screenY: Float): Boolean {
+        override fun mouseMoved(screenX: Float, screenY: Float, movementX: Float, movementY: Float): Boolean {
             var handled = false
-            mouseMoved.fastForEach { if (it.invoke(screenX, screenY)) handled = true }
+            mouseMoved.fastForEach { if (it.invoke(screenX, screenY, movementX, movementY)) handled = true }
             return handled
         }
 

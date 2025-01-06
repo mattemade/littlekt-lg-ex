@@ -709,8 +709,8 @@ open class SceneGraph<InputType>(
         return false
     }
 
-    override fun mouseMoved(screenX: Float, screenY: Float): Boolean {
-        if (controller.mouseMoved(screenX, screenY)) return true
+    override fun mouseMoved(screenX: Float, screenY: Float, movementX: Float, movementY: Float): Boolean {
+        if (controller.mouseMoved(screenX, screenY, movementX, movementY)) return true
 
         mouseScreenX = screenX
         mouseScreenY = screenY

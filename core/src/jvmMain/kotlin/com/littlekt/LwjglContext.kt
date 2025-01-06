@@ -251,6 +251,14 @@ class LwjglContext(override val configuration: JvmConfiguration) : Context() {
         GLFW.glfwSetWindowShouldClose(windowHandle, true)
     }
 
+    override fun captureCursor() {
+        GLFW.glfwSetInputMode(windowHandle, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED)
+    }
+
+    override fun releaseCursor() {
+        GLFW.glfwSetInputMode(windowHandle, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL)
+    }
+
     override fun destroy() {
         // Free the window callbacks and destroy the window
         Callbacks.glfwFreeCallbacks(windowHandle)

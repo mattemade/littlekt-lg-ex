@@ -1,4 +1,4 @@
-package net.mattemade.gametemplate
+package net.mattemade.bossrush
 
 import com.littlekt.Context
 import com.littlekt.RemoveContextCallback

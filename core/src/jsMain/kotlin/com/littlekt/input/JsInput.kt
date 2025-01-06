@@ -96,10 +96,18 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
             val rect = canvas.getBoundingClientRect()
             val x = touchEvent.clientX.toFloat() - rect.left.toFloat()
             val y = touchEvent.clientY.toFloat() - rect.top.toFloat()
+            _deltaX = touchEvent.asDynamic().movementX as Float
+            _deltaY = touchEvent.asDynamic().movementY as Float
             val pointerIndex = touchIdentifiers.indexOf(-1)
             if (pointerIndex >= 0) {
                 touchIdentifiers[pointerIndex] = touchEvent.identifier
-                inputCache.onTouchDown(x, y, pointerIndex.getPointer)
+                inputCache.onTouchDown(
+                    x,
+                    y,
+                    _deltaX,
+                    _deltaY,
+                    pointerIndex.getPointer
+                )
             }
         }
     }
@@ -113,9 +121,15 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
             val rect = canvas.getBoundingClientRect()
             val x = touchEvent.clientX.toFloat() - rect.left.toFloat()
             val y = touchEvent.clientY.toFloat() - rect.top.toFloat()
+            _deltaX = touchEvent.asDynamic().movementX as Float
+            _deltaY = touchEvent.asDynamic().movementY as Float
             val pointerIndex = touchIdentifiers.indexOf(touchEvent.identifier)
             if (pointerIndex >= 0) {
-                inputCache.onMove(x, y, pointerIndex.getPointer)
+                inputCache.onMove(
+                    x, y,
+                    _deltaX,
+                    _deltaY, pointerIndex.getPointer
+                )
             }
         }
     }
@@ -129,10 +143,18 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
             val rect = canvas.getBoundingClientRect()
             val x = touchEvent.clientX.toFloat() - rect.left.toFloat()
             val y = touchEvent.clientY.toFloat() - rect.top.toFloat()
+            _deltaX = touchEvent.asDynamic().movementX as Float
+            _deltaY = touchEvent.asDynamic().movementY as Float
             val pointerIndex = touchIdentifiers.indexOf(touchEvent.identifier)
             if (pointerIndex >= 0) {
                 touchIdentifiers[pointerIndex] = -1
-                inputCache.onTouchUp(x, y, pointerIndex.getPointer)
+                inputCache.onTouchUp(
+                    x,
+                    y,
+                    _deltaX,
+                    _deltaY,
+                    pointerIndex.getPointer
+                )
             }
         }
     }
@@ -142,7 +164,15 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
         val rect = canvas.getBoundingClientRect()
         val x = event.clientX.toFloat() - rect.left.toFloat()
         val y = event.clientY.toFloat() - rect.top.toFloat()
-        inputCache.onTouchDown(x, y, event.button.getPointer)
+        _deltaX = event.asDynamic().movementX as Float
+        _deltaY = event.asDynamic().movementY as Float
+        inputCache.onTouchDown(
+            x,
+            y,
+            _deltaX,
+            _deltaY,
+            event.button.getPointer
+        )
         touchedPointers += event.button.getPointer
     }
 
@@ -151,7 +181,13 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
         val rect = canvas.getBoundingClientRect()
         val x = event.clientX.toFloat() - rect.left.toFloat()
         val y = event.clientY.toFloat() - rect.top.toFloat()
-        inputCache.onTouchUp(x, y, event.button.getPointer)
+        _deltaX = event.asDynamic().movementX as Float
+        _deltaY = event.asDynamic().movementY as Float
+        inputCache.onTouchUp(
+            x, y,
+            _deltaX,
+            _deltaY, event.button.getPointer
+        )
         touchedPointers -= event.button.getPointer
     }
 
@@ -160,14 +196,20 @@ class JsInput(val canvas: HTMLCanvasElement) : Input {
         val rect = canvas.getBoundingClientRect()
         val x = event.clientX.toFloat() - rect.left.toFloat()
         val y = event.clientY.toFloat() - rect.top.toFloat()
-        _deltaX = x - logicalMouseX
-        _deltaY = y - logicalMouseY
+        _deltaX = event.asDynamic().movementX as Float
+        _deltaY = event.asDynamic().movementY as Float
+        //_deltaX = x - logicalMouseX
+        //_deltaY = y - logicalMouseY
         mouseX = x
         mouseY = y
         logicalMouseX = mouseX
         logicalMouseY = mouseY
 
-        inputCache.onMove(mouseX, mouseY, touchedPointers.lastOrNull() ?: Pointer.POINTER1)
+        inputCache.onMove(
+            mouseX, mouseY,
+            _deltaX,
+            _deltaY, touchedPointers.lastOrNull() ?: Pointer.POINTER1
+        )
     }
 
 

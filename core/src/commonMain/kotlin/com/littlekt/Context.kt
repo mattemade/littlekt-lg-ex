@@ -95,6 +95,9 @@ abstract class Context {
     /** Closes and destroys this context. */
     abstract fun close()
 
+    abstract fun captureCursor()
+    abstract fun releaseCursor()
+
     internal abstract fun destroy()
 
     protected fun calcFrameTimes(time: Duration) {

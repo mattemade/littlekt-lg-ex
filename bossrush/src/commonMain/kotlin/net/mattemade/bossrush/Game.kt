@@ -1,4 +1,4 @@
-package net.mattemade.gametemplate
+package net.mattemade.bossrush
 
 import com.littlekt.Context
 import com.littlekt.ContextListener
@@ -10,6 +10,9 @@ import com.littlekt.input.InputProcessor
 import com.littlekt.input.Key
 import com.littlekt.input.Pointer
 import com.littlekt.util.milliseconds
+import net.mattemade.bossrush.input.GameInput
+import net.mattemade.bossrush.input.bindInputs
+import net.mattemade.bossrush.scene.Fight
 import net.mattemade.utils.releasing.Releasing
 import net.mattemade.utils.releasing.Self
 import net.mattemade.utils.render.DirectRender
@@ -24,7 +27,7 @@ class Game(
 
     private var zoom: Float = initialZoom
 
-    var focused = false
+    var focused = true
         set(value) {
             field = value
             if (!value) {
@@ -40,11 +43,19 @@ class Game(
     private var fpsCheckTimeout: Float = 5000f
     private var framesRenderedInPeriod: Int = 0
 
+    private val input = context.bindInputs()
+    private var fight = Fight(context, input)
+
     override suspend fun Context.start() {
         input.addInputProcessor(object : InputProcessor {
             override fun keyDown(key: Key): Boolean {
                 if (!focused) {
                     focused = true
+                }
+                if (key == Key.ESCAPE) {
+                    releaseCursor()
+                } else {
+                    captureCursor()
                 }
                 return false
             }
@@ -58,7 +69,7 @@ class Game(
         })
 
         onResize { width, height ->
-            focused = false
+            //focused = false
             fpsCheckTimeout = 5000f
             framesRenderedInPeriod = 0
             // resizing to a higher resolution than was before -> going fullscreen
@@ -66,6 +77,8 @@ class Game(
                 zoom = onLowPerformance(true) // just to reset the zoom factor - it will auto-adjust in 5 seconds after
             }
             directRender.resize(width, height)
+
+            fight.resize(width, height)
         }
 
         onRender { dt ->
@@ -80,7 +93,9 @@ class Game(
             }
 
             if (focused && assetsReady) {
-                directRender.render(dt)
+
+                fight.updateAndRender(dt)
+                //directRender.render(dt)
 
                 framesRenderedInPeriod++
                 fpsCheckTimeout -= dt.milliseconds
@@ -113,6 +128,6 @@ class Game(
     }
 
     companion object {
-        const val TITLE = "littlekt-lg-ex game template"
+        const val TITLE = "Boss Rush game"
     }
 }

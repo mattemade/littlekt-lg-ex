@@ -22,9 +22,9 @@ class DirectRender(
     val postCamera = postViewport.camera
     val postBatch = SpriteBatch(context).releasing()
 
-    fun resize(width: Int, height: Int) {
-        postViewport.virtualWidth = width.toFloat()
-        postViewport.virtualHeight = height.toFloat()
+    fun resize(width: Int, height: Int, worldWidth: Float = width.toFloat(), worldHeight: Float = height.toFloat()) {
+        postViewport.virtualWidth = worldWidth
+        postViewport.virtualHeight = worldHeight
         postViewport.update(width, height, context)
     }
 

@@ -103,9 +103,9 @@ class InputCache {
         return gamepadButtonsJustReleased.getOrPut(gamepad) { mutableMapOf() }[button] ?: false
     }
 
-    fun onTouchDown(x: Float, y: Float, pointer: Pointer) {
+    fun onTouchDown(x: Float, y: Float, movementX: Float, movementY: Float, pointer: Pointer) {
         if (pointersTouching[pointer] != true) {
-            queueManager.touchDown(x, y, pointer, epochMillis())
+            queueManager.touchDown(x, y, movementX, movementY, pointer, epochMillis())
             touches++
             justTouched = true
             pointersTouching[pointer] = true
@@ -113,17 +113,17 @@ class InputCache {
         }
     }
 
-    fun onMove(x: Float, y: Float, pointer: Pointer) {
+    fun onMove(x: Float, y: Float, movementX: Float, movementY: Float, pointer: Pointer) {
         if (touches > 0) {
-            queueManager.touchDragged(x, y, pointer, epochMillis())
+            queueManager.touchDragged(x, y, movementX, movementY, pointer, epochMillis())
         } else {
-            queueManager.mouseMoved(x, y, epochMillis())
+            queueManager.mouseMoved(x, y, movementX, movementY, epochMillis())
         }
     }
 
-    fun onTouchUp(x: Float, y: Float, pointer: Pointer) {
+    fun onTouchUp(x: Float, y: Float, movementX: Float, movementY: Float, pointer: Pointer) {
         if (pointersTouching[pointer] == true) {
-            queueManager.touchUp(x, y, pointer, epochMillis())
+            queueManager.touchUp(x, y, movementX, movementY, pointer, epochMillis())
             touches = max(0, touches - 1)
             justTouchReleased = true
             pointersTouching[pointer] = false

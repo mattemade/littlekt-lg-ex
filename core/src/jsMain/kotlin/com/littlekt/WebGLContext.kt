@@ -115,6 +115,15 @@ class WebGLContext(override val configuration: JsConfiguration) : Context() {
         closed = true
     }
 
+    override fun captureCursor() {
+        canvas.asDynamic().requestPointerLock()
+    }
+
+    override fun releaseCursor() {
+        //canvas.asDynamic().exitPointerLock()
+        document.asDynamic().exitPointerLock()
+    }
+
     override fun destroy() {
         KtScope.launch { disposeCalls.fastForEach { release -> release() } }
     }
