@@ -10,7 +10,6 @@ import com.littlekt.input.InputProcessor
 import com.littlekt.input.Key
 import com.littlekt.input.Pointer
 import com.littlekt.util.milliseconds
-import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.input.bindInputs
 import net.mattemade.bossrush.scene.Fight
 import net.mattemade.utils.releasing.Releasing
@@ -36,6 +35,7 @@ class Game(
                 context.audio.resume()
             }
         }
+    private val assets = Assets(context)
     private var audioReady: Boolean = false
     private var assetsReady: Boolean = false
     private val directRender = DirectRender(context, width = 1920, height = 1080, ::update, ::render)
@@ -44,7 +44,7 @@ class Game(
     private var framesRenderedInPeriod: Int = 0
 
     private val input = context.bindInputs()
-    private var fight = Fight(context, input)
+    private var fight = Fight(context, input, assets)
 
     override suspend fun Context.start() {
         input.addInputProcessor(object : InputProcessor {
@@ -89,7 +89,7 @@ class Game(
                 audioReady = audio.isReady()
             }
             if (!assetsReady) {
-                assetsReady = audioReady // TODO && assets.isLoaded
+                assetsReady = audioReady && assets.isLoaded
             }
 
             if (focused && assetsReady) {

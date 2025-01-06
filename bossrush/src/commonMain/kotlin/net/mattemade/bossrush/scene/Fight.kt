@@ -7,6 +7,7 @@ import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.input.InputMapController
 import com.littlekt.util.fastForEach
 import com.littlekt.util.fastIterateRemove
+import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.objects.Projectile
 import net.mattemade.bossrush.objects.ProjectileSpawner
@@ -19,14 +20,17 @@ import kotlin.time.Duration
 class Fight(
     private val context: Context,
     private val input: InputMapController<GameInput>,
-    ) : Releasing by Self() {
+    private val assets: Assets,
+) : Releasing by Self() {
 
-    private val player = Player(context, input)
+    private val player by lazy { Player(context, input, assets) }
     private var shapeRenderer: ShapeRenderer? = null
 
 
-    private val projectileSpawner = ProjectileSpawner(player) {
-        projectiles += it
+    private val projectileSpawner by lazy {
+        ProjectileSpawner(player) {
+            //projectiles += it
+        }
     }
     private val projectiles = mutableListOf<Projectile>()
 
@@ -80,7 +84,6 @@ class Fight(
             }
         }
     }
-
 
 
     fun updateAndRender(dt: Duration) {
