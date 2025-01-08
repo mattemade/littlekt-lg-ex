@@ -10,6 +10,7 @@ import com.littlekt.input.InputMapController
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.PI2_F
 import com.littlekt.math.PI_F
+import com.littlekt.math.Vec2f
 import com.littlekt.math.floorToInt
 import com.littlekt.util.milliseconds
 import net.mattemade.bossrush.Assets
@@ -20,7 +21,8 @@ import kotlin.time.Duration
 
 class Player(private val context: Context, val input: InputMapController<GameInput>, private val assets: Assets) {
 
-    var position = MutableVec2f(0f, 400f)
+    var previousPosition = MutableVec2f(0f, 100f)
+    var position = MutableVec2f(0f, 100f)
     var rotation = 0f
     var racketPosition = MutableVec2f(0f, 0f)
     private var circleInFront: Boolean = false
@@ -43,13 +45,15 @@ class Player(private val context: Context, val input: InputMapController<GameInp
         }
 
     fun update(dt: Duration) {
+        previousPosition.set(position)
         rotation += context.input.deltaX / 200f
 
         tempVec2f
             .set(input.axis(GameInput.MOVE_HORIZONTAL), input.axis(GameInput.MOVE_VERTICAL))
             .limit(1f)
-            .scale(dt.milliseconds / 2f)
+            .scale(dt.milliseconds / 20f)
 
+        // TODO: check if we bumped into any obstacles on the way, and change the position accordingly
         position.add(tempVec2f)
 
         circleRotation = (rotation % PI2_F + PI2_F) % PI2_F
@@ -61,8 +65,14 @@ class Player(private val context: Context, val input: InputMapController<GameInp
 
     }
 
+    fun displace(displacement: Vec2f) {
+        // TODO: check if we bumped into any obstacles on the way, and change the position accordingly
+        // TODO: but should not be possible, as all the obstacles are equaly displaced ¦3
+        position.add(displacement)
+    }
+
     fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
-        if (!circleInFront) drawCircle(shapeRenderer)
+        /*if (!circleInFront) drawCircle(shapeRenderer)
         shapeRenderer.filledRectangle(
             x = position.x - 25f,
             y = position.y - 50f,
@@ -70,16 +80,16 @@ class Player(private val context: Context, val input: InputMapController<GameInp
             height = 100f,
             color = debugCharacterColor
         )
-        if (circleInFront) drawCircle(shapeRenderer)
+        if (circleInFront) drawCircle(shapeRenderer)*/
 
         val segment = (((circleRotation - PI_F/2f) / radInSegment).floorToInt() % positions + positions) % positions
         val index = if (segment >= assets.texture.sequence.size) (positions - 1 - segment) else segment
-        batch.draw(assets.texture.sequence[index], x = position.x - 150f, y = position.y-50f, width = 100f, height= 100f, flipX = segment < assets.texture.sequence.size)
+        batch.draw(assets.texture.sequence[index], x = position.x - 16f, y = position.y-30f, width = 32f, height = 32f, flipX = segment < assets.texture.sequence.size)
 
 
-        val segment2 = (((circleRotation - PI_F/2f) / radInSegment2).floorToInt() % positions2 + positions2) % positions2
+        /*val segment2 = (((circleRotation - PI_F/2f) / radInSegment2).floorToInt() % positions2 + positions2) % positions2
         val index2 = if (segment2 >= assets.texture.sequence2.size) (positions2 - 1 - segment2) else segment2
-        batch.draw(assets.texture.sequence2[index2], x = position.x - 250f, y = position.y-50f, width = 100f, height= 100f, flipX = segment2 < assets.texture.sequence2.size)
+        batch.draw(assets.texture.sequence2[index2], x = position.x - 250f, y = position.y-50f, width = 100f, height= 100f, flipX = segment2 < assets.texture.sequence2.size)*/
 
 
 

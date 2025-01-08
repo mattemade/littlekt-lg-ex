@@ -5,8 +5,12 @@ import com.littlekt.graphics.Camera
 import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.input.InputMapController
+import com.littlekt.math.MutableVec2f
+import com.littlekt.math.Vec2f
+import com.littlekt.math.geom.radians
 import com.littlekt.util.fastForEach
 import com.littlekt.util.fastIterateRemove
+import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.objects.Projectile
@@ -24,6 +28,7 @@ class Fight(
 ) : Releasing by Self() {
 
     private val player by lazy { Player(context, input, assets) }
+    private val arena by lazy { Arena(0f, assets) }
     private var shapeRenderer: ShapeRenderer? = null
 
 
@@ -46,11 +51,23 @@ class Fight(
         }
     )
 
+    private val tempVec2f = MutableVec2f()
+
+    private fun getDisplacementAt(position: Vec2f, dt: Duration): Vec2f {
+        // TODO: apply active turn-tables too
+        tempVec2f.set(position).rotate((arena.angularVelocity * dt.seconds).radians).minusAssign(position)
+        return tempVec2f
+    }
+
     private fun update(camera: Camera, dt: Duration) {
         camera.position.set(player.position.x / 2f, player.position.y / 2f, 0f)
         camera.update()
         player.update(dt)
+        arena.adjustVelocity(player.previousPosition, player.position, 0.05f)
+        arena.update(dt)
         projectileSpawner.update(dt)
+
+        player.displace(getDisplacementAt(player.position, dt))
 
         projectiles.fastIterateRemove {
             it.update(dt)
@@ -70,12 +87,13 @@ class Fight(
 
     private fun render(batch: Batch) {
         (shapeRenderer ?: ShapeRenderer(batch).also { shapeRenderer = it }).let { shapeRenderer ->
+            arena.render(batch)
             projectiles.fastForEach {
                 if (it.position.y < player.position.y) {
                     it.render(shapeRenderer)
                 }
             }
-            projectileSpawner.render(shapeRenderer)
+            //projectileSpawner.render(shapeRenderer)
             player.render(batch, shapeRenderer)
             projectiles.fastForEach {
                 if (it.position.y >= player.position.y) {
@@ -91,6 +109,6 @@ class Fight(
     }
 
     fun resize(width: Int, height: Int) {
-        renderer.resize(width, height, 1920f, 1080f)
+        renderer.resize(width, height, 320f, 240f)
     }
 }
