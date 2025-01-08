@@ -13,18 +13,25 @@ import com.littlekt.math.PI_F
 import com.littlekt.math.Vec2f
 import com.littlekt.math.floorToInt
 import com.littlekt.util.milliseconds
+import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.input.GameInput
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.time.Duration
 
-class Player(private val context: Context, val input: InputMapController<GameInput>, private val assets: Assets) {
+class Player(
+    private val context: Context,
+    private val input: InputMapController<GameInput>,
+    private val assets: Assets,
+    private val placingTrap: (seconds: Float, released: Boolean) -> Unit,
+) {
 
     var previousPosition = MutableVec2f(0f, 100f)
     var position = MutableVec2f(0f, 100f)
     var rotation = 0f
     var racketPosition = MutableVec2f(0f, 0f)
+    private val shadowRadii = Vec2f(4f, 2f)
     private var circleInFront: Boolean = false
     private var circleRotation: Float = 0f
     private val positions = assets.texture.sequence.size * 2
@@ -34,6 +41,8 @@ class Player(private val context: Context, val input: InputMapController<GameInp
 
     private val debugCharacterColor = MutableColor(Color.BLUE).withAlpha(0.2f).toFloatBits()
     private val debugRacketColor = MutableColor(Color.WHITE).withAlpha(0.2f).toFloatBits()
+
+    private var placingTrapForSeconds = 0f
 
     private val tempVec2f = MutableVec2f()
 
@@ -63,6 +72,13 @@ class Player(private val context: Context, val input: InputMapController<GameInp
             position.y + 25f * sin(circleRotation)
         )
 
+        if (input.released(GameInput.PLACE_TRAP)) {
+            placingTrap(placingTrapForSeconds, true)
+            placingTrapForSeconds = 0f
+        } else if (input.down(GameInput.PLACE_TRAP) && !input.pressed(GameInput.PLACE_TRAP)) {
+            placingTrapForSeconds += dt.seconds
+            placingTrap(placingTrapForSeconds, false)
+        }
     }
 
     fun displace(displacement: Vec2f) {
@@ -82,15 +98,21 @@ class Player(private val context: Context, val input: InputMapController<GameInp
         )
         if (circleInFront) drawCircle(shapeRenderer)*/
 
-        val segment = (((circleRotation - PI_F/2f) / radInSegment).floorToInt() % positions + positions) % positions
+        val segment = (((circleRotation - PI_F / 2f) / radInSegment).floorToInt() % positions + positions) % positions
         val index = if (segment >= assets.texture.sequence.size) (positions - 1 - segment) else segment
-        batch.draw(assets.texture.sequence[index], x = position.x - 16f, y = position.y-30f, width = 32f, height = 32f, flipX = segment < assets.texture.sequence.size)
+        batch.draw(
+            assets.texture.sequence[index],
+            x = position.x - 16f,
+            y = position.y - 30f,
+            width = 32f,
+            height = 32f,
+            flipX = segment < assets.texture.sequence.size
+        )
 
 
         /*val segment2 = (((circleRotation - PI_F/2f) / radInSegment2).floorToInt() % positions2 + positions2) % positions2
         val index2 = if (segment2 >= assets.texture.sequence2.size) (positions2 - 1 - segment2) else segment2
         batch.draw(assets.texture.sequence2[index2], x = position.x - 250f, y = position.y-50f, width = 100f, height= 100f, flipX = segment2 < assets.texture.sequence2.size)*/
-
 
 
     }
@@ -102,6 +124,11 @@ class Player(private val context: Context, val input: InputMapController<GameInp
             radius = 20f,
             color = debugRacketColor
         )
+    }
+
+
+    fun renderShadow(shapeRenderer: ShapeRenderer) {
+        shapeRenderer.filledEllipse(position, shadowRadii, innerColor = Color.BLUE.toFloatBits(), outerColor = Color.BLACK.toFloatBits())
     }
 
 }

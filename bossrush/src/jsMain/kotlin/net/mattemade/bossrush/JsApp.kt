@@ -24,7 +24,7 @@ fun main() {
         scheduleCanvasResize(it)
         val game = Game(it, ::onLowPerformance, zoom)
         window.addEventListener("blur", {
-            game.focused = false
+            //game.focused = false
         })
         game
     }

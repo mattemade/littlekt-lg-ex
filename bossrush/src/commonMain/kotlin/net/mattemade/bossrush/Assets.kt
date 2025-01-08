@@ -26,7 +26,8 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
 
 
     val arena by "texture/arena.png".pack()
+    val trap by "texture/trap.png".pack()
 
     val sequence by preparePlain(1) { arrayOf(/*down,*/ downRight, right, upRight/*, up*/) }
-    val sequence2 by preparePlain(1) { arrayOf(down, downRight, right, upRight, up) }
+    val sequence2 by preparePlain(2) { arrayOf(down, downRight, right, upRight, up) }
 }

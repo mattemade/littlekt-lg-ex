@@ -26,7 +26,7 @@ class Game(
 
     private var zoom: Float = initialZoom
 
-    var focused = true
+    var focused = true // TODO: always keep it true? such a hassle to focus/unfocus
         set(value) {
             field = value
             if (!value) {
