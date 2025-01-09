@@ -17,6 +17,7 @@ import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.input.GameInput
+import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.time.Duration
@@ -26,10 +27,10 @@ class Player(
     private val input: InputMapController<GameInput>,
     private val assets: Assets,
     private val placingTrap: (seconds: Float, released: Boolean) -> Unit,
-) {
+): TemporaryDepthRenderableObject {
 
     var previousPosition = MutableVec2f(0f, 100f)
-    var position = MutableVec2f(0f, 100f)
+    override var position = MutableVec2f(0f, 100f)
     var rotation = 0f
     var racketPosition = MutableVec2f(0f, 0f)
     var trappedForSeconds = 0f
@@ -57,11 +58,11 @@ class Player(
             this
         }
 
-    fun update(dt: Duration) {
+    override fun update(dt: Duration): Boolean {
         previousPosition.set(position)
         if (trappedForSeconds > 0f) {
             trappedForSeconds -= dt.seconds
-            return
+            return true
         }
         rotation += context.input.deltaX / 200f
 
@@ -87,15 +88,16 @@ class Player(
             placingTrapForSeconds += dt.seconds
             placingTrap(placingTrapForSeconds, false)
         }
+        return true
     }
 
-    fun displace(displacement: Vec2f) {
+    override fun displace(displacement: Vec2f) {
         // TODO: check if we bumped into any obstacles on the way, and change the position accordingly
         // TODO: but should not be possible, as all the obstacles are equaly displaced ¦3
         position.add(displacement)
     }
 
-    fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
+    override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
         /*if (!circleInFront) drawCircle(shapeRenderer)
         shapeRenderer.filledRectangle(
             x = position.x - 25f,
@@ -161,7 +163,7 @@ class Player(
     }
 
 
-    fun renderShadow(shapeRenderer: ShapeRenderer) {
+    override fun renderShadow(shapeRenderer: ShapeRenderer) {
         shapeRenderer.filledEllipse(
             position,
             shadowRadii,

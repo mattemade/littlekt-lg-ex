@@ -19,9 +19,9 @@ class TestBoss(
     private val player: Player,
     private val assets: Assets,
     private val spawn: (Projectile) -> Unit
-) {
+): TemporaryDepthRenderableObject {
 
-    val position = MutableVec2f(0f, -100f)
+    override val position = MutableVec2f(0f, -100f)
     private var trappedForSeconds = 0f
     private val shadowRadii = Vec2f(10f, 5f)
 
@@ -29,10 +29,10 @@ class TestBoss(
     private var nextParticleIn = 1f
     private val tempVec2f = MutableVec2f()
 
-    fun update(dt: Duration) {
+    override fun update(dt: Duration): Boolean {
         if (trappedForSeconds > 0f) {
             trappedForSeconds -= dt.seconds
-            return
+            return true
         }
         nextParticleIn -= dt.seconds
         while (nextParticleIn <= 0f) {
@@ -54,13 +54,14 @@ class TestBoss(
 
 
         }
+        return true
     }
 
-    fun renderShadow(shapeRenderer: ShapeRenderer) {
+    override fun renderShadow(shapeRenderer: ShapeRenderer) {
         shapeRenderer.filledEllipse(position, shadowRadii, innerColor = Color.BLUE.toFloatBits(), outerColor = Color.BLACK.toFloatBits())
     }
 
-    fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
+    override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
         shapeRenderer.filledCircle(x = position.x, y = position.y - 10f, radius = 10f, color = Color.YELLOW.toFloatBits())
 
         if (trappedForSeconds > 0f) {
