@@ -13,6 +13,7 @@ import com.littlekt.util.fastIterateRemove
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.input.GameInput
+import net.mattemade.bossrush.objects.Column
 import net.mattemade.bossrush.objects.Projectile
 import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import net.mattemade.bossrush.objects.TestBoss
@@ -30,19 +31,29 @@ class Fight(
 ) : Releasing by Self() {
 
     private val gameObjects = mutableListOf<TemporaryDepthRenderableObject>()
+    private val solidObjects = mutableListOf<TemporaryDepthRenderableObject>()
 
     private fun <T : TemporaryDepthRenderableObject> T.save(): T {
         gameObjects.add(this)
         return this
     }
+    private fun <T : TemporaryDepthRenderableObject> T.solid(): T {
+        gameObjects.add(this)
+        solidObjects.add(this)
+        return this
+    }
 
-    private val player by lazy { Player(context, input, assets, ::placingTrap).save() }
-    private val arena by lazy { Arena(0f, assets) }
+    private val player by lazy { Player(context, input, assets, ::placingTrap).solid() }
+    private val arena by lazy {
+        Column(MutableVec2f(-50f, 0f), assets).solid()
+        Column(MutableVec2f(50f, 0f), assets).solid()
+        Arena(0f, assets)
+    }
     private var shapeRenderer: ShapeRenderer? = null
 
 
     private val testBoss by lazy {
-        TestBoss(player, assets) { it.save() }.save()
+        TestBoss(player, assets) { it.save() }.solid()
     }
 
     private var renderer = DirectRender(
@@ -72,37 +83,58 @@ class Fight(
         arena.adjustVelocity(player.previousPosition, player.position, 0.05f)
         arena.update(dt)
 
-        gameObjects.fastIterateRemove {
-            var isAlive = it.update(dt)
-            if (isAlive) {
-                it.displace(getDisplacementAt(position = it.position, dt = dt))
-                when (it) {
-                    is Trap -> {
-                        if (it.activatedTimeToLive < 0f) {
-                            if (it.position.distance(player.position) < 10f) {
-                                player.trapped()
-                                it.activate()
-                            }
-                            if (it.position.distance(testBoss.position) < 20f) {
-                                testBoss.trapped()
-                                it.activate()
-                            }
-                        }
-                    }
-                    is Projectile -> {
-                        if (it.timeToLive > 0f) {
-                            // collision check
-                            if (player.position.distance(it.position) < 8f) {
-                                isAlive = false
-                                // TODO: hit player
-                            } /* else if (player.racketPosition.distance(it.position) < 10f) {
-                                isAlive = false
-                            }*/
-                        }
+        gameObjects.fastIterateRemove { obj -> !obj.update(dt).also { if (!it) solidObjects.remove(obj) } }
+        solidObjects.fastForEach {
+            if (it != player) {
+                it.solidRadius?.let { solidRadius ->
+                    if (player.position.distance(it.position) < player.solidRadius + solidRadius) {
+                        // push player away
+                        tempVec2f.set(player.position).subtract(it.position).setLength(player.solidRadius + solidRadius)
+                        player.position.set(it.position).add(tempVec2f)
                     }
                 }
             }
-            !isAlive
+            // TODO: the same for boss
+        }
+        gameObjects.fastIterateRemove {
+            it.displace(getDisplacementAt(position = it.position, dt = dt))
+            when (it) {
+                is Trap -> {
+                    if (it.activatedTimeToLive < 0f) {
+                        if (it.position.distance(player.position) < player.solidRadius + it.solidRadius) {
+                            player.trapped()
+                            it.activate()
+                        }
+                        if (it.position.distance(testBoss.position) < testBoss.solidRadius + it.solidRadius*3f) {
+                            testBoss.trapped()
+                            it.activate()
+                        }
+                    }
+                    false // do not remove trap here
+                }
+                is Projectile -> {
+                    if (it.timeToLive > 0f) {
+                        // collision check
+                        var collide = false
+                        solidObjects.fastForEach { solid ->
+                            if (solid !== testBoss) { // do not collide with boss
+                                solid.solidRadius?.let { solidRadius ->
+                                    if (solid.position.distance(it.position) < solidRadius) {
+                                        collide = true
+                                        if (solid === player) {
+                                            // TODO: hit player
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        collide
+                    } else {
+                        false
+                    }
+                }
+                else -> false
+            }
         }
     }
 

@@ -25,6 +25,8 @@ class TestBoss(
     private var trappedForSeconds = 0f
     private val shadowRadii = Vec2f(10f, 5f)
 
+    override val solidRadius: Float
+        get() = 8f
     private var difficulty = 1
     private var nextParticleIn = 1f
     private val tempVec2f = MutableVec2f()

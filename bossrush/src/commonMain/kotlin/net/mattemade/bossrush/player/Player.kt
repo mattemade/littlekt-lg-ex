@@ -34,6 +34,8 @@ class Player(
     var rotation = 0f
     var racketPosition = MutableVec2f(0f, 0f)
     var trappedForSeconds = 0f
+    override val solidRadius: Float
+        get() = 4f
     private val shadowRadii = Vec2f(4f, 2f)
     private var circleInFront: Boolean = false
     private var circleRotation: Float = 0f

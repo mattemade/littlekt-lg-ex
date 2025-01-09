@@ -14,6 +14,9 @@ class Trap(override val position: MutableVec2f, private val assets: Assets): Tem
     private val textureActivated = assets.texture.trapActivated
     var activatedTimeToLive = -1f
 
+    override val solidRadius: Float
+        get() = 4f
+
     override fun displace(displacement: Vec2f) {
         position.add(displacement)
     }

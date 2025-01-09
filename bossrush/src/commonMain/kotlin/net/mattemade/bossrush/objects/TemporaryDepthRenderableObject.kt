@@ -16,6 +16,9 @@ interface TemporaryDepthRenderableObject : Comparable<TemporaryDepthRenderableOb
 
     fun renderShadow(shapeRenderer: ShapeRenderer) {}
 
+    val solidRadius: Float?
+        get() = null
+
     override fun compareTo(other: TemporaryDepthRenderableObject): Int =
         position.y.compareTo(other.position.y)
 }
