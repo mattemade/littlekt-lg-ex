@@ -12,6 +12,7 @@ import com.littlekt.math.PI2_F
 import com.littlekt.math.PI_F
 import com.littlekt.math.Vec2f
 import com.littlekt.math.floorToInt
+import com.littlekt.math.geom.radians
 import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
@@ -31,13 +32,16 @@ class Player(
     var position = MutableVec2f(0f, 100f)
     var rotation = 0f
     var racketPosition = MutableVec2f(0f, 0f)
+    var trappedForSeconds = 0f
     private val shadowRadii = Vec2f(4f, 2f)
     private var circleInFront: Boolean = false
     private var circleRotation: Float = 0f
-    private val positions = assets.texture.sequence.size * 2
-    private val positions2 = assets.texture.sequence2.size * 2
+    private val textureSequence = listOf(assets.texture.downRight, assets.texture.right, assets.texture.upRight)
+    private val positions = textureSequence.size * 2
+
+    //private val positions2 = assets.texture.sequence2.size * 2
     private val radInSegment = PI2_F / positions
-    private val radInSegment2 = PI2_F / positions2
+    //private val radInSegment2 = PI2_F / positions2
 
     private val debugCharacterColor = MutableColor(Color.BLUE).withAlpha(0.2f).toFloatBits()
     private val debugRacketColor = MutableColor(Color.WHITE).withAlpha(0.2f).toFloatBits()
@@ -55,6 +59,10 @@ class Player(
 
     fun update(dt: Duration) {
         previousPosition.set(position)
+        if (trappedForSeconds > 0f) {
+            trappedForSeconds -= dt.seconds
+            return
+        }
         rotation += context.input.deltaX / 200f
 
         tempVec2f
@@ -68,8 +76,8 @@ class Player(
         circleRotation = (rotation % PI2_F + PI2_F) % PI2_F
         circleInFront = circleRotation < PI_F
         racketPosition.set(
-            position.x + 50f * cos(circleRotation),
-            position.y + 25f * sin(circleRotation)
+            position.x + 20f * cos(circleRotation),
+            position.y + 20f * sin(circleRotation)
         )
 
         if (input.released(GameInput.PLACE_TRAP)) {
@@ -99,15 +107,41 @@ class Player(
         if (circleInFront) drawCircle(shapeRenderer)*/
 
         val segment = (((circleRotation - PI_F / 2f) / radInSegment).floorToInt() % positions + positions) % positions
-        val index = if (segment >= assets.texture.sequence.size) (positions - 1 - segment) else segment
+        val index = if (segment >= textureSequence.size) (positions - 1 - segment) else segment
         batch.draw(
-            assets.texture.sequence[index],
+            textureSequence[index],
             x = position.x - 16f,
             y = position.y - 30f,
             width = 32f,
             height = 32f,
-            flipX = segment < assets.texture.sequence.size
+            flipX = segment < textureSequence.size
         )
+
+        if (trappedForSeconds > 0f) {
+            for (i in 0..2) {
+                tempVec2f.set(10f, 0f)
+                    .rotate((trappedForSeconds*3f + i * PI2_F / 3f).radians)
+                    .scale(1f, 0.5f)
+                    .add(-4f, -4f) // offset the middle of the texture
+                    .add(position) // offset into character position
+                batch.draw(
+                    assets.texture.littleStar,
+                    x = tempVec2f.x,
+                    y = tempVec2f.y - 30f,
+                    width = 8f,
+                    height = 8f,
+                )
+            }
+        }
+
+        if (placingTrapForSeconds > 0f) {
+            shapeRenderer.filledCircle(
+                x = racketPosition.x,
+                y = racketPosition.y,
+                radius = 20f,
+                color = debugRacketColor
+            )
+        }
 
 
         /*val segment2 = (((circleRotation - PI_F/2f) / radInSegment2).floorToInt() % positions2 + positions2) % positions2
@@ -128,7 +162,16 @@ class Player(
 
 
     fun renderShadow(shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledEllipse(position, shadowRadii, innerColor = Color.BLUE.toFloatBits(), outerColor = Color.BLACK.toFloatBits())
+        shapeRenderer.filledEllipse(
+            position,
+            shadowRadii,
+            innerColor = Color.BLUE.toFloatBits(),
+            outerColor = Color.BLACK.toFloatBits()
+        )
+    }
+
+    fun trapped() {
+        trappedForSeconds = 2f
     }
 
 }

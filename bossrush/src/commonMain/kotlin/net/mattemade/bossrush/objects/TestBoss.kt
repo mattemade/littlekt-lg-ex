@@ -1,22 +1,28 @@
 package net.mattemade.bossrush.objects
 
 import com.littlekt.graphics.Color
+import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.toFloatBits
 import com.littlekt.math.MutableVec2f
+import com.littlekt.math.PI2_F
 import com.littlekt.math.Vec2f
 import com.littlekt.math.geom.degrees
+import com.littlekt.math.geom.radians
 import com.littlekt.math.geom.times
 import com.littlekt.util.seconds
+import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.player.Player
 import kotlin.time.Duration
 
 class TestBoss(
     private val player: Player,
+    private val assets: Assets,
     private val spawn: (Projectile) -> Unit
 ) {
 
     val position = MutableVec2f(0f, -100f)
+    private var trappedForSeconds = 0f
     private val shadowRadii = Vec2f(10f, 5f)
 
     private var difficulty = 1
@@ -24,6 +30,10 @@ class TestBoss(
     private val tempVec2f = MutableVec2f()
 
     fun update(dt: Duration) {
+        if (trappedForSeconds > 0f) {
+            trappedForSeconds -= dt.seconds
+            return
+        }
         nextParticleIn -= dt.seconds
         while (nextParticleIn <= 0f) {
             //difficulty++
@@ -50,8 +60,29 @@ class TestBoss(
         shapeRenderer.filledEllipse(position, shadowRadii, innerColor = Color.BLUE.toFloatBits(), outerColor = Color.BLACK.toFloatBits())
     }
 
-    fun render(shapeRenderer: ShapeRenderer) {
+    fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
         shapeRenderer.filledCircle(x = position.x, y = position.y - 10f, radius = 10f, color = Color.YELLOW.toFloatBits())
+
+        if (trappedForSeconds > 0f) {
+            for (i in 0..2) {
+                tempVec2f.set(10f, 0f)
+                    .rotate((trappedForSeconds*3f + i * PI2_F / 3f).radians)
+                    .scale(1f, 0.5f)
+                    .add(-4f, -4f) // offset the middle of the texture
+                    .add(position) // offset into character position
+                batch.draw(
+                    assets.texture.littleStar,
+                    x = tempVec2f.x,
+                    y = tempVec2f.y - 30f,
+                    width = 8f,
+                    height = 8f,
+                )
+            }
+        }
+    }
+
+    fun trapped() {
+        trappedForSeconds = 5f
     }
 
 }

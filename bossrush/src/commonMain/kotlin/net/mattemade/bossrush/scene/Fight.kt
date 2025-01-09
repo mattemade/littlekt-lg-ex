@@ -34,7 +34,7 @@ class Fight(
 
 
     private val testBoss by lazy {
-        TestBoss(player) {
+        TestBoss(player, assets) {
             projectiles += it
         }
     }
@@ -74,7 +74,19 @@ class Fight(
         player.displace(getDisplacementAt(player.position, dt))
         traps.fastForEach {
             it.displace(getDisplacementAt(it.position, dt))
+            if (it.activatedTimeToLive < 0f) {
+                if (it.position.distance(player.position) < 10f) {
+                    player.trapped()
+                    it.activate()
+                }
+                if (it.position.distance(testBoss.position) < 20f) {
+                    testBoss.trapped()
+                    it.activate()
+                }
+            }
+            it.update(dt)
         }
+        traps.fastIterateRemove { it.activatedTimeToLive == 0f }
 
         projectiles.fastIterateRemove {
             it.update(dt)
@@ -110,7 +122,7 @@ class Fight(
                     it.render(shapeRenderer)
                 }
             }
-            testBoss.render(shapeRenderer)
+            testBoss.render(batch, shapeRenderer)
             player.render(batch, shapeRenderer)
             traps.fastForEach {
                 if (it.position.y >= player.position.y) {
