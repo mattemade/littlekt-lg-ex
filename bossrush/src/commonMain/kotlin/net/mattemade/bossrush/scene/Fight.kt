@@ -6,15 +6,18 @@ import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.input.InputMapController
 import com.littlekt.math.MutableVec2f
+import com.littlekt.math.PI_F
 import com.littlekt.math.Vec2f
 import com.littlekt.math.geom.radians
 import com.littlekt.util.fastForEach
 import com.littlekt.util.fastIterateRemove
+import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.objects.Column
 import net.mattemade.bossrush.objects.Projectile
+import net.mattemade.bossrush.objects.Swing
 import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import net.mattemade.bossrush.objects.TestBoss
 import net.mattemade.bossrush.objects.Trap
@@ -43,7 +46,7 @@ class Fight(
         return this
     }
 
-    private val player by lazy { Player(context, input, assets, ::placingTrap).solid() }
+    private val player by lazy { Player(context, input, assets, ::placingTrap, ::swing).solid() }
     private val arena by lazy {
         Column(MutableVec2f(-50f, 0f), assets).solid()
         Column(MutableVec2f(50f, 0f), assets).solid()
@@ -80,10 +83,11 @@ class Fight(
         tempVec2f.set(player.position).add(testBoss.position).scale(0.5f)
         camera.position.set(tempVec2f.x, tempVec2f.y, 0f)
         camera.update()
+
+        gameObjects.fastIterateRemove { obj -> !obj.update(dt).also { if (!it) solidObjects.remove(obj) } }
         arena.adjustVelocity(player.previousPosition, player.position, 0.05f)
         arena.update(dt)
 
-        gameObjects.fastIterateRemove { obj -> !obj.update(dt).also { if (!it) solidObjects.remove(obj) } }
         solidObjects.fastForEach {
             if (it != player) {
                 it.solidRadius?.let { solidRadius ->
@@ -122,7 +126,7 @@ class Fight(
                                     if (solid.position.distance(it.position) < solidRadius) {
                                         collide = true
                                         if (solid === player) {
-                                            // TODO: hit player
+                                            player.damaged()
                                         }
                                     }
                                 }
@@ -155,6 +159,10 @@ class Fight(
         if (place) {
             Trap(MutableVec2f(player.racketPosition), assets).save()
         }
+    }
+
+    private fun swing(angle: Float, clockwise: Boolean, powerful: Boolean) {
+        Swing(player.position, angle, clockwise, assets).save()
     }
 
     fun updateAndRender(dt: Duration) {

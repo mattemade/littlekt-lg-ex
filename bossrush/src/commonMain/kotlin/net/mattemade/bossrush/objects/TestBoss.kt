@@ -33,8 +33,10 @@ class TestBoss(
 
     override fun update(dt: Duration): Boolean {
         if (trappedForSeconds > 0f) {
-            trappedForSeconds -= dt.seconds
-            return true
+            trappedForSeconds = maxOf(0f, trappedForSeconds - dt.seconds)
+            if (trappedForSeconds > 0f) {
+                return true
+            }
         }
         nextParticleIn -= dt.seconds
         while (nextParticleIn <= 0f) {
@@ -85,7 +87,7 @@ class TestBoss(
     }
 
     fun trapped() {
-        trappedForSeconds = 5f
+        trappedForSeconds += 5f
     }
 
 }

@@ -23,6 +23,8 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val right by "texture/character/right.png".pack()
     val downRight by "texture/character/down_right.png".pack()
     val down by "texture/character/down.png".pack()
+    val swingLight by "texture/swing_light.png".pack()
+    val swingStrong by "texture/swing_strong.png".pack()
 
 
     val arena by "texture/arena.png".pack()

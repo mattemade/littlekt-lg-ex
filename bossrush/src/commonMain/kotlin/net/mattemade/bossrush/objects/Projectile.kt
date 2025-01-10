@@ -27,7 +27,7 @@ class Projectile(
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledCircle(x = position.x, y = position.y - 3f, radius = 2f, color = Color.YELLOW.toFloatBits())
+        shapeRenderer.filledCircle(x = position.x, y = position.y - 8f, radius = 2f, color = Color.YELLOW.toFloatBits())
     }
 
     override fun renderShadow(shapeRenderer: ShapeRenderer) {

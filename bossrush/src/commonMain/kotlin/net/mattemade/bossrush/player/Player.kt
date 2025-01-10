@@ -27,15 +27,23 @@ class Player(
     private val input: InputMapController<GameInput>,
     private val assets: Assets,
     private val placingTrap: (seconds: Float, released: Boolean) -> Unit,
+    private val swing: (angle: Float, clockwise: Boolean, powerful: Boolean) -> Unit,
 ): TemporaryDepthRenderableObject {
 
     var previousPosition = MutableVec2f(0f, 100f)
     override var position = MutableVec2f(0f, 100f)
+    var previousRotationStopOrPivot = 0f
     var rotation = 0f
     var racketPosition = MutableVec2f(0f, 0f)
     var trappedForSeconds = 0f
+    var damagedForSeconds = 0f
+    private val damageColor = Color.RED.toFloatBits()
     override val solidRadius: Float
         get() = 4f
+
+    var isReadyToSwing = true
+    var previousDRotation = 0f
+
     private val shadowRadii = Vec2f(4f, 2f)
     private var circleInFront: Boolean = false
     private var circleRotation: Float = 0f
@@ -62,11 +70,34 @@ class Player(
 
     override fun update(dt: Duration): Boolean {
         previousPosition.set(position)
-        if (trappedForSeconds > 0f) {
-            trappedForSeconds -= dt.seconds
-            return true
+        if (damagedForSeconds > 0f) {
+            damagedForSeconds = maxOf(0f, damagedForSeconds - dt.seconds)
         }
-        rotation += context.input.deltaX / 200f
+        if (trappedForSeconds > 0f) {
+            trappedForSeconds = maxOf(0f, trappedForSeconds-dt.seconds)
+            if (trappedForSeconds > 0f) {
+                return true
+            }
+        }
+        val dRotation = context.input.deltaX / 200f
+        rotation += dRotation
+
+        val swingingAngleDifference = previousRotationStopOrPivot - rotation
+        val absSwingingAngleDifference = kotlin.math.abs(swingingAngleDifference)
+        if (isReadyToSwing && absSwingingAngleDifference >= PI_F * 0.75f) {
+            val sign = swingingAngleDifference / absSwingingAngleDifference
+            swing(previousRotationStopOrPivot % PI2_F - sign * PI_F * 0.75f, swingingAngleDifference > 0f, false)
+            previousRotationStopOrPivot = rotation
+            isReadyToSwing = false
+        }
+
+        val rotationSpeed = kotlin.math.abs(dRotation) / dt.milliseconds // slow 0.02 light 0.04 quick
+        val pivoting = dRotation > 0f && previousDRotation <= 0f || dRotation <= 0f && previousDRotation > 0f
+        if ((rotationSpeed > 0f && rotationSpeed < 0.002f) || pivoting) {
+            previousRotationStopOrPivot = rotation
+            isReadyToSwing = true
+        }
+        previousDRotation = dRotation
 
         tempVec2f
             .set(input.axis(GameInput.MOVE_HORIZONTAL), input.axis(GameInput.MOVE_VERTICAL))
@@ -118,7 +149,8 @@ class Player(
             y = position.y - 30f,
             width = 32f,
             height = 32f,
-            flipX = segment < textureSequence.size
+            flipX = segment < textureSequence.size,
+            colorBits = if (damagedForSeconds > 0f) damageColor*damagedForSeconds else batch.colorBits,
         )
 
         if (trappedForSeconds > 0f) {
@@ -175,7 +207,13 @@ class Player(
     }
 
     fun trapped() {
-        trappedForSeconds = 2f
+        trappedForSeconds += 2f
+    }
+
+    fun damaged() {
+        if (damagedForSeconds == 0f) {
+            damagedForSeconds += 0.75f
+        }
     }
 
 }
