@@ -8,6 +8,7 @@ import com.littlekt.math.MutableVec2f
 import com.littlekt.math.Vec2f
 import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
+import net.mattemade.bossrush.math.rotateTowards
 import kotlin.time.Duration
 
 class Projectile(
@@ -18,9 +19,15 @@ class Projectile(
     var timeToLive = 10f
     private val shadowRadii = Vec2f(2f, 1f)
     private val tempVec2f = MutableVec2f()
+    var target: (() -> Vec2f)? = null
+    var canDamageBoss: Boolean = false
 
     override fun update(dt: Duration): Boolean {
         timeToLive -= dt.seconds
+        target?.invoke()?.let { targetPosition ->
+            tempVec2f.set(targetPosition).subtract(position)
+            direction.rotateTowards(tempVec2f, limit = dt.seconds)
+        }
         tempVec2f.set(direction).scale(dt.milliseconds / 100f)
         position.add(tempVec2f)
         return timeToLive > 0f

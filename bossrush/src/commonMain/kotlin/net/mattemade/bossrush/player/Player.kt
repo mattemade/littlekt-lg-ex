@@ -33,6 +33,7 @@ class Player(
     var previousPosition = MutableVec2f(0f, 100f)
     override var position = MutableVec2f(0f, 100f)
     var previousRotationStopOrPivot = 0f
+    var swingingForMillis = 0f
     var rotation = 0f
     var racketPosition = MutableVec2f(0f, 0f)
     var trappedForSeconds = 0f
@@ -84,18 +85,22 @@ class Player(
 
         val swingingAngleDifference = previousRotationStopOrPivot - rotation
         val absSwingingAngleDifference = kotlin.math.abs(swingingAngleDifference)
+        swingingForMillis += dt.milliseconds
         if (isReadyToSwing && absSwingingAngleDifference >= PI_F * 0.75f) {
             val sign = swingingAngleDifference / absSwingingAngleDifference
-            swing(previousRotationStopOrPivot % PI2_F - sign * PI_F * 0.75f, swingingAngleDifference > 0f, false)
+            swing(previousRotationStopOrPivot % PI2_F - sign * PI_F * 0.75f, swingingAngleDifference > 0f, swingingForMillis <= 160f)
             previousRotationStopOrPivot = rotation
             isReadyToSwing = false
+            println("swinging for millis: $swingingForMillis")
+            swingingForMillis = 0f
         }
 
         val rotationSpeed = kotlin.math.abs(dRotation) / dt.milliseconds // slow 0.02 light 0.04 quick
         val pivoting = dRotation > 0f && previousDRotation <= 0f || dRotation <= 0f && previousDRotation > 0f
-        if ((rotationSpeed > 0f && rotationSpeed < 0.002f) || pivoting) {
+        if ((rotationSpeed > 0f && rotationSpeed < 0.005f) || pivoting) {
             previousRotationStopOrPivot = rotation
             isReadyToSwing = true
+            swingingForMillis = 0f
         }
         previousDRotation = dRotation
 
@@ -120,6 +125,8 @@ class Player(
         } else if (input.down(GameInput.PLACE_TRAP) && !input.pressed(GameInput.PLACE_TRAP)) {
             placingTrapForSeconds += dt.seconds
             placingTrap(placingTrapForSeconds, false)
+            isReadyToSwing = false
+            swingingForMillis = 0f
         }
         return true
     }
@@ -169,6 +176,13 @@ class Player(
                 )
             }
         }
+
+        shapeRenderer.filledCircle(
+            x = racketPosition.x,
+            y = racketPosition.y,
+            radius = 3f,
+            color = debugRacketColor
+        )
 
         if (placingTrapForSeconds > 0f) {
             shapeRenderer.filledCircle(

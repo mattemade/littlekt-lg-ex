@@ -19,11 +19,13 @@ class TestBoss(
     private val player: Player,
     private val assets: Assets,
     private val spawn: (Projectile) -> Unit
-): TemporaryDepthRenderableObject {
+) : TemporaryDepthRenderableObject {
 
+    private var damagedForSeconds: Float = 0f
     override val position = MutableVec2f(0f, -100f)
     private var trappedForSeconds = 0f
     private val shadowRadii = Vec2f(10f, 5f)
+    private val damageColor = Color.RED.toFloatBits()
 
     override val solidRadius: Float
         get() = 8f
@@ -32,6 +34,9 @@ class TestBoss(
     private val tempVec2f = MutableVec2f()
 
     override fun update(dt: Duration): Boolean {
+        if (damagedForSeconds > 0f) {
+            damagedForSeconds = maxOf(0f, damagedForSeconds - dt.seconds)
+        }
         if (trappedForSeconds > 0f) {
             trappedForSeconds = maxOf(0f, trappedForSeconds - dt.seconds)
             if (trappedForSeconds > 0f) {
@@ -49,10 +54,12 @@ class TestBoss(
 
             tempVec2f.set(player.position).subtract(position).setLength(5f).rotate(startAngle)
             for (i in 0 until shots) {
-                spawn(Projectile(
-                    position = position.toMutableVec2(),
-                    direction = MutableVec2f(tempVec2f)
-                ))
+                spawn(
+                    Projectile(
+                        position = position.toMutableVec2(),
+                        direction = MutableVec2f(tempVec2f)
+                    )
+                )
                 tempVec2f.rotate(deltaAngle)
             }
 
@@ -62,16 +69,26 @@ class TestBoss(
     }
 
     override fun renderShadow(shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledEllipse(position, shadowRadii, innerColor = Color.BLUE.toFloatBits(), outerColor = Color.BLACK.toFloatBits())
+        shapeRenderer.filledEllipse(
+            position,
+            shadowRadii,
+            innerColor = Color.BLUE.toFloatBits(),
+            outerColor = Color.BLACK.toFloatBits()
+        )
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledCircle(x = position.x, y = position.y - 10f, radius = 10f, color = Color.YELLOW.toFloatBits())
+        shapeRenderer.filledCircle(
+            x = position.x,
+            y = position.y - 10f,
+            radius = 10f,
+            color = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else Color.YELLOW.toFloatBits()
+        )
 
         if (trappedForSeconds > 0f) {
             for (i in 0..2) {
                 tempVec2f.set(10f, 0f)
-                    .rotate((trappedForSeconds*3f + i * PI2_F / 3f).radians)
+                    .rotate((trappedForSeconds * 3f + i * PI2_F / 3f).radians)
                     .scale(1f, 0.5f)
                     .add(-4f, -4f) // offset the middle of the texture
                     .add(position) // offset into character position
@@ -90,4 +107,9 @@ class TestBoss(
         trappedForSeconds += 5f
     }
 
+    fun damaged() {
+        if (damagedForSeconds == 0f) {
+            damagedForSeconds += 0.75f
+        }
+    }
 }

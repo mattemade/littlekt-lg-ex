@@ -11,10 +11,10 @@ import com.littlekt.math.Vec2f
 import com.littlekt.math.geom.radians
 import com.littlekt.util.fastForEach
 import com.littlekt.util.fastIterateRemove
-import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.input.GameInput
+import net.mattemade.bossrush.math.rotateTowards
 import net.mattemade.bossrush.objects.Column
 import net.mattemade.bossrush.objects.Projectile
 import net.mattemade.bossrush.objects.Swing
@@ -40,6 +40,7 @@ class Fight(
         gameObjects.add(this)
         return this
     }
+
     private fun <T : TemporaryDepthRenderableObject> T.solid(): T {
         gameObjects.add(this)
         solidObjects.add(this)
@@ -49,7 +50,7 @@ class Fight(
     private val player by lazy { Player(context, input, assets, ::placingTrap, ::swing).solid() }
     private val arena by lazy {
         Column(MutableVec2f(-50f, 0f), assets).solid()
-        Column(MutableVec2f(50f, 0f), assets).solid()
+        //Column(MutableVec2f(50f, 0f), assets).solid()
         Arena(0f, assets)
     }
     private var shapeRenderer: ShapeRenderer? = null
@@ -109,24 +110,27 @@ class Fight(
                             player.trapped()
                             it.activate()
                         }
-                        if (it.position.distance(testBoss.position) < testBoss.solidRadius + it.solidRadius*3f) {
+                        if (it.position.distance(testBoss.position) < testBoss.solidRadius + it.solidRadius * 3f) {
                             testBoss.trapped()
                             it.activate()
                         }
                     }
                     false // do not remove trap here
                 }
+
                 is Projectile -> {
                     if (it.timeToLive > 0f) {
                         // collision check
                         var collide = false
                         solidObjects.fastForEach { solid ->
-                            if (solid !== testBoss) { // do not collide with boss
+                            if (it.canDamageBoss || solid !== testBoss) { // do not collide with boss if we can't damage
                                 solid.solidRadius?.let { solidRadius ->
                                     if (solid.position.distance(it.position) < solidRadius) {
                                         collide = true
                                         if (solid === player) {
                                             player.damaged()
+                                        } else if (solid === testBoss) {
+                                            testBoss.damaged()
                                         }
                                     }
                                 }
@@ -137,6 +141,7 @@ class Fight(
                         false
                     }
                 }
+
                 else -> false
             }
         }
@@ -162,7 +167,40 @@ class Fight(
     }
 
     private fun swing(angle: Float, clockwise: Boolean, powerful: Boolean) {
-        Swing(player.position, angle, clockwise, assets).save()
+        val swing = Swing(player.position, angle, clockwise, assets, powerful).save()
+        gameObjects.fastForEach {
+            if (it is Projectile) {
+                if (swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius &&
+                    swing.hitBackPosition.distance(it.position) > swing.hitBackRadius
+                ) {
+                    it.canDamageBoss = true
+                    if (powerful) {
+                        tempVec2f.set(it.position).subtract(player.position).rotate((if (clockwise) -PI_F *0.4f else PI_F *0.4f).radians)
+                        it.direction.rotateTowards(tempVec2f)
+                        //var movingDistance = it.position.distance(testBoss.position)
+                        it.target = {
+                            // TODO: think about restricting spinning the opposit direction after passing through the boss
+                            /*val currentDistance = it.position.distance(testBoss.position)
+                            if (currentDistance > movingDistance) {
+                                it.target = null
+                            } else {
+                                movingDistance = currentDistance
+                            }*/
+                            testBoss.position
+                        }
+                    } else {
+                        tempVec2f.set(it.position).subtract(player.position)
+                        it.direction.rotateTowards(tempVec2f)
+                    }
+                }
+            } else if (it is TestBoss) {
+                if (swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius + it.solidRadius &&
+                    swing.hitBackPosition.distance(it.position) > swing.hitBackRadius
+                ) {
+                    it.damaged()
+                }
+            }
+        }
     }
 
     fun updateAndRender(dt: Duration) {
