@@ -16,10 +16,17 @@ enum class GameInput {
     MOVE_DOWN,
     MOVE_VERTICAL, // mapped from UP and DOWN based on axis
 
-    SWING, // either right stick or mouse, how to map that?
+    // right stick only, mouse is controlled separately
+    SWING_LEFT,
+    SWING_RIGHT,
+    SWING_HORIZONTAL,
+
+    SWING_UP,
+    SWING_DOWN,
+    SWING_VERTICAL,
 
     SLOW_MODIFIER,
-    FAST_MODIFIER,
+    //FAST_MODIFIER,
     PLACE_TRAP,
 
     ANY,
@@ -65,29 +72,27 @@ fun Context.bindInputs(): InputMapController<GameInput> =
         )
         addAxis(GameInput.MOVE_VERTICAL, GameInput.MOVE_DOWN, GameInput.MOVE_UP)
 
+        addBinding(GameInput.SWING_RIGHT, axes = listOf(GameAxis.RX),)
+        addBinding(GameInput.SWING_LEFT, axes = listOf(GameAxis.RX),)
+        addAxis(GameInput.SWING_HORIZONTAL, GameInput.SWING_RIGHT, GameInput.SWING_LEFT)
+
+        addBinding(GameInput.SWING_UP, axes = listOf(GameAxis.RY),)
+        addBinding(GameInput.SWING_DOWN, axes = listOf(GameAxis.RY),)
+        addAxis(GameInput.SWING_VERTICAL, GameInput.SWING_DOWN, GameInput.SWING_UP)
+
         addBinding(
             GameInput.PLACE_TRAP,
-            listOf(Key.J, Key.X).any().action(),
-            buttons = listOf(GameButton.XBOX_A, GameButton.XBOX_Y).any().action(),
+            buttons = listOf(GameButton.R1).any().action(),
             // JS configuration is messed up, and right/middle mouse buttons have different codes in browsers
             pointers = listOf(Pointer.MOUSE_RIGHT, Pointer.MOUSE_MIDDLE),
         )
         addBinding(
             GameInput.SLOW_MODIFIER,
-            listOf(Key.SHIFT_LEFT).any().action(),
-            buttons = listOf(GameButton.XBOX_X, GameButton.XBOX_B).any().action()
+            listOf(Key.SHIFT_LEFT, Key.CTRL_RIGHT).any().action(),
+            buttons = listOf(GameButton.L1).any().action()
         )
-
-        addBinding(
-            GameInput.FAST_MODIFIER,
-            listOf(Key.SPACE).any(),
-            buttons = listOf(GameButton.START).any(),
-            pointers = listOf(Pointer.MOUSE_LEFT), // TODO: it will break touch screen compatibility
-        )
-        //addBinding(GameInput.SELECT, listOf(Key.R), buttons = listOf(GameButton.SELECT))
 
         addBinding(GameInput.ANY, anyKey, buttons = anyButton)
-        //addBinding(GameInput.ANY_ACTION, anyActionKey, buttons = anyActionButton)
 
         mode = InputMapController.InputMode.GAMEPAD
 

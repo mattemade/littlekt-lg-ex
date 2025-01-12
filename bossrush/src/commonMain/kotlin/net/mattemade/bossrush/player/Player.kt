@@ -15,11 +15,14 @@ import com.littlekt.math.floorToInt
 import com.littlekt.math.geom.radians
 import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
+import net.mattemade.bossrush.ARENA_RADIUS
 import net.mattemade.bossrush.Assets
+import net.mattemade.bossrush.NO_ROTATION
+import net.mattemade.bossrush.SWING_ANGLE
 import net.mattemade.bossrush.input.GameInput
+import net.mattemade.bossrush.math.minimalRotation
 import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
-import kotlin.math.cos
-import kotlin.math.sin
+import kotlin.math.abs
 import kotlin.time.Duration
 
 class Player(
@@ -28,13 +31,15 @@ class Player(
     private val assets: Assets,
     private val placingTrap: (seconds: Float, released: Boolean) -> Unit,
     private val swing: (angle: Float, clockwise: Boolean, powerful: Boolean) -> Unit,
-): TemporaryDepthRenderableObject {
+) : TemporaryDepthRenderableObject {
 
+    var resources: Int = 0
     var previousPosition = MutableVec2f(0f, 100f)
     override var position = MutableVec2f(0f, 100f)
     var previousRotationStopOrPivot = 0f
     var swingingForMillis = 0f
     var rotation = 0f
+    var relativeRacketPosition = MutableVec2f(0f, 0f)
     var racketPosition = MutableVec2f(0f, 0f)
     var trappedForSeconds = 0f
     var damagedForSeconds = 0f
@@ -59,6 +64,8 @@ class Player(
     private val debugRacketColor = MutableColor(Color.WHITE).withAlpha(0.2f).toFloatBits()
 
     private var placingTrapForSeconds = 0f
+    private val bumpingDirection = MutableVec2f()
+    private var bumpingForSeconds = 0f
 
     private val tempVec2f = MutableVec2f()
 
@@ -75,27 +82,47 @@ class Player(
             damagedForSeconds = maxOf(0f, damagedForSeconds - dt.seconds)
         }
         if (trappedForSeconds > 0f) {
-            trappedForSeconds = maxOf(0f, trappedForSeconds-dt.seconds)
+            trappedForSeconds = maxOf(0f, trappedForSeconds - dt.seconds)
             if (trappedForSeconds > 0f) {
                 return true
             }
         }
-        val dRotation = context.input.deltaX / 200f
+
+        val gamepadSwingHorizontal = input.axis(GameInput.SWING_HORIZONTAL)
+        val gamepadSwingVertical = input.axis(GameInput.SWING_VERTICAL)
+
+        val previousCircleRotation = relativeRacketPosition.angleTo(NO_ROTATION).radians
+        if (gamepadSwingHorizontal != 0f || gamepadSwingVertical != 0f) {
+            relativeRacketPosition.set(gamepadSwingHorizontal, gamepadSwingVertical).scale(20f)
+        } else {
+            relativeRacketPosition.add(context.input.deltaX / 4f, context.input.deltaY / 4f)
+        }
+        if (relativeRacketPosition.length() > 20f) {
+            relativeRacketPosition.setLength(20f)
+        }
+        racketPosition.set(position).add(relativeRacketPosition)
+        circleRotation = relativeRacketPosition.angleTo(NO_ROTATION).radians
+
+        val dRotation = minimalRotation(previousCircleRotation, circleRotation)
+        //val dRotation = context.input.deltaX / 200f
         rotation += dRotation
 
         val swingingAngleDifference = previousRotationStopOrPivot - rotation
-        val absSwingingAngleDifference = kotlin.math.abs(swingingAngleDifference)
+        val absSwingingAngleDifference = abs(swingingAngleDifference)
         swingingForMillis += dt.milliseconds
-        if (isReadyToSwing && absSwingingAngleDifference >= PI_F * 0.75f) {
+        if (isReadyToSwing && absSwingingAngleDifference >= PI_F * SWING_ANGLE) {
             val sign = swingingAngleDifference / absSwingingAngleDifference
-            swing(previousRotationStopOrPivot % PI2_F - sign * PI_F * 0.75f, swingingAngleDifference > 0f, swingingForMillis <= 160f)
+            swing(
+                previousRotationStopOrPivot % PI2_F - sign * PI_F * SWING_ANGLE,
+                swingingAngleDifference > 0f,
+                swingingForMillis <= 120f
+            )
             previousRotationStopOrPivot = rotation
             isReadyToSwing = false
-            println("swinging for millis: $swingingForMillis")
             swingingForMillis = 0f
         }
 
-        val rotationSpeed = kotlin.math.abs(dRotation) / dt.milliseconds // slow 0.02 light 0.04 quick
+        val rotationSpeed = abs(dRotation) / dt.milliseconds // slow 0.02 light 0.04 quick
         val pivoting = dRotation > 0f && previousDRotation <= 0f || dRotation <= 0f && previousDRotation > 0f
         if ((rotationSpeed > 0f && rotationSpeed < 0.005f) || pivoting) {
             previousRotationStopOrPivot = rotation
@@ -108,16 +135,26 @@ class Player(
             .set(input.axis(GameInput.MOVE_HORIZONTAL), input.axis(GameInput.MOVE_VERTICAL))
             .limit(1f)
             .scale(dt.milliseconds / 20f)
-
-        // TODO: check if we bumped into any obstacles on the way, and change the position accordingly
+        if (input.down(GameInput.SLOW_MODIFIER)) {
+            tempVec2f.scale(0.5f)
+        }
         position.add(tempVec2f)
 
-        circleRotation = (rotation % PI2_F + PI2_F) % PI2_F
+        if (bumpingForSeconds > 0f) {
+            bumpingForSeconds = maxOf(0f, bumpingForSeconds - dt.seconds)
+            tempVec2f.set(bumpingDirection).scale(dt.seconds)
+            position.add(tempVec2f)
+        }
+        if (position.length() > ARENA_RADIUS) {
+            position.setLength(ARENA_RADIUS)
+        }
+
+        /*circleRotation = (rotation % PI2_F + PI2_F) % PI2_F
         circleInFront = circleRotation < PI_F
         racketPosition.set(
             position.x + 20f * cos(circleRotation),
             position.y + 20f * sin(circleRotation)
-        )
+        )*/
 
         if (input.released(GameInput.PLACE_TRAP)) {
             placingTrap(placingTrapForSeconds, true)
@@ -157,13 +194,13 @@ class Player(
             width = 32f,
             height = 32f,
             flipX = segment < textureSequence.size,
-            colorBits = if (damagedForSeconds > 0f) damageColor*damagedForSeconds else batch.colorBits,
+            colorBits = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else batch.colorBits,
         )
 
         if (trappedForSeconds > 0f) {
             for (i in 0..2) {
                 tempVec2f.set(10f, 0f)
-                    .rotate((trappedForSeconds*3f + i * PI2_F / 3f).radians)
+                    .rotate((trappedForSeconds * 3f + i * PI2_F / 3f).radians)
                     .scale(1f, 0.5f)
                     .add(-4f, -4f) // offset the middle of the texture
                     .add(position) // offset into character position
@@ -221,13 +258,18 @@ class Player(
     }
 
     fun trapped() {
-        trappedForSeconds += 2f
+        trappedForSeconds = 2f
     }
 
     fun damaged() {
         if (damagedForSeconds == 0f) {
             damagedForSeconds += 0.75f
         }
+    }
+
+    fun bump(from: Vec2f) {
+        bumpingDirection.set(position).subtract(from).setLength(100f)
+        bumpingForSeconds = 0.25f
     }
 
 }

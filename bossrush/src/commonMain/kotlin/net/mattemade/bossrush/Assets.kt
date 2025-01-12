@@ -33,6 +33,16 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val littleStar by "texture/little_star.png".pack()
     val column by "texture/column.png".pack()
 
+    val heartFilled by "texture/hud/heart_filled.png".pack()
+    val heartEmpty by "texture/hud/heart_empty.png".pack()
+
+
+    val clockBg by "texture/hud/clock_bg.png".pack()
+    val clockMinute by "texture/hud/clock_minute.png".pack()
+    val clockHour by "texture/hud/clock_hour.png".pack()
+
+    val mock by "texture/hud/mock.png".pack()
+
     //val sequence by preparePlain(1) { arrayOf(/*down,*/ downRight, right, upRight/*, up*/) }
     //val sequence2 by preparePlain(2) { arrayOf(down, downRight, right, upRight, up) }
 }

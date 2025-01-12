@@ -9,6 +9,7 @@ import com.littlekt.graphics.gl.ClearBufferMask
 import com.littlekt.input.InputProcessor
 import com.littlekt.input.Key
 import com.littlekt.input.Pointer
+import com.littlekt.math.floor
 import com.littlekt.util.milliseconds
 import net.mattemade.bossrush.input.bindInputs
 import net.mattemade.bossrush.scene.Fight
@@ -39,6 +40,9 @@ class Game(
     private var audioReady: Boolean = false
     private var assetsReady: Boolean = false
     private val directRender = DirectRender(context, width = 1920, height = 1080, ::update, ::render)
+    private var offsetX = 0f
+    private var offsetY = 0f
+    private var scale = 0f
 
     private var fpsCheckTimeout: Float = 5000f
     private var framesRenderedInPeriod: Int = 0
@@ -79,6 +83,13 @@ class Game(
             directRender.resize(width, height)
 
             fight.resize(width, height)
+
+            scale = minOf(
+                width.toFloat() / VIRTUAL_WIDTH,
+                height.toFloat() / VIRTUAL_HEIGHT
+            ).floor()
+            offsetX = (width - VIRTUAL_WIDTH * scale) / 2f
+            offsetY = (height - VIRTUAL_HEIGHT * scale) / 2f
         }
 
         onRender { dt ->
@@ -95,7 +106,7 @@ class Game(
             if (focused && assetsReady) {
 
                 fight.updateAndRender(dt)
-                //directRender.render(dt)
+                directRender.render(dt)
 
                 framesRenderedInPeriod++
                 fpsCheckTimeout -= dt.milliseconds
@@ -109,6 +120,7 @@ class Game(
                             zoom = onLowPerformance(false)
                         }
                     }
+                    println("fps: ${framesRenderedInPeriod/5f}")
                     fpsCheckTimeout = 5000f
                     framesRenderedInPeriod = 0
                 }
@@ -120,11 +132,17 @@ class Game(
 
 
     private fun update(duration: Duration, camera: Camera) {
-
+        camera.position.set(
+            directRender.postViewport.width.toFloat() / 2f,
+            directRender.postViewport.height.toFloat() / 2f,
+            0f
+        )
+        camera.update()
     }
 
     private fun render(duration: Duration, batch: Batch) {
-
+        batch.draw(fight.texture, offsetX, offsetY, width = GAME_WIDTH * scale, height = VIRTUAL_HEIGHT * scale, flipY = true)
+        batch.draw(fight.uiTexture, offsetX + GAME_WIDTH * scale, offsetY, width = UI_WIDTH * scale, height = VIRTUAL_HEIGHT * scale, flipY = true)
     }
 
     companion object {
