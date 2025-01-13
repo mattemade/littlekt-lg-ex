@@ -34,6 +34,7 @@ class Player(
 ) : TemporaryDepthRenderableObject {
 
     var resources: Int = 0
+    var hearts: Int = 5
     var previousPosition = MutableVec2f(0f, 100f)
     override var position = MutableVec2f(0f, 100f)
     var previousRotationStopOrPivot = 0f
@@ -263,7 +264,11 @@ class Player(
 
     fun damaged() {
         if (damagedForSeconds == 0f) {
-            damagedForSeconds += 0.75f
+            damagedForSeconds = 0.75f
+            hearts--
+            if (hearts == 0) {
+                // TODO game over, spin the time
+            }
         }
     }
 

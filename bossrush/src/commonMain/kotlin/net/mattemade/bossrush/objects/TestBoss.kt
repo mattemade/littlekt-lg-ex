@@ -29,6 +29,7 @@ class TestBoss(
     private val melee: (angle: Float, clockwise: Boolean) -> Unit,
 ) : TemporaryDepthRenderableObject {
 
+    var health: Float = 1f
     private var damagedForSeconds: Float = 0f
     override val position = MutableVec2f(0f, -100f)
     private var trappedForSeconds = 0f
@@ -224,9 +225,15 @@ class TestBoss(
         elevatingRate = -60f
     }
 
-    fun damaged() {
-        if (damagedForSeconds == 0f) {
-            damagedForSeconds += 0.75f
+    fun damaged(strong: Boolean = false) {
+        if (health == 0f) {
+            return
+        }
+        damagedForSeconds = 0.75f
+        health -= if (strong) 0.1f else 0.05f
+        if (health <= 0f) {
+            health = 0f
+            // TODO: next boss
         }
     }
 }

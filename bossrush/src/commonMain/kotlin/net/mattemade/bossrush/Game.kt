@@ -6,13 +6,19 @@ import com.littlekt.graphics.Camera
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.gl.ClearBufferMask
+import com.littlekt.graphics.shader.ShaderProgram
+import com.littlekt.input.InputMapController
 import com.littlekt.input.InputProcessor
 import com.littlekt.input.Key
 import com.littlekt.input.Pointer
 import com.littlekt.math.floor
 import com.littlekt.util.milliseconds
+import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.input.bindInputs
 import net.mattemade.bossrush.scene.Fight
+import net.mattemade.bossrush.shader.ParticleFragmentShader
+import net.mattemade.bossrush.shader.ParticleVertexShader
+import net.mattemade.bossrush.shader.createParticleShader
 import net.mattemade.utils.releasing.Releasing
 import net.mattemade.utils.releasing.Self
 import net.mattemade.utils.render.DirectRender
@@ -40,6 +46,7 @@ class Game(
     private var audioReady: Boolean = false
     private var assetsReady: Boolean = false
     private val directRender = DirectRender(context, width = 1920, height = 1080, ::update, ::render)
+    lateinit var particleShader: ShaderProgram<ParticleVertexShader, ParticleFragmentShader>
     private var offsetX = 0f
     private var offsetY = 0f
     private var scale = 0f
@@ -47,10 +54,17 @@ class Game(
     private var fpsCheckTimeout: Float = 5000f
     private var framesRenderedInPeriod: Int = 0
 
-    private val input = context.bindInputs()
-    private var fight = Fight(context, input, assets)
+    private val gameInput: InputMapController<GameInput> = context.bindInputs()
+    private lateinit var fight: Fight
 
     override suspend fun Context.start() {
+        particleShader = createParticleShader(
+            vfs["shader/particles.vert.glsl"].readString(),
+            vfs["shader/particles.frag.glsl"].readString()
+        ).also { it.prepare(this) }
+
+        fight =  Fight(context, gameInput, assets, particleShader)
+
         input.addInputProcessor(object : InputProcessor {
             override fun keyDown(key: Key): Boolean {
                 if (!focused) {

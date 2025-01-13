@@ -2,10 +2,9 @@ package net.mattemade.bossrush.scene
 
 import com.littlekt.Context
 import com.littlekt.graphics.Camera
-import com.littlekt.graphics.Color
 import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
-import com.littlekt.graphics.toFloatBits
+import com.littlekt.graphics.shader.ShaderProgram
 import com.littlekt.input.InputMapController
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.PI2_F
@@ -21,18 +20,23 @@ import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.GAME_WIDTH
 import net.mattemade.bossrush.UI_WIDTH
 import net.mattemade.bossrush.VIRTUAL_HEIGHT
-import net.mattemade.bossrush.VIRTUAL_WIDTH
 import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.math.rotateTowards
 import net.mattemade.bossrush.objects.BossMeleeAttack
 import net.mattemade.bossrush.objects.Collectible
 import net.mattemade.bossrush.objects.Column
 import net.mattemade.bossrush.objects.Projectile
+import net.mattemade.bossrush.objects.ReadyBall
 import net.mattemade.bossrush.objects.Swing
 import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import net.mattemade.bossrush.objects.TestBoss
+import net.mattemade.bossrush.objects.TextureParticles
 import net.mattemade.bossrush.objects.Trap
 import net.mattemade.bossrush.player.Player
+import net.mattemade.bossrush.shader.ParticleFragmentShader
+import net.mattemade.bossrush.shader.ParticleVertexShader
+import net.mattemade.bossrush.shader.Particler
+import net.mattemade.utils.math.fill
 import net.mattemade.utils.releasing.Releasing
 import net.mattemade.utils.releasing.Self
 import net.mattemade.utils.render.PixelRender
@@ -42,6 +46,7 @@ class Fight(
     private val context: Context,
     private val input: InputMapController<GameInput>,
     private val assets: Assets,
+    private val particleShader: ShaderProgram<ParticleVertexShader, ParticleFragmentShader>,
 ) : Releasing by Self() {
 
     private val gameObjects = mutableListOf<TemporaryDepthRenderableObject>()
@@ -66,8 +71,6 @@ class Fight(
         Arena(0f, assets)
     }
     private var shapeRenderer: ShapeRenderer? = null
-    private var uiShapeRenderer: ShapeRenderer? = null
-
 
     private val testBoss by lazy {
         TestBoss(player, assets, { it.save() }, ::spawnCollectible, ::bossMeleeAttack).solid()
@@ -88,22 +91,8 @@ class Fight(
         clear = true,
     )
     val texture = gameRenderer.texture
-    private var uiRenderer = PixelRender(
-        context,
-        targetWidth = UI_WIDTH,
-        targetHeight = VIRTUAL_HEIGHT,
-        preRenderCall = { dt, camera ->
-            camera.position.set(UI_WIDTH / 2f, VIRTUAL_HEIGHT / 2f, 0f)
-            camera.update()
-        },
-        renderCall = { dt, camera, batch ->
-            renderUi(batch)
-        },
-        worldWidth = UI_WIDTH,
-        worldHeight = VIRTUAL_HEIGHT,
-        clear = true,
-    )
-    val uiTexture = uiRenderer.texture
+    val hud by lazy { Hud(context, particleShader, assets, player, testBoss) }
+    val uiTexture by lazy { hud.uiTexture }
 
     private val tempVec2f = MutableVec2f()
 
@@ -212,30 +201,19 @@ class Fight(
         }
     }
 
-    private fun renderUi(batch: Batch) {
-        (uiShapeRenderer ?: ShapeRenderer(batch).also { uiShapeRenderer = it }).let { shapeRenderer ->
-
-            for (i in 0..3) {
-                batch.draw(if (i == 3) assets.texture.heartEmpty else assets.texture.heartFilled, x = 10f + 9f * i, y = 7f, width = 8f, height = 6f)
-            }
-
-            batch.draw(assets.texture.clockBg, x = 24f, y = 24f, width = 57f, height = 57f)
-            val totalMinutes = absoluteTime// * 20f
-            val minutes = totalMinutes % 60f
-            val hours = totalMinutes / 60f
-            val minutesRotation = minutes * PI2_F / 60f// + PI_F/2f
-            val hoursRotation = hours * PI2_F / 4f// + PI_F/2f
-            tempVec2f.set(-57f / 2f, -57 / 2f).rotate(hoursRotation.radians)
-            batch.draw(assets.texture.clockHour, x = 24f + 57 / 2f + tempVec2f.x, y = 24f + 57f / 2f + tempVec2f.y, width = 57f, height = 57f, rotation = hoursRotation.radians)
-            tempVec2f.set(-57f / 2f, -57 / 2f).rotate(minutesRotation.radians)
-            batch.draw(assets.texture.clockMinute, x = 24f + 57 / 2f + tempVec2f.x, y = 24f + 57f / 2f + tempVec2f.y, width = 57f, height = 57f, rotation = minutesRotation.radians)
-            batch.draw(assets.texture.mock, x = 0f, y = 90f, width = 100f, height = 150f)
-        }
-    }
-
     private fun placingTrap(seconds: Float, place: Boolean) {
         if (place) {
-            Trap(MutableVec2f(player.racketPosition), assets).save()
+            if (seconds >= 2f && player.resources >= 10) {
+                // heal
+                player.resources -= 10
+                player.hearts = maxOf(5, player.hearts + 1)
+                // TODO: play healing animation
+            } else if (seconds >= 1f && player.resources >= 5) {
+                player.resources -= 10
+                Trap(MutableVec2f(player.racketPosition), assets).save()
+            } else if (seconds >= 0f && player.resources >= 2) {
+                ReadyBall(MutableVec2f(player.racketPosition)).save()
+            }
         }
     }
 
@@ -263,8 +241,25 @@ class Fight(
                 if (it.elevation < 20f && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius + it.solidRadius &&
                     swing.hitBackPosition.distance(it.position) > swing.hitBackRadius
                 ) {
-                    it.damaged()
+                    it.damaged(strong = powerful)
                 }
+            } else if (it is ReadyBall && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius &&
+                swing.hitBackPosition.distance(it.position) > swing.hitBackRadius) {
+                gameObjects.remove(it)
+                tempVec2f.set(it.position).subtract(player.position)
+                    .rotate((if (clockwise) -PI_F * 0.4f else PI_F * 0.4f).radians)
+                Projectile(
+                    position = it.position.toMutableVec2(),
+                    direction = MutableVec2f(200f, 0f).also { it.rotateTowards(tempVec2f) },
+                    elevation = it.elevation,
+                    elevationRate = 120f,
+                    spawnCollectible = ::spawnCollectible,
+                ).also{
+                    it.target = { testBoss.position }
+                    it.targetElevation = { testBoss.elevation }
+                    it.angularSpeedScale = 1f
+                    it.canDamageBoss = true
+                }.save()
             }
         }
     }
@@ -287,7 +282,7 @@ class Fight(
     fun updateAndRender(dt: Duration) {
         absoluteTime += dt.seconds
         gameRenderer.render(dt)
-        uiRenderer.render(dt)
+        hud.updateAndRender(dt)
     }
 
     fun resize(width: Int, height: Int) {
