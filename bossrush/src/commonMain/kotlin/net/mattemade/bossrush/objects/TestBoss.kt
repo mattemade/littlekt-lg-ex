@@ -120,7 +120,7 @@ class TestBoss(
                     position = position.toMutableVec2(),
                     direction = MutableVec2f(tempVec2f),
                     elevation = elevation,
-                    elevationRate = -elevation/reachingInSeconds * 0.85f, // to make them fly a bit longer,
+                    elevationRate = -elevation/reachingInSeconds * 0.7f, // to make them fly a bit longer,
                     spawnCollectible = spawnCollectible,
                 )
             )

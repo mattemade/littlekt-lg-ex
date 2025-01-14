@@ -15,6 +15,7 @@ class Projectile(
     val direction: MutableVec2f = MutableVec2f(),
     var elevation: Float = 6f,
     var elevationRate: Float = 0f,
+    var gravity: Float = 0f,
     val spawnCollectible: (Projectile) -> Unit
 ): TemporaryDepthRenderableObject {
 
@@ -32,6 +33,7 @@ class Projectile(
         targetElevation?.invoke()?.let { targetElevation ->
             elevation += (targetElevation - elevation) * dt.seconds
         } ?: run {
+            elevationRate -= gravity * dt.seconds
             elevation += elevationRate * dt.seconds
             if (elevation <= 0f) {
                 spawnCollectible(this)

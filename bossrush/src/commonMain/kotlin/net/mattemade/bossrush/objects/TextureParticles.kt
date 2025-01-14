@@ -7,6 +7,7 @@ import com.littlekt.graphics.g2d.TextureSlice
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.shader.ShaderProgram
 import com.littlekt.math.Vec2f
+import com.littlekt.math.clamp
 import net.mattemade.bossrush.shader.ParticleFragmentShader
 import net.mattemade.bossrush.shader.ParticleVertexShader
 import net.mattemade.bossrush.shader.Particler
@@ -83,13 +84,16 @@ class TextureParticles(
         }
     )
 
+    fun addToTime(value: Float) {
+        particler.time = (particler.time + value).clamp(0f, timeToLive)
+    }
+
     override fun update(dt: Duration): Boolean {
         particler.update(dt)
         return !completed
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
-        println("rendering particles")
         particler.render(batch)
     }
 

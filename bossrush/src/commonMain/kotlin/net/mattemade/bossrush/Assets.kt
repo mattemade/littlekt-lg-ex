@@ -26,6 +26,8 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val swingLight by "texture/swing_light.png".pack()
     val swingStrong by "texture/swing_strong.png".pack()
 
+    val robot by "texture/character/mc_bot_sprites-static.png".pack()
+
 
     val arena by "texture/arena.png".pack()
     val trap by "texture/trap.png".pack()

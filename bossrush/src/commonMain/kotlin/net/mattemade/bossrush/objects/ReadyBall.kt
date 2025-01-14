@@ -29,7 +29,7 @@ class ReadyBall(
     }
 
     override fun displace(displacement: Vec2f) {
-        //position.add(displacement)
+        position.add(displacement)
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {

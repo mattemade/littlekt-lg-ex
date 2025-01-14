@@ -8,13 +8,11 @@ import com.littlekt.math.MutableVec2f
 import com.littlekt.math.PI2_F
 import com.littlekt.math.Vec2f
 import com.littlekt.math.geom.radians
-import com.littlekt.util.fastForEach
-import com.littlekt.util.fastIterateRemove
+import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.UI_WIDTH
 import net.mattemade.bossrush.VIRTUAL_HEIGHT
-import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import net.mattemade.bossrush.objects.TestBoss
 import net.mattemade.bossrush.objects.TextureParticles
 import net.mattemade.bossrush.player.Player
@@ -58,80 +56,47 @@ class Hud(
         uiRenderer.render(dt)
     }
 
-    private var wasHearts = player.hearts
-    private val temporaryObjects = mutableListOf<TemporaryDepthRenderableObject>()
-
     val halfWidth = assets.texture.heartFilled.width / 2f
     val halfHeight = assets.texture.heartFilled.height / 2f
 
+    private val heartTextures = Array(5) { index ->
+        val startX = 10f + 9f * index
+        val startY = 7f
+        TextureParticles(
+            context,
+            particleShader,
+            assets.texture.heartFilled,
+            position = Vec2f(startX, startY),
+            activeFrom = { _, _ -> 0f },
+            activeTo = { _, _ -> 500f },
+            setEndColor = { a = 0f },
+            timeToLive = 500f,
+            interpolation = 3,
+            setEndPosition = { x, y ->
+                fill(
+                    startX + halfWidth - (halfWidth - x - 0.5f)*5f,
+                    startY + halfHeight - (halfHeight - y - 0.5f)*5f,
+                )
+            }
+        )
+    }
+
     private fun renderUi(dt: Duration, batch: Batch) {
-        temporaryObjects.fastIterateRemove {
-            !it.update(dt)
-        }
         (uiShapeRenderer ?: ShapeRenderer(batch).also { uiShapeRenderer = it }).let { shapeRenderer ->
 
-            drawFilledHearts(batch, player.hearts)
-            if (wasHearts > player.hearts) {
-                for (i in (wasHearts-1) downTo player.hearts) {
-                    val startX = 10f + 9f * i
-                    val startY = 7f
-                    temporaryObjects += TextureParticles(
-                        context,
-                        particleShader,
-                        assets.texture.heartFilled,
-                        position = Vec2f(startX, startY),
-                        activeFrom = { _, _ -> 0f },
-                        activeTo = { _, _ -> 500f },
-                        setEndColor = { a = 0f },
-                        timeToLive = 500f,
-                        interpolation = 3,
-                        setEndPosition = { x, y ->
-                            fill(
-                                startX + halfWidth - (halfWidth - x - 0.5f)*5f,
-                                startY + halfHeight - (halfHeight - y - 0.5f)*5f,
-                            )
-                        }
-                        /*setStartPosition = { x, y ->
-                            fill(
-                                startX + halfWidth - (halfWidth - x - 0.5f)*5f,
-                                startY + halfHeight - (halfHeight - y - 0.5f)*5f,
-                            )
-                        },
-                        setEndPosition = {x, y ->
-                            fill(
-                                startX + x * 2f,
-                                startY + y * 2f,
-                            )
-                        }*/
-                    )
-                }
-            }/* else if (wasHearts < player.hearts) {
-                for (i in (wasHearts) until player.hearts) {
-                    val startX = 10f + 9f * i
-                    val startY = 7f
-                    temporaryObjects += TextureParticles(
-                        context,
-                        particleShader,
-                        assets.texture.heartFilled,
-                        position = Vec2f(startX, startY),
-                        activeFrom = { _, _ -> 0f },
-                        activeTo = { _, _ -> 500f },
-                        setEndColor = { a = 0f },
-                        timeToLive = 500f,
-                        interpolation = 3,
-                        setEndPosition = { x, y ->
-                            fill(
-                                startX + halfWidth - (halfWidth - x - 0.5f)*5f,
-                                startY + halfHeight - (halfHeight - y - 0.5f)*5f,
-                            )
-                        }
-                    )
-                }
-                drawFilledHearts(batch, wasHearts)
-            } else {
+            for (i in 0..4) {
+                batch.draw(
+                    assets.texture.heartEmpty,
+                    x = 10f + 9f * i,
+                    y = 7f,
+                    width = 8f,
+                    height = 6f
+                )
 
-            }*/
-            wasHearts = player.hearts
+                val heartTexture = heartTextures[i]
+                heartTexture.addToTime(if (player.hearts > i) -dt.milliseconds else dt.milliseconds)
+                heartTexture.render(batch, shapeRenderer)
+            }
 
             batch.draw(assets.texture.clockBg, x = 24f, y = 24f, width = 57f, height = 57f)
             val bossNumber = 1
@@ -159,8 +124,6 @@ class Hud(
                 rotation = minutesRotation.radians
             )
             batch.draw(assets.texture.mock, x = 0f, y = 90f, width = 100f, height = 150f)
-
-            temporaryObjects.fastForEach { it.render(batch, shapeRenderer) }
         }
     }
 

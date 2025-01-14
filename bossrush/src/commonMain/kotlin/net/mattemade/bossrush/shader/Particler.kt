@@ -92,7 +92,7 @@ class Particler(
         activeBetween = BoundableBuffer(context, activeBetweenArray, 2, instanced = true)
     }
 
-    private var time = 0f
+    var time = 0f
 
     fun render(batch: Batch) {
         val originalMatrix = batch.projectionMatrix

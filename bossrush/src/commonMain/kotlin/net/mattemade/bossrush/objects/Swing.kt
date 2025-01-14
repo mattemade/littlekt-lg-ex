@@ -37,8 +37,8 @@ class Swing(
         add(playerPosition)
     }.toVec2()
     override val position: Vec2f = MutableVec2f().apply {
-        set(60f - texture.height, -texture.width / 2f)
-        rotate(playerRotation.radians)
+        set(-texture.width/2f, -texture.height / 2f - 20f)
+        rotate((playerRotation + PI_F/2f).radians)
         add(playerPosition)
     }.toVec2()
 
@@ -53,7 +53,7 @@ class Swing(
         batch.draw(
             texture,
             x = position.x,
-            y = position.y - 8f,
+            y = position.y,
             width = texture.width.toFloat(),
             height = texture.height.toFloat(),
             rotation = (playerRotation + PI_F/2f).radians,

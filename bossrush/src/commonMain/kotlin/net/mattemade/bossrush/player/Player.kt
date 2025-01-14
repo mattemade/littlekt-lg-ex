@@ -33,7 +33,7 @@ class Player(
     private val swing: (angle: Float, clockwise: Boolean, powerful: Boolean) -> Unit,
 ) : TemporaryDepthRenderableObject {
 
-    var resources: Int = 0
+    var resources: Int = 1000
     var hearts: Int = 5
     var previousPosition = MutableVec2f(0f, 100f)
     override var position = MutableVec2f(0f, 100f)
@@ -51,11 +51,12 @@ class Player(
     var isReadyToSwing = true
     var previousDRotation = 0f
 
-    private val shadowRadii = Vec2f(4f, 2f)
+    private val shadowRadii = Vec2f(10f, 5f)
     private var circleInFront: Boolean = false
     private var circleRotation: Float = 0f
-    private val textureSequence = listOf(assets.texture.downRight, assets.texture.right, assets.texture.upRight)
-    private val positions = textureSequence.size * 2
+    private val textureSlices = assets.texture.robot.slice(sliceWidth = 40, sliceHeight = 34)[0]
+    private val textureSequence = listOf(1, 0, 7, 6, 4, 3, 2).map { textureSlices[it] }
+    private val positions = textureSequence.size/* * 2*/
 
     //private val positions2 = assets.texture.sequence2.size * 2
     private val radInSegment = PI2_F / positions
@@ -186,15 +187,14 @@ class Player(
         )
         if (circleInFront) drawCircle(shapeRenderer)*/
 
-        val segment = (((circleRotation - PI_F / 2f) / radInSegment).floorToInt() % positions + positions) % positions
-        val index = if (segment >= textureSequence.size) (positions - 1 - segment) else segment
+        val segment = ((circleRotation / radInSegment).floorToInt() % positions + positions) % positions
         batch.draw(
-            textureSequence[index],
-            x = position.x - 16f,
+            textureSequence[segment],
+            x = position.x - 20f,
             y = position.y - 30f,
-            width = 32f,
-            height = 32f,
-            flipX = segment < textureSequence.size,
+            width = 40f,
+            height = 34f,
+            flipX = false,
             colorBits = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else batch.colorBits,
         )
 

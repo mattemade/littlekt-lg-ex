@@ -231,7 +231,7 @@ class Fight(
                         it.direction.scale(1.25f).rotateTowards(tempVec2f)
                         it.target = testBoss::position
                         it.targetElevation = testBoss::elevation
-                        it.angularSpeedScale = 2f
+                        it.angularSpeedScale = 1f
                     } else {
                         tempVec2f.set(it.position).subtract(player.position)
                         it.direction.rotateTowards(tempVec2f)
@@ -274,7 +274,7 @@ class Fight(
                 position = projectile.position.toMutableVec2(),
                 direction = projectile.direction.toMutableVec2().scale(0.5f),
                 elevation = projectile.elevation,
-                targetElevation = 6f,
+                //targetElevation = 6f,
             ).solid()
         }
     }
