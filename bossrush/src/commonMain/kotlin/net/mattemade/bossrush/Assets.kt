@@ -2,6 +2,7 @@ package net.mattemade.bossrush
 
 import com.littlekt.Context
 import com.littlekt.PreparableGameAsset
+import com.littlekt.file.vfs.readTexture
 import com.littlekt.graphics.g2d.TextureSlice
 import net.mattemade.utils.asset.AssetPack
 import net.mattemade.utils.atlas.RuntimeTextureAtlasPacker
@@ -44,6 +45,8 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val clockHour by "texture/hud/clock_hour.png".pack()
 
     val mock by "texture/hud/mock.png".pack()
+    val xviii by prepare { context.vfs["texture/xviii.png"].readTexture() }
+    val title by prepare { context.vfs["texture/title.png"].readTexture() }
 
     //val sequence by preparePlain(1) { arrayOf(/*down,*/ downRight, right, upRight/*, up*/) }
     //val sequence2 by preparePlain(2) { arrayOf(down, downRight, right, upRight, up) }

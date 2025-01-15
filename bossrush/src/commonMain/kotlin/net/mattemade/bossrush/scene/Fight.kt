@@ -7,7 +7,6 @@ import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.shader.ShaderProgram
 import com.littlekt.input.InputMapController
 import com.littlekt.math.MutableVec2f
-import com.littlekt.math.PI2_F
 import com.littlekt.math.PI_F
 import com.littlekt.math.Vec2f
 import com.littlekt.math.geom.radians
@@ -18,8 +17,8 @@ import com.littlekt.util.seconds
 import net.mattemade.bossrush.ARENA_RADIUS
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.GAME_WIDTH
-import net.mattemade.bossrush.UI_WIDTH
 import net.mattemade.bossrush.VIRTUAL_HEIGHT
+import net.mattemade.bossrush.input.ControllerInput
 import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.math.rotateTowards
 import net.mattemade.bossrush.objects.BossMeleeAttack
@@ -30,13 +29,10 @@ import net.mattemade.bossrush.objects.ReadyBall
 import net.mattemade.bossrush.objects.Swing
 import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import net.mattemade.bossrush.objects.TestBoss
-import net.mattemade.bossrush.objects.TextureParticles
 import net.mattemade.bossrush.objects.Trap
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleFragmentShader
 import net.mattemade.bossrush.shader.ParticleVertexShader
-import net.mattemade.bossrush.shader.Particler
-import net.mattemade.utils.math.fill
 import net.mattemade.utils.releasing.Releasing
 import net.mattemade.utils.releasing.Self
 import net.mattemade.utils.render.PixelRender
@@ -44,7 +40,7 @@ import kotlin.time.Duration
 
 class Fight(
     private val context: Context,
-    private val input: InputMapController<GameInput>,
+    private val input: GameInput,
     private val assets: Assets,
     private val particleShader: ShaderProgram<ParticleVertexShader, ParticleFragmentShader>,
 ) : Releasing by Self() {
