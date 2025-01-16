@@ -13,7 +13,6 @@ import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.UI_WIDTH
 import net.mattemade.bossrush.VIRTUAL_HEIGHT
-import net.mattemade.bossrush.objects.TestBoss
 import net.mattemade.bossrush.objects.TextureParticles
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleFragmentShader
@@ -27,7 +26,7 @@ class Hud(
     private val particleShader: ShaderProgram<ParticleVertexShader, ParticleFragmentShader>,
     private val assets: Assets,
     private val player: Player,
-    private val boss: TestBoss,
+    private val bossHealth: () -> Float,
 ) {
 
     private var uiRenderer = PixelRender(
@@ -50,6 +49,7 @@ class Hud(
     private var uiShapeRenderer: ShapeRenderer? = null
     private var absoluteTime: Float = 0f
     private val tempVec2f = MutableVec2f()
+    var currentHour = 0
 
     fun updateAndRender(dt: Duration) {
         absoluteTime += dt.seconds
@@ -99,10 +99,10 @@ class Hud(
             }
 
             batch.draw(assets.texture.clockBg, x = 24f, y = 24f, width = 57f, height = 57f)
-            val bossNumber = 1
-            val totalMinutes = bossNumber * 60 + (1 - boss.health) * 60// absoluteTime// * 20f
-            val minutes = totalMinutes % 60f
-            val hours = totalMinutes / 60f
+            //val bossNumber = 1
+            val totalMinutes = currentHour * 60 + (1 - bossHealth()) * 60// absoluteTime// * 20f
+            val minutes = (1 - bossHealth()) * 60f
+            val hours = currentHour + minutes / 60f
             val minutesRotation = minutes * PI2_F / 60f// + PI_F/2f
             val hoursRotation = hours * PI2_F / 4f// + PI_F/2f
             tempVec2f.set(-57f / 2f, -57 / 2f).rotate(hoursRotation.radians)

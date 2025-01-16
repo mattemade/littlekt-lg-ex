@@ -10,7 +10,7 @@ import net.mattemade.bossrush.Assets
 import kotlin.math.sqrt
 import kotlin.time.Duration
 
-class Arena(private var rotation: Float = 0f, private val assets: Assets) {
+class Arena(var rotation: Float = 0f, private val assets: Assets) {
 
     private val textureSize = Vec2f(assets.texture.arena.width.toFloat(), assets.texture.arena.height.toFloat())
     private val startPosition = Vec2f(-assets.texture.arena.width / 2f, -assets.texture.arena.height / 2f)

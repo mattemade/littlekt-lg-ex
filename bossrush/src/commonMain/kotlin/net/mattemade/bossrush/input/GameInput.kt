@@ -38,7 +38,7 @@ class GameInput(private val context: Context, private val input: InputMapControl
             cursorPosition.setLength(20f)
         }
 
-        if (length < 10f) {
+        if (length < 4f) {
             rotation = previousRotation
             dRotation = 0f
             cursorCentered = true

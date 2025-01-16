@@ -6,7 +6,6 @@ import com.littlekt.graphics.MutableColor
 import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.toFloatBits
-import com.littlekt.input.InputMapController
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.PI2_F
 import com.littlekt.math.PI_F
@@ -17,9 +16,7 @@ import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.ARENA_RADIUS
 import net.mattemade.bossrush.Assets
-import net.mattemade.bossrush.NO_ROTATION
 import net.mattemade.bossrush.SWING_ANGLE
-import net.mattemade.bossrush.input.ControllerInput
 import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.math.minimalRotation
 import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
@@ -249,7 +246,7 @@ class Player(
         }
     }
 
-    fun bump(from: Vec2f) {
+    fun bumpFrom(from: Vec2f) {
         bumpingDirection.set(position).subtract(from).setLength(100f)
         bumpingForSeconds = 0.25f
     }

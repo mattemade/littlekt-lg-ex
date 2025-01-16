@@ -48,6 +48,12 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val xviii by prepare { context.vfs["texture/xviii.png"].readTexture() }
     val title by prepare { context.vfs["texture/title.png"].readTexture() }
 
+    val cogwheelTurn0 by "texture/cogwheel/turn_0.png".pack()
+    val cogwheelTurn1 by "texture/cogwheel/turn_1.png".pack()
+    val cogwheelTurn2 by "texture/cogwheel/turn_2.png".pack()
+
+    val spikeBall by "texture/spikeball.png".pack()
+
     //val sequence by preparePlain(1) { arrayOf(/*down,*/ downRight, right, upRight/*, up*/) }
     //val sequence2 by preparePlain(2) { arrayOf(down, downRight, right, upRight, up) }
 }

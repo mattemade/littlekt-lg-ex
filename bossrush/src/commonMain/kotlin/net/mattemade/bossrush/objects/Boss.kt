@@ -21,17 +21,17 @@ import kotlin.time.Duration
 typealias Program = List<Pair<Float, () -> Unit>>
 typealias State = List<Pair<Float, Program>>
 
-class TestBoss(
+class Boss(
     private val player: Player,
     private val assets: Assets,
     private val spawn: (Projectile) -> Unit,
     private val spawnCollectible: (Projectile) -> Unit,
-    private val melee: (angle: Float, clockwise: Boolean) -> Unit,
+    private val melee: (position: Vec2f, angle: Float, clockwise: Boolean) -> Unit,
+    override val position: MutableVec2f = MutableVec2f(0f, -100f),
+    var health: Float = 1f,
 ) : TemporaryDepthRenderableObject {
 
-    var health: Float = 1f
     private var damagedForSeconds: Float = 0f
-    override val position = MutableVec2f(0f, -100f)
     private var trappedForSeconds = 0f
     private var meleeCooldown = 0f
     private val shadowRadii = Vec2f(10f, 5f)
@@ -170,9 +170,9 @@ class TestBoss(
 
         if (meleeCooldown == 0f && elevation < 30f && position.distance(player.position) < solidRadius + player.solidRadius + 40f) {
             player.damaged()
-            player.bump(position)
+            player.bumpFrom(position)
             tempVec2f.set(player.position).subtract(position)
-            melee(tempVec2f.angleTo(NO_ROTATION).radians, false)
+            melee(position, tempVec2f.angleTo(NO_ROTATION).radians, false)
             meleeCooldown = 2f
         }
         return true
@@ -226,14 +226,14 @@ class TestBoss(
     }
 
     fun damaged(strong: Boolean = false) {
-        if (health == 0f) {
+        /*if (health == 0f) {
             return
-        }
+        }*/
         damagedForSeconds = 0.75f
         health -= if (strong) 0.1f else 0.05f
-        if (health <= 0f) {
+        /*if (health <= 0f) {
             health = 0f
             // TODO: next boss
-        }
+        }*/
     }
 }

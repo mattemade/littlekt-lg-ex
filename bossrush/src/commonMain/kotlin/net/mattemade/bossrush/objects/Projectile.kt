@@ -22,7 +22,7 @@ class Projectile(
     var timeToLive = 10f
     private val shadowRadii = Vec2f(2f, 1f)
     private val tempVec2f = MutableVec2f()
-    var target: (() -> Vec2f)? = null
+    var target: (() -> Vec2f?)? = null
     var targetElevation: (() -> Float)? = null
     var angularSpeedScale = 1f
     var canDamageBoss: Boolean = false

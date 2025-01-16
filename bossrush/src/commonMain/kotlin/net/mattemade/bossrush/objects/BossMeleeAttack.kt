@@ -11,7 +11,7 @@ import net.mattemade.bossrush.Assets
 import kotlin.time.Duration
 
 class BossMeleeAttack(
-    private val bossPosition: MutableVec2f,
+    private val bossPosition: Vec2f,
     private val hitRotation: Float,
     private val clockwise: Boolean,
     private val assets: Assets,
