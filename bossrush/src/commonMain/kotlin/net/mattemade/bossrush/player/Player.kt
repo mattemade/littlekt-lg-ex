@@ -32,12 +32,15 @@ class Player(
     private val swing: (angle: Float, clockwise: Boolean, powerful: Boolean) -> Unit,
 ) : TemporaryDepthRenderableObject {
 
-    var resources: Int = 1000
+    var resources: Int = 0
+        set(value) {
+            field = minOf(value, 12)
+        }
     var hearts: Int = 5
     var dizziness: Float = 0f
     var dizzy: Boolean = false
-    var previousPosition = MutableVec2f(0f, 100f)
-    override var position = MutableVec2f(0f, 100f)
+    override var position = MutableVec2f(0f, -80f)
+    var previousPosition = position.toMutableVec2()
     var previousRotationStopOrPivot = 0f
     var swingingForMillis = 0f
     //var rotation = 0f
@@ -66,7 +69,10 @@ class Player(
     private val debugCharacterColor = MutableColor(Color.BLUE).withAlpha(0.2f).toFloatBits()
     private val debugRacketColor = MutableColor(Color.WHITE).withAlpha(0.8f).toFloatBits()
 
-    private var placingTrapForSeconds = 0f
+    var placingTrapForSeconds = 0f
+        set(value) {
+            field = minOf(value, if (resources >= 10) 2.99f else if (resources >= 5) 1.99f else if (resources >= 2f) 0.99f else 0f)
+        }
     private val bumpingDirection = MutableVec2f()
     private var bumpingForSeconds = 0f
 
@@ -234,6 +240,7 @@ class Player(
 
     fun trapped() {
         trappedForSeconds = 2f
+        placingTrapForSeconds = 0f
     }
 
     fun damaged() {

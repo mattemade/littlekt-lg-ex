@@ -3,20 +3,18 @@ package net.mattemade.bossrush.shader
 import com.littlekt.Context
 import com.littlekt.graphics.GL
 import com.littlekt.graphics.g2d.Batch
-import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.gl.BlendFactor
 import com.littlekt.graphics.gl.State
 import com.littlekt.graphics.shader.ShaderProgram
-import com.littlekt.math.Vec2f
+import com.littlekt.math.MutableVec2f
 import com.littlekt.util.milliseconds
-import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import net.mattemade.bossrush.shader.representation.BoundableBuffer
 import kotlin.time.Duration
 
 class Particler(
     private val context: Context,
     private val shader: ShaderProgram<ParticleVertexShader, ParticleFragmentShader>,
-    val position: Vec2f,
+    val position: MutableVec2f,
     private val instances: Int,
     private val lifeTime: Float,
     private val size: Float,
@@ -109,9 +107,16 @@ class Particler(
         shader.uProjTrans?.apply(shader, originalMatrix)
         shader.vertexShader.uTime.apply(shader, time)
         shader.vertexShader.uInterpolation.apply(shader, interpolation)
+        shader.vertexShader.uOffsetX.apply(shader, position.x * 2f)
+        shader.vertexShader.uOffsetY.apply(shader, position.y * 2f)
 
         context.gl.enable(State.BLEND)
-        context.gl.blendFuncSeparate(BlendFactor.SRC_ALPHA,  BlendFactor.ONE_MINUS_SRC_ALPHA, BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        context.gl.blendFuncSeparate(
+            BlendFactor.SRC_ALPHA,
+            BlendFactor.ONE_MINUS_SRC_ALPHA,
+            BlendFactor.SRC_ALPHA,
+            BlendFactor.ONE_MINUS_SRC_ALPHA
+        )
         context.gl.drawArraysInstanced(
             GL.TRIANGLE_STRIP,
             0,             // offset

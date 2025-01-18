@@ -6,7 +6,7 @@ import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.TextureSlice
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.shader.ShaderProgram
-import com.littlekt.math.Vec2f
+import com.littlekt.math.MutableVec2f
 import com.littlekt.math.clamp
 import net.mattemade.bossrush.shader.ParticleFragmentShader
 import net.mattemade.bossrush.shader.ParticleVertexShader
@@ -19,18 +19,19 @@ class TextureParticles(
     val context: Context,
     val particleShader: ShaderProgram<ParticleVertexShader, ParticleFragmentShader>,
     val slice: TextureSlice,
-    override val position: Vec2f,
+    override val position: MutableVec2f,
     val activeFrom: (x: Int, y: Int) -> Float,
-    val activeTo: (x: Int, y: Int) -> Float,
+    val activeFor: (x: Int, y: Int) -> Float,
     val timeToLive: Float,
     val doubles: Int = 1,
     val interpolation: Int = 1,
-    val doublePosition: Vec2f = position.toMutableVec2().scale(2f).toVec2(),
+    //val doublePosition: Vec2f = position.toMutableVec2().scale(2f).toVec2(),
+    val setStartColor: MutableColor.() -> Unit = {},
     val setEndColor: MutableColor.() -> Unit = {},
     val setStartPosition: FloatArray.(x: Int, y: Int) -> Unit = { x, y ->
         fill(
-            doublePosition.x + x * 2,
-            doublePosition.y + y * 2,
+            /*doublePosition.x + */x * 2f,
+            /*doublePosition.y + */y * 2f,
         )
     },
     val setEndPosition: FloatArray.(x: Int, y: Int) -> Unit,
@@ -39,6 +40,8 @@ class TextureParticles(
     val width = slice.width
     val height = slice.height
     val textureData = slice.texture.textureData
+    val liveFactor: Float
+        get() = particler.time / timeToLive
     private val tempColor = MutableColor()
 
     private fun FloatArray.fill(vararg value: Float) {
@@ -51,7 +54,7 @@ class TextureParticles(
     private val particler = Particler(
         context,
         particleShader,
-        doublePosition,
+        position,
         width * height * doubles,
         timeToLive,
         2f,
@@ -68,6 +71,7 @@ class TextureParticles(
                 activeBetween.fill(0f)
             } else {
                 tempColor.setRgba8888(pixelColor)
+                setStartColor(tempColor)
                 startColor.fill(tempColor.r, tempColor.g, tempColor.b, tempColor.a)
                 setEndColor(tempColor)
                 endColor.fill(tempColor.r, tempColor.g, tempColor.b, tempColor.a)
@@ -76,7 +80,7 @@ class TextureParticles(
                 endPosition[0] *= 2f
                 endPosition[1] *= 2f
                 activeBetween[0] = activeFrom(x, y)
-                activeBetween[1] = activeTo(x, y)
+                activeBetween[1] = activeBetween[0] + activeFor(x, y)
             }
         },
         die = {

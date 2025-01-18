@@ -43,6 +43,8 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val clockBg by "texture/hud/clock_bg.png".pack()
     val clockMinute by "texture/hud/clock_minute.png".pack()
     val clockHour by "texture/hud/clock_hour.png".pack()
+    val resource by "texture/hud/resource.png".pack()
+    val selector by "texture/hud/selector.png".pack()
 
     val mock by "texture/hud/mock.png".pack()
     val xviii by prepare { context.vfs["texture/xviii.png"].readTexture() }

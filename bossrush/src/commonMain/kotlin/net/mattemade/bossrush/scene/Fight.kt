@@ -100,6 +100,11 @@ class Fight(
     val uiTexture by lazy { hud.uiTexture }
 
     private val tempVec2f = MutableVec2f()
+    private val cameraStart = MutableVec2f()
+    private val cameraTarget = MutableVec2f()
+    private var cameraTime: Float = 2f
+    private var cameraMaxTime: Float = 2f
+    private var cameraFactor: Float = 1f
 
     private fun getDisplacementAt(position: Vec2f, dt: Duration): Vec2f {
         // TODO: apply active turn-tables too
@@ -108,12 +113,18 @@ class Fight(
     }
 
     private fun update(camera: Camera, dt: Duration) {
-        tempVec2f.set(player.position)
-        bosses.fastForEach {
-            tempVec2f.add(it.position)
+        if (cameraTime < cameraMaxTime) {
+            cameraTime = minOf(cameraMaxTime, cameraTime + dt.seconds)
+            cameraFactor = cameraTime / cameraMaxTime
         }
-        tempVec2f.scale(1f / (1f + bosses.size))
-        camera.position.set(tempVec2f.x, tempVec2f.y, 0f)
+
+        cameraTarget.set(player.position)
+        bosses.fastForEach {
+            cameraTarget.add(it.position)
+        }
+        cameraTarget.scale(1f / (1f + bosses.size))
+
+        camera.position.set(cameraStart.x + (cameraTarget.x - cameraStart.x) * cameraFactor, cameraStart.y + (cameraTarget.y - cameraStart.y) * cameraFactor, 0f)
         camera.update()
 
         gameObjects.fastIterateRemove { obj -> !obj.update(dt).also { if (!it) solidObjects.remove(obj) } }
@@ -130,7 +141,7 @@ class Fight(
                         } else if (it is SpikeBall && player.damagedForSeconds == 0f) {
                             player.damaged()
                             player.bumpFrom(it.position)
-                        } else {
+                        } else if (it.isActive()) {
                             // push player away
                             tempVec2f.set(player.position).subtract(it.position)
                                 .setLength(player.solidRadius + solidRadius)
@@ -204,8 +215,6 @@ class Fight(
                         hud.currentHour++
                         when (hud.currentHour) {
                             1 -> {
-                                Column(MutableVec2f(-50f, 0f), assets).solid()
-                                Column(MutableVec2f(50f, 0f), assets).solid()
                                 bosses.add(
                                     Boss(
                                         player,
@@ -213,13 +222,15 @@ class Fight(
                                         { it.save() },
                                         ::spawnCollectible,
                                         ::bossMeleeAttack,
-                                        MutableVec2f(-100f, 0f)
+                                        MutableVec2f(0f, 100f),
+                                        health = 0.3f
                                     ).solid()
                                 )
-                                maxBossHealth = 1f
+                                maxBossHealth = 0.3f
                             }
                             2 -> {
-                                SpikeBall(MutableVec2f(0f, 0f), 100f, 1f, assets, arena).solid()
+                                Column(MutableVec2f(-50f, 0f), assets, context, particleShader).solid()
+                                Column(MutableVec2f(50f, 0f), assets, context, particleShader).solid()
                                 bosses.add(
                                     Boss(
                                         player,
@@ -227,7 +238,23 @@ class Fight(
                                         { it.save() },
                                         ::spawnCollectible,
                                         ::bossMeleeAttack,
-                                        MutableVec2f(-100f, 0f)
+                                        MutableVec2f(0f, -100f),
+                                        health = 0.4f
+                                    ).solid()
+                                )
+                                maxBossHealth = 0.4f
+                            }
+                            3 -> {
+                                SpikeBall(context, particleShader, MutableVec2f(0f, 0f), 60f, 0.66f, assets, arena).solid()
+                                bosses.add(
+                                    Boss(
+                                        player,
+                                        assets,
+                                        { it.save() },
+                                        ::spawnCollectible,
+                                        ::bossMeleeAttack,
+                                        MutableVec2f(-100f, 0f),
+                                        health = 0.25f
                                     ).solid()
                                 )
                                 bosses.add(
@@ -237,12 +264,37 @@ class Fight(
                                         { it.save() },
                                         ::spawnCollectible,
                                         ::bossMeleeAttack,
-                                        MutableVec2f(100f, 0f)
+                                        MutableVec2f(100f, 0f),
+                                        health = 0.25f
                                     ).solid()
                                 )
-                                maxBossHealth = 2f
+                                maxBossHealth = 0.5f
+                            }
+                            4 -> {
+                                for (i in 0..2) {
+                                    val position = MutableVec2f(66f, 0f).rotate((PI2_F * i / 3f).radians)
+                                    Column(position, assets, context, particleShader).solid()
+                                    // TODO: taking advantage that Column will change the displacement of the same mutable position
+                                    // might be too dangerous though, but meh ¦3
+                                    SpikeBall(context, particleShader, position, 33f, 2f, assets, arena, 0.5f).solid()
+                                }
+                                bosses.add(
+                                    Boss(
+                                        player,
+                                        assets,
+                                        { it.save() },
+                                        ::spawnCollectible,
+                                        ::bossMeleeAttack,
+                                        MutableVec2f(0f, 100f),
+                                        health = 0.6f
+                                    ).solid()
+                                )
+                                maxBossHealth = 0.6f
                             }
                         }
+                        cameraStart.set(camera.position.x, camera.position.y)
+                        cameraFactor = 0f
+                        cameraTime = 0f
                         true
                     } else {
                         false
@@ -265,15 +317,29 @@ class Fight(
             result
         }
         totalBossHealth = maxOf(0f, bosses.sumOf { it.health })
-        if (!cogwheelFound && totalBossHealth <= 0f) {
+        val playerIsDead = player.hearts == 0
+        if (!cogwheelFound && (totalBossHealth <= 0f || playerIsDead)) {
             bosses.clear()
             solidObjects.fastIterateRemove {
-                val removing = it !is Player && it !is Collectible
-                if (removing) {
+                var removing = it !is Player && (it !is Collectible || playerIsDead)
+                if (it is Column) {
+                    it.startDisappearing()
+                    removing = false
+                } else if (removing) {
                     gameObjects.remove(it)
                 }
                 removing
             }
+            if (playerIsDead) {
+                player.hearts = 5
+                hud.currentHour--
+                gameObjects.fastIterateRemove {
+                    it is Projectile
+                }
+            }
+            cameraStart.set(camera.position.x, camera.position.y)
+            cameraFactor = 0f
+            cameraTime = 0f
             Cogwheel(MutableVec2f(0f, 0f), player, input, assets).solid()
         }
     }
@@ -299,9 +365,10 @@ class Fight(
                 player.hearts = maxOf(5, player.hearts + 1)
                 // TODO: play healing animation
             } else if (seconds >= 1f && player.resources >= 5) {
-                player.resources -= 10
+                player.resources -= 5
                 Trap(MutableVec2f(player.racketPosition), assets).save()
             } else if (seconds >= 0f && player.resources >= 2) {
+                player.resources -= 2
                 ReadyBall(MutableVec2f(player.racketPosition)).save()
             }
         }

@@ -1,12 +1,14 @@
 package net.mattemade.bossrush.scene
 
 import com.littlekt.Context
+import com.littlekt.graphics.Color
 import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.shader.ShaderProgram
+import com.littlekt.graphics.toFloatBits
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.PI2_F
-import com.littlekt.math.Vec2f
+import com.littlekt.math.floorToInt
 import com.littlekt.math.geom.radians
 import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
@@ -59,6 +61,8 @@ class Hud(
     val halfWidth = assets.texture.heartFilled.width / 2f
     val halfHeight = assets.texture.heartFilled.height / 2f
 
+    private val fadeOutColor = Color.BLACK.toMutableColor().apply { a = 0.5f }.toFloatBits()
+
     private val heartTextures = Array(5) { index ->
         val startX = 10f + 9f * index
         val startY = 7f
@@ -66,16 +70,16 @@ class Hud(
             context,
             particleShader,
             assets.texture.heartFilled,
-            position = Vec2f(startX, startY),
+            position = MutableVec2f(startX, startY),
             activeFrom = { _, _ -> 0f },
-            activeTo = { _, _ -> 500f },
+            activeFor = { _, _ -> 500f },
             setEndColor = { a = 0f },
             timeToLive = 500f,
             interpolation = 3,
             setEndPosition = { x, y ->
                 fill(
-                    startX + halfWidth - (halfWidth - x - 0.5f)*5f,
-                    startY + halfHeight - (halfHeight - y - 0.5f)*5f,
+                    halfWidth - (halfWidth - x - 0.5f) * 5f,
+                    halfHeight - (halfHeight - y - 0.5f) * 5f,
                 )
             }
         )
@@ -123,7 +127,55 @@ class Hud(
                 height = 57f,
                 rotation = minutesRotation.radians
             )
+
+
             batch.draw(assets.texture.mock, x = 0f, y = 90f, width = 100f, height = 150f)
+            for (i in 1..player.resources) {
+                val row = (i - 1) % 6
+                val column = (i - 1) / 6
+                batch.draw(
+                    assets.texture.resource,
+                    x = 10f + 10f * column,
+                    y = 150f - 10f * row,
+                    width = 9f,
+                    height = 9f
+                )
+            }
+            val selectorPosition = minOf(player.placingTrapForSeconds, 3f)
+            if (selectorPosition > 0f) {
+                batch.draw(
+                    assets.texture.selector,
+                    x = 38f,
+                    y = 155f - selectorPosition * 19f,
+                    width = 10f,
+                    height = 5f
+                )
+
+                val trap = minOf(3, selectorPosition.floorToInt() + 1)
+                for (i in 1..3) {
+                    if (i != trap) {
+                        shapeRenderer.filledRectangle(
+                            x = 50f,
+                            y = 155f - i * 19f,
+                            width = 50f,
+                            height = 22f,
+                            color = fadeOutColor
+                        )
+                    }
+                }
+            } else {
+
+            }
+            val trapAvailable =
+                if (player.resources >= 10) 3 else if (player.resources >= 5) 2 else if (player.resources >= 2) 1 else 0
+            shapeRenderer.filledRectangle(
+                x = 50f,
+                y = 155f - 3 * 19f,
+                width = 50f,
+                height = 22f + 2 * 19f - trapAvailable*19f,
+                color = fadeOutColor
+            )
+
         }
     }
 

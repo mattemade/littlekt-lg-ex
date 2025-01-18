@@ -1,6 +1,8 @@
 uniform mat4 u_projTrans;
 uniform float u_time;
 uniform int u_interpolation;
+uniform float u_offset_x;
+uniform float u_offset_y;
 attribute vec4 vertexPosition;
 attribute vec4 startPosition;
 attribute vec4 endPosition;
@@ -36,7 +38,10 @@ void main()
     v_color = mix(startColor, endColor, rate);
     v_color.a = v_color.a * (255.0/254.0);
 
-    vec4 pos = vertexPosition + mix(startPosition, endPosition, rate);
+//    vec4 offset = vec4(u_offset_x, u_offset_y, 0.0, 0.0);
+    vec4 pos = vertexPosition + mix(startPosition /*+ offset*/, endPosition /*+ offset*/, rate);
+    pos.x += u_offset_x;
+    pos.y += u_offset_y;
 
     gl_Position = u_projTrans * pos;
 }
