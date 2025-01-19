@@ -23,7 +23,6 @@ class Column(override val position: MutableVec2f, private val assets: Assets, co
     private var appearing = true
     private var disappearing = false
 
-
     private val appear = TextureParticles(
         context,
         shader,

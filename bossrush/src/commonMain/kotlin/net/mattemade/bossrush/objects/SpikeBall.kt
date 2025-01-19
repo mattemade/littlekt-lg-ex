@@ -41,6 +41,7 @@ class SpikeBall(
     private val halfWidth = width / 2f
     private val halfHeight = height / 2f
     private var appearing = true
+    private var disappearing = false
 
     private val appear = TextureParticles(
         context,
@@ -62,7 +63,14 @@ class SpikeBall(
     )
 
     override fun update(dt: Duration): Boolean {
-        if (appearing) {
+        if (disappearing) {
+            position.set(movingRadius, 0f).rotate((rotation/* + arena.rotation*/).radians).add(centerPosition)
+            appear.update(-dt)
+            shadowRadii.set(20f, 10f).scale(scale).scale(appear.liveFactor)
+            if (appear.liveFactor <= 0f) {
+                return false
+            }
+        } else if (appearing) {
             position.set(movingRadius, 0f).rotate((rotation/* + arena.rotation*/).radians).add(centerPosition)
             appearing = appear.update(dt)
             shadowRadii.set(20f, 10f).scale(scale)
@@ -77,7 +85,7 @@ class SpikeBall(
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
-        if (appearing) {
+        if (appearing || disappearing) {
             appear.render(batch, shapeRenderer)
         } else {
             batch.draw(
@@ -88,6 +96,13 @@ class SpikeBall(
                 height = 48f * scale,
             )
         }
+    }
+
+
+    override fun isActive(): Boolean = !appearing && !disappearing
+
+    override fun startDisappearing() {
+        disappearing = true
     }
 
     override fun displace(displacement: Vec2f) {

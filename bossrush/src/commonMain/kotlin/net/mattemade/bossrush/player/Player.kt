@@ -36,7 +36,7 @@ class Player(
         set(value) {
             field = minOf(value, 12)
         }
-    var hearts: Int = 5
+    var hearts: Int = 1
     var dizziness: Float = 0f
     var dizzy: Boolean = false
     override var position = MutableVec2f(0f, -80f)
