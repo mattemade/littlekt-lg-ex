@@ -10,12 +10,12 @@ import com.littlekt.math.PI2_F
 import com.littlekt.math.PI_F
 import com.littlekt.math.Vec2f
 import com.littlekt.math.geom.radians
-import com.littlekt.math.isFuzzyEqual
 import com.littlekt.util.fastForEach
 import com.littlekt.util.fastIterateRemove
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.ARENA_RADIUS
 import net.mattemade.bossrush.Assets
+import net.mattemade.bossrush.DEBUG
 import net.mattemade.bossrush.GAME_WIDTH
 import net.mattemade.bossrush.NO_ROTATION
 import net.mattemade.bossrush.VIRTUAL_HEIGHT
@@ -46,6 +46,7 @@ class Fight(
     private val input: GameInput,
     private val assets: Assets,
     private val particleShader: ShaderProgram<ParticleVertexShader, ParticleFragmentShader>,
+    private val end: () -> Unit,
 ) : Releasing by Self() {
 
     private val gameObjects = mutableListOf<TemporaryDepthRenderableObject>()
@@ -63,16 +64,8 @@ class Fight(
         return this
     }
 
-    private val player by lazy { Player(context, input, assets, ::placingTrap, ::swing).solid() }
-    private val arena by lazy {
-        //Column(MutableVec2f(-50f, 0f), assets).solid()
-        //Column(MutableVec2f(50f, 0f), assets).solid()
-        //Cogwheel(MutableVec2f(0f, 0f), player, input, assets).solid()
-        //val result = Arena(0f, assets)
-        //SpikeBall(MutableVec2f(0f, 0f), 100f, 1f, assets, result).solid()
-
-        Arena(0f, assets)
-    }
+    private val player by lazy { Player(context, input, assets, particleShader, ::placingTrap, ::swing).solid() }
+    private val arena by lazy { Arena(0f, assets, context, particleShader) }
     private var shapeRenderer: ShapeRenderer? = null
 
     private var bosses =
@@ -95,7 +88,10 @@ class Fight(
     val texture = gameRenderer.texture
     val hud by lazy { Hud(context, particleShader, assets, player) { totalBossHealth / maxBossHealth } }
 
-    private var extraDelay = 4f // each retry it goes down to speed up animations
+    private var extraDelay = if (DEBUG) 0f else 5f // each retry it goes down to speed up animations
+        set(value) {
+            field = if (DEBUG) 0f else value
+        }
     private var bossScheduled = false
     private var cogwheelScheduled = false
     private var maxBossHealth = 1f
@@ -113,6 +109,10 @@ class Fight(
 
     private fun getDisplacementAt(position: Vec2f, dt: Duration): Vec2f {
         // TODO: apply active turn-tables too
+        if (arena.disappearing) {
+            tempVec2f.set(0f, 0f)
+            return tempVec2f
+        }
         tempVec2f.set(position).rotate((arena.angularVelocity * dt.seconds).radians).minusAssign(position)
         return tempVec2f
     }
@@ -147,7 +147,17 @@ class Fight(
         )
         camera.update()
 
-        gameObjects.fastIterateRemove { obj -> !obj.update(dt).also { if (!it) solidObjects.remove(obj) } }
+        gameObjects.fastIterateRemove { obj ->
+            !obj.update(dt).also {
+                if (!it) {
+                    solidObjects.remove(obj)
+                    if (obj is Boss) {
+                        bosses.remove(obj)
+                        camera.startMovement()
+                    }
+                }
+            }
+        }
         arena.adjustVelocity(player.previousPosition, player.position, 0.05f)
         arena.update(dt)
 
@@ -183,7 +193,7 @@ class Fight(
                             obj.activate()
                         }
                         bosses.fastForEach { boss ->
-                            if (obj.activatedTimeToLive < 0f && boss.elevation < 5f && obj.position.distance(boss.position) < boss.solidRadius + obj.solidRadius * 3f) {
+                            if (obj.activatedTimeToLive < 0f && boss.solidElevation < 5f && obj.position.distance(boss.position) < boss.solidRadius + obj.solidRadius * 3f) {
                                 boss.trapped()
                                 obj.activate()
                             }
@@ -199,19 +209,15 @@ class Fight(
                         solidObjects.fastForEach { solid ->
                             if (obj.canDamageBoss || !bosses.contains(solid)) { // do not collide with boss if we can't damage
                                 solid.solidRadius?.let { solidRadius ->
-                                    if (solid.position.distance(obj.position) < solidRadius) {
+                                    if (solid.position.distance(obj.position) < solidRadius && obj.solidElevation >= solid.solidElevation
+                                        && obj.solidElevation <= solid.solidElevation + solid.solidHeight
+                                    ) {
                                         if (solid === player) {
                                             player.damaged()
                                             collide = true
-                                        } else if (solid is Boss) {
-                                            if (obj.elevation.isFuzzyEqual(
-                                                    solid.elevation,
-                                                    eps = solid.solidRadius
-                                                )
-                                            ) {
-                                                solid.damaged()
-                                                collide = true
-                                            }
+                                        } else if (solid is Boss && solid.isActive()) {
+                                            solid.damaged()
+                                            collide = true
                                         } else if (solid.isActive() && (solid is Column || solid is SpikeBall)) {
                                             obj.direction.set(0f, 0f)
                                             spawnCollectible(obj)
@@ -235,27 +241,11 @@ class Fight(
                         hud.currentHour++
                         when (hud.currentHour) {
                             1 -> {
-                                for (i in 0..2) {
-                                    val position = MutableVec2f(66f, 0f).rotate((PI2_F * i / 3f).radians)
-                                    delay(extraDelay/2f + i * 0.5f) { Column(position, assets, context, particleShader).solid() }
-                                    delay(extraDelay/2f + i * 0.5f + 0.25f) {
-                                        // TODO: taking advantage that Column will change the displacement of the same mutable position
-                                        // might be too dangerous though, but meh ¦3
-                                        SpikeBall(
-                                            context,
-                                            particleShader,
-                                            position,
-                                            33f,
-                                            2f,
-                                            assets,
-                                            arena,
-                                            0.5f
-                                        ).solid()
-                                    }
-                                }
-                                delay(extraDelay) {
+                                delay(extraDelay / 2f) {
                                     bosses.add(
                                         Boss(
+                                            context,
+                                            particleShader,
                                             player,
                                             assets,
                                             { it.save() },
@@ -273,77 +263,152 @@ class Fight(
                             }
 
                             2 -> {
-                                Column(MutableVec2f(-50f, 0f), assets, context, particleShader).solid()
-                                Column(MutableVec2f(50f, 0f), assets, context, particleShader).solid()
-                                bosses.add(
-                                    Boss(
-                                        player,
+                                delay(extraDelay / 3f) {
+                                    Column(
+                                        MutableVec2f(-50f, 0f),
                                         assets,
-                                        { it.save() },
-                                        ::spawnCollectible,
-                                        ::bossMeleeAttack,
-                                        MutableVec2f(0f, -100f),
-                                        health = 0.4f
+                                        context,
+                                        particleShader
                                     ).solid()
-                                )
-                                maxBossHealth = 0.4f
+                                }
+                                delay(extraDelay * 2f / 3f) {
+                                    Column(
+                                        MutableVec2f(50f, 0f),
+                                        assets,
+                                        context,
+                                        particleShader
+                                    ).solid()
+                                }
+                                delay(extraDelay) {
+                                    bosses.add(
+                                        Boss(
+                                            context,
+                                            particleShader,
+                                            player,
+                                            assets,
+                                            { it.save() },
+                                            ::spawnCollectible,
+                                            ::bossMeleeAttack,
+                                            MutableVec2f(0f, -100f),
+                                            health = 0.4f
+                                        ).solid()
+                                    )
+                                    maxBossHealth = 0.4f
+                                    camera.startMovement()
+                                    bossScheduled = false
+                                }
+                                bossScheduled = true
                             }
 
                             3 -> {
-                                SpikeBall(
-                                    context,
-                                    particleShader,
-                                    MutableVec2f(0f, 0f),
-                                    60f,
-                                    0.66f,
-                                    assets,
-                                    arena
-                                ).solid()
-                                bosses.add(
-                                    Boss(
-                                        player,
+                                delay(extraDelay / 2f) {
+                                    SpikeBall(
+                                        context,
+                                        particleShader,
+                                        MutableVec2f(0f, 0f),
+                                        60f,
+                                        0.66f,
                                         assets,
-                                        { it.save() },
-                                        ::spawnCollectible,
-                                        ::bossMeleeAttack,
-                                        MutableVec2f(-100f, 0f),
-                                        health = 0.25f
+                                        arena
                                     ).solid()
-                                )
-                                bosses.add(
-                                    Boss(
-                                        player,
-                                        assets,
-                                        { it.save() },
-                                        ::spawnCollectible,
-                                        ::bossMeleeAttack,
-                                        MutableVec2f(100f, 0f),
-                                        health = 0.25f
-                                    ).solid()
-                                )
-                                maxBossHealth = 0.5f
+                                }
+                                delay(extraDelay) {
+                                    bosses.add(
+                                        Boss(
+                                            context,
+                                            particleShader,
+                                            player,
+                                            assets,
+                                            { it.save() },
+                                            ::spawnCollectible,
+                                            ::bossMeleeAttack,
+                                            MutableVec2f(-100f, 0f),
+                                            health = 0.25f
+                                        ).solid()
+                                    )
+                                    bosses.add(
+                                        Boss(
+                                            context,
+                                            particleShader,
+                                            player,
+                                            assets,
+                                            { it.save() },
+                                            ::spawnCollectible,
+                                            ::bossMeleeAttack,
+                                            MutableVec2f(100f, 0f),
+                                            health = 0.25f
+                                        ).solid()
+                                    )
+                                    maxBossHealth = 0.5f
+                                    camera.startMovement()
+                                    bossScheduled = false
+                                }
+                                bossScheduled = true
                             }
 
                             4 -> {
                                 for (i in 0..2) {
                                     val position = MutableVec2f(66f, 0f).rotate((PI2_F * i / 3f).radians)
-                                    Column(position, assets, context, particleShader).solid()
-                                    // TODO: taking advantage that Column will change the displacement of the same mutable position
-                                    // might be too dangerous though, but meh ¦3
-                                    SpikeBall(context, particleShader, position, 33f, 2f, assets, arena, 0.5f).solid()
+                                    delay(extraDelay / 2f + i * 0.5f) {
+                                        Column(
+                                            position,
+                                            assets,
+                                            context,
+                                            particleShader
+                                        ).solid()
+                                    }
+                                    delay(extraDelay / 2f + i * 0.5f + 0.25f) {
+                                        // TODO: taking advantage that Column will change the displacement of the same mutable position
+                                        // might be too dangerous though, but meh ¦3
+                                        SpikeBall(
+                                            context,
+                                            particleShader,
+                                            position,
+                                            33f,
+                                            2f,
+                                            assets,
+                                            arena,
+                                            0.5f
+                                        ).solid()
+                                    }
                                 }
-                                bosses.add(
-                                    Boss(
-                                        player,
-                                        assets,
-                                        { it.save() },
-                                        ::spawnCollectible,
-                                        ::bossMeleeAttack,
-                                        MutableVec2f(0f, 100f),
-                                        health = 0.6f
-                                    ).solid()
-                                )
-                                maxBossHealth = 0.6f
+                                delay(extraDelay) {
+                                    bosses.add(
+                                        Boss(
+                                            context,
+                                            particleShader,
+                                            player,
+                                            assets,
+                                            { it.save() },
+                                            ::spawnCollectible,
+                                            ::bossMeleeAttack,
+                                            MutableVec2f(0f, 100f),
+                                            health = 0.3f
+                                        ).solid()
+                                    )
+                                    maxBossHealth = 0.3f
+                                    camera.startMovement()
+                                    bossScheduled = false
+                                }
+                                bossScheduled = true
+                            }
+
+                            5 -> {
+                                cogwheelScheduled = true // to prevent if from appearing
+                                hud.currentHour-- // to reverse the advance, as there are no more
+                                delay(extraDelay / 2f) {
+                                    arena.turnToZero {
+                                        delay(extraDelay / 2f) {
+                                            arena.startDisappearing()
+                                            delay(extraDelay * 1.25f) {
+                                                player.startDisappearing()
+                                                delay(extraDelay * 1.5f) {
+                                                    end()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                         camera.startMovement()
@@ -372,11 +437,16 @@ class Fight(
         totalBossHealth = maxOf(0f, bosses.sumOf { it.health })
         val playerIsDead = player.hearts == 0
         if (!bossScheduled && !cogwheelFound && (totalBossHealth <= 0f || playerIsDead)) {
-            bosses.clear()
+            //bosses.clear()
             solidObjects.fastIterateRemove {
                 var removing = it !is Player && (it !is Collectible || playerIsDead)
-                if (it is Column || it is SpikeBall) {
-                    it.startDisappearing()
+                if (it is Column || it is SpikeBall || it is Boss) {
+                    it.deactivate()
+                    if (playerIsDead) {
+                        it.startDisappearing()
+                    } else {
+                        delay(if (it is Boss) 1f else 2f, it::startDisappearing)
+                    }
                     removing = false
                 } else if (removing) {
                     gameObjects.remove(it)
@@ -412,7 +482,7 @@ class Fight(
 
     private fun render(batch: Batch) {
         (shapeRenderer ?: ShapeRenderer(batch).also { shapeRenderer = it }).let { shapeRenderer ->
-            arena.render(batch)
+            arena.render(batch, shapeRenderer)
             gameObjects.sort()
             gameObjects.fastForEach {
                 it.renderShadow(shapeRenderer)
@@ -462,7 +532,7 @@ class Fight(
                         }
                         targetBoss?.let { boss ->
                             it.target = boss::position
-                            it.targetElevation = boss::elevation
+                            it.targetElevation = { boss.solidElevation + boss.solidHeight / 2f }
                         }
                         it.angularSpeedScale = 1f
                     } else {
@@ -470,8 +540,8 @@ class Fight(
                         it.direction.rotateTowards(tempVec2f)
                     }
                 }
-            } else if (it is Boss) {
-                if (it.elevation < 20f && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius + it.solidRadius &&
+            } else if (it is Boss && it.isActive()) {
+                if (it.solidElevation < 20f && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius + it.solidRadius &&
                     swing.hitBackPosition.distance(it.position) > swing.hitBackRadius
                 ) {
                     it.damaged(strong = powerful)
@@ -494,13 +564,13 @@ class Fight(
                 Projectile(
                     position = it.position.toMutableVec2(),
                     direction = ballDirection,
-                    elevation = it.elevation,
+                    solidElevation = it.elevation,
                     elevationRate = 120f,
                     spawnCollectible = ::spawnCollectible,
                 ).also {
                     targetBoss?.let { boss ->
                         it.target = boss::position
-                        it.targetElevation = boss::elevation
+                        it.targetElevation = { boss.solidElevation + boss.solidHeight / 2f }
                     }
                     it.angularSpeedScale = 1f
                     it.canDamageBoss = true
@@ -518,7 +588,7 @@ class Fight(
             Collectible(
                 position = projectile.position.toMutableVec2(),
                 direction = projectile.direction.toMutableVec2().scale(0.5f),
-                elevation = projectile.elevation,
+                elevation = projectile.solidElevation,
                 //targetElevation = 6f,
             ).solid()
         }

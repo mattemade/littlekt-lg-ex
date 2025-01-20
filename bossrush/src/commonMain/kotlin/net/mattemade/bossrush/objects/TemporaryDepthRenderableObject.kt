@@ -20,8 +20,16 @@ interface TemporaryDepthRenderableObject : Comparable<TemporaryDepthRenderableOb
 
     fun startDisappearing() {}
 
+    fun deactivate() {}
+
     val solidRadius: Float?
         get() = null
+
+    val solidElevation: Float
+        get() = 0f
+
+    val solidHeight: Float
+        get() = 10000f
 
     override fun compareTo(other: TemporaryDepthRenderableObject): Int =
         position.y.compareTo(other.position.y)

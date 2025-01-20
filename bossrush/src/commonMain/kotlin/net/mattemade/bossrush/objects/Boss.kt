@@ -1,7 +1,9 @@
 package net.mattemade.bossrush.objects
 
+import com.littlekt.Context
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.g2d.Batch
+import com.littlekt.graphics.g2d.TextureSlice
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.toFloatBits
 import com.littlekt.math.MutableVec2f
@@ -15,6 +17,8 @@ import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.NO_ROTATION
 import net.mattemade.bossrush.player.Player
+import net.mattemade.bossrush.shader.ParticleShader
+import net.mattemade.utils.math.fill
 import kotlin.random.Random
 import kotlin.time.Duration
 
@@ -22,6 +26,8 @@ typealias Program = List<Pair<Float, () -> Unit>>
 typealias State = List<Pair<Float, Program>>
 
 class Boss(
+    private val context: Context,
+    private val shader: ParticleShader,
     private val player: Player,
     private val assets: Assets,
     private val spawn: (Projectile) -> Unit,
@@ -31,16 +37,63 @@ class Boss(
     var health: Float = 1f,
 ) : TemporaryDepthRenderableObject {
 
+
+    private val standTexture = assets.texture.bossStand
+    private val flyTexture = assets.texture.bossFly
     private var damagedForSeconds: Float = 0f
     private var trappedForSeconds = 0f
     private var meleeCooldown = 0f
-    private val shadowRadii = Vec2f(10f, 5f)
+    private val shadowRadii = MutableVec2f(0f, 0f)
     private val damageColor = Color.RED.toFloatBits()
-    var elevation: Float = 0f
+    override var solidElevation: Float = 0f
+    override val solidHeight: Float = 38f
 
     override val solidRadius: Float
         get() = 8f
     private val tempVec2f = MutableVec2f()
+
+
+    private val appearingFor = 3000f
+    private fun createParticles(texture: TextureSlice): TextureParticles {
+        val width = texture.width
+        val widthFloat = texture.width.toFloat()
+        val height = texture.height
+        val heightFloat = height.toFloat()
+        val halfWidth = width / 2f
+        val halfHeight = height / 2f
+
+        return TextureParticles(
+            context,
+            shader,
+            texture,
+            position,
+            interpolation = 2,
+            activeFrom = { x, y -> Random.nextFloat() * 300f + (height - y) * 30f },
+            activeFor = { x, y -> 2000f },
+            timeToLive = appearingFor,
+            setStartColor = { a = 0f },
+            setEndColor = { a = 1f },
+            setStartPosition = { x, y ->
+                fill(-width * 2f + width * 4f * Random.nextFloat(), y - heightFloat * 4f)
+            },
+            setEndPosition = { x, y ->
+                fill(x - halfWidth, y - 45f - solidElevation) // normal rendering offsets
+            },
+        )
+    }
+
+    private var appearing = true
+    private var disappearing = false
+    private var deactivated = false
+        set(value) {
+            if (value && !field && solidElevation > 0f) {
+                appear = createParticles(flyTexture)
+                appear.addToTime(appearingFor)
+            }
+            field = value
+        }
+
+    private var appear = createParticles(standTexture)
 
     // program is a list of actions to choose from: "relative chance" to ("cooldown" to "action")
     private val stayingUpState: State =
@@ -91,16 +144,23 @@ class Boss(
         targetElevation = 20f
         elevatingRate = 20f
     }
+
     private fun land() {
         targetElevation = 0f
         elevatingRate = -20f
     }
 
-    private fun spinClockwise() { angularSpinningSpeed = 0.5f }
+    private fun spinClockwise() {
+        angularSpinningSpeed = 0.5f
+    }
 
-    private fun spinCounterClockwise() { angularSpinningSpeed = -0.5f }
+    private fun spinCounterClockwise() {
+        angularSpinningSpeed = -0.5f
+    }
 
-    private fun stopSpinning() { angularSpinningSpeed = 0f }
+    private fun stopSpinning() {
+        angularSpinningSpeed = 0f
+    }
 
     private fun simpleAttack() = fireProjectiles(1, 0f)
 
@@ -114,13 +174,14 @@ class Boss(
         val distance = tempVec2f.set(player.position).subtract(position).length()
         val reachingInSeconds = distance / speed
         tempVec2f.setLength(speed).rotate(startAngle)
+        val spawnElevation = solidElevation + 24f
         for (i in 0 until count) {
             spawn(
                 Projectile(
                     position = position.toMutableVec2(),
                     direction = MutableVec2f(tempVec2f),
-                    elevation = elevation,
-                    elevationRate = -elevation/reachingInSeconds * 0.7f, // to make them fly a bit longer,
+                    solidElevation = spawnElevation,
+                    elevationRate = -spawnElevation / reachingInSeconds * 0.7f, // to make them fly a bit longer,
                     spawnCollectible = spawnCollectible,
                 )
             )
@@ -129,17 +190,34 @@ class Boss(
     }
 
     override fun update(dt: Duration): Boolean {
+        if (disappearing) {
+            appear.update(-dt)
+            disappearing = appear.liveFactor > 0f
+            shadowRadii.set(10f, 5f).scale(appear.liveFactor)
+            return disappearing
+        } else if (appearing) {
+            appearing = appear.update(dt)
+            shadowRadii.set(10f, 5f)
+            if (appearing) {
+                shadowRadii.scale(appear.liveFactor)
+            }
+            return true
+        }
+
         if (damagedForSeconds > 0f) {
             damagedForSeconds = maxOf(0f, damagedForSeconds - dt.seconds)
+        }
+        if (deactivated) {
+            return true
         }
         if (meleeCooldown > 0f) {
             meleeCooldown = maxOf(0f, meleeCooldown - dt.seconds)
         }
 
-        if (elevation < targetElevation && elevatingRate > 0f) {
-            elevation = minOf(targetElevation, elevation + elevatingRate * dt.seconds)
-        } else if (elevation> targetElevation && elevatingRate < 0f) {
-            elevation = maxOf(targetElevation, elevation + elevatingRate * dt.seconds)
+        if (solidElevation < targetElevation && elevatingRate > 0f) {
+            solidElevation = minOf(targetElevation, solidElevation + elevatingRate * dt.seconds)
+        } else if (solidElevation > targetElevation && elevatingRate < 0f) {
+            solidElevation = maxOf(targetElevation, solidElevation + elevatingRate * dt.seconds)
         }
 
         if (trappedForSeconds > 0f) {
@@ -168,7 +246,7 @@ class Boss(
             currentAction.second.invoke()
         }
 
-        if (meleeCooldown == 0f && elevation < 30f && position.distance(player.position) < solidRadius + player.solidRadius + 40f) {
+        if (meleeCooldown == 0f && solidElevation < 30f && position.distance(player.position) < solidRadius + player.solidRadius + 40f) {
             player.damaged()
             player.bumpFrom(position)
             tempVec2f.set(player.position).subtract(position)
@@ -179,7 +257,7 @@ class Boss(
     }
 
     override fun displace(displacement: Vec2f) {
-        if (elevation == 0f) {
+        if (solidElevation == 0f) {
             position.add(displacement)
         }
     }
@@ -194,11 +272,18 @@ class Boss(
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledCircle(
-            x = position.x,
-            y = position.y - 10f - elevation,
-            radius = 10f,
-            color = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else Color.YELLOW.toFloatBits()
+        if (appearing || disappearing) {
+            appear.render(batch, shapeRenderer)
+            return
+        }
+
+        batch.draw(
+            slice = if (solidElevation == 0f) standTexture else flyTexture,
+            x = position.x - 16f,
+            y = position.y - 45f - solidElevation,
+            width = 32f,
+            height = 48f,
+            colorBits = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else batch.colorBits
         )
 
         if (trappedForSeconds > 0f) {
@@ -211,12 +296,22 @@ class Boss(
                 batch.draw(
                     assets.texture.littleStar,
                     x = tempVec2f.x,
-                    y = tempVec2f.y - 30f - elevation,
+                    y = tempVec2f.y - 30f - solidElevation,
                     width = 8f,
                     height = 8f,
                 )
             }
         }
+    }
+
+    override fun isActive(): Boolean = !appearing && !disappearing && !deactivated
+
+    override fun startDisappearing() {
+        disappearing = true
+    }
+
+    override fun deactivate() {
+        deactivated = true
     }
 
     fun trapped() {

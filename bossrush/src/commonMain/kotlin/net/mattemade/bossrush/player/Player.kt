@@ -4,6 +4,7 @@ import com.littlekt.Context
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.MutableColor
 import com.littlekt.graphics.g2d.Batch
+import com.littlekt.graphics.g2d.TextureSlice
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.toFloatBits
 import com.littlekt.math.MutableVec2f
@@ -20,14 +21,19 @@ import net.mattemade.bossrush.SWING_ANGLE
 import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.math.minimalRotation
 import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
+import net.mattemade.bossrush.objects.TextureParticles
+import net.mattemade.bossrush.shader.ParticleShader
+import net.mattemade.utils.math.fill
 import kotlin.math.abs
 import kotlin.math.sign
+import kotlin.random.Random
 import kotlin.time.Duration
 
 class Player(
     private val context: Context,
     private val input: GameInput,//InputMapController<ControllerInput>,
     private val assets: Assets,
+    private val shader: ParticleShader,
     private val placingTrap: (seconds: Float, released: Boolean) -> Unit,
     private val swing: (angle: Float, clockwise: Boolean, powerful: Boolean) -> Unit,
 ) : TemporaryDepthRenderableObject {
@@ -36,7 +42,8 @@ class Player(
         set(value) {
             field = minOf(value, 12)
         }
-    var hearts: Int = 1
+    var hearts: Int = 5
+    override val solidHeight: Float = 30f
     var dizziness: Float = 0f
     var dizzy: Boolean = false
     override var position = MutableVec2f(0f, -80f)
@@ -55,7 +62,47 @@ class Player(
     var isReadyToSwing = true
     //var previousDRotation = 0f
 
-    private val shadowRadii = Vec2f(10f, 5f)
+    private val disappearingFor = 10000f
+    private fun createParticles(texture: TextureSlice): TextureParticles {
+        val width = texture.width
+        val widthFloat = texture.width.toFloat()
+        val height = texture.height
+        val heightFloat = height.toFloat()
+        val halfWidth = width / 2f
+        val halfHeight = height / 2f
+
+        return TextureParticles(
+            context,
+            shader,
+            texture,
+            position,
+            interpolation = 2,
+            activeFrom = { x, y -> Random.nextFloat() * 300f + (height - y) * 100f },
+            activeFor = { x, y -> 4000f },
+            timeToLive = disappearingFor,
+            setStartColor = { a = 0f },
+            setEndColor = { a = 1f },
+            setStartPosition = { x, y ->
+                fill(-width * 2f + width * 4f * Random.nextFloat(), y - heightFloat * 8f)
+            },
+            setEndPosition = { x, y ->
+                fill(x - halfWidth, y - 30f) // normal rendering offsets
+            },
+        )
+    }
+    private var disappear: TextureParticles? = null
+
+    var disappearing: Boolean = false
+        set(value) {
+            if (!field && value) {
+                val segment = ((input.rotation / radInSegment).floorToInt() % positions + positions) % positions
+                disappear = createParticles(textureSequence[segment])
+                disappear?.addToTime(disappearingFor)
+            }
+            field = value
+        }
+
+    private val shadowRadii = MutableVec2f(10f, 5f)
     private var circleInFront: Boolean = false
     //private var circleRotation: Float = 0f
     private val textureSlices = assets.texture.robot.slice(sliceWidth = 40, sliceHeight = 34)[0]
@@ -79,6 +126,11 @@ class Player(
     private val tempVec2f = MutableVec2f()
 
     override fun update(dt: Duration): Boolean {
+        disappear?.let {
+            it.update(-dt)
+            shadowRadii.set(10f, 5f).scale(it.liveFactor)
+            return it.liveFactor > 0f
+        }
         previousPosition.set(position)
         if (damagedForSeconds > 0f) {
             damagedForSeconds = maxOf(0f, damagedForSeconds - dt.seconds)
@@ -163,6 +215,11 @@ class Player(
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
+        disappear?.let {
+            it.render(batch, shapeRenderer)
+            return
+        }
+
         if (racketPosition.y <= position.y) {
             shapeRenderer.filledCircle(
                 x = racketPosition.x,
@@ -249,8 +306,13 @@ class Player(
             hearts--
             if (hearts == 0) {
                 // TODO game over, spin the time
+                trapped()
             }
         }
+    }
+
+    override fun startDisappearing() {
+        disappearing = true
     }
 
     fun bumpFrom(from: Vec2f) {

@@ -13,7 +13,7 @@ import kotlin.time.Duration
 class Projectile(
     override val position: MutableVec2f = MutableVec2f(),
     val direction: MutableVec2f = MutableVec2f(),
-    var elevation: Float = 6f,
+    override var solidElevation: Float = 6f,
     var elevationRate: Float = 0f,
     var gravity: Float = 0f,
     val spawnCollectible: (Projectile) -> Unit
@@ -31,11 +31,11 @@ class Projectile(
         //timeToLive -= dt.seconds
 
         targetElevation?.invoke()?.let { targetElevation ->
-            elevation += (targetElevation - elevation) * dt.seconds
+            solidElevation += (targetElevation - solidElevation) * dt.seconds
         } ?: run {
             elevationRate -= gravity * dt.seconds
-            elevation += elevationRate * dt.seconds
-            if (elevation <= 0f) {
+            solidElevation += elevationRate * dt.seconds
+            if (solidElevation <= 0f) {
                 spawnCollectible(this)
                 return false
             }
@@ -50,7 +50,7 @@ class Projectile(
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledCircle(x = position.x, y = position.y - 2f - elevation, radius = 2f, color = Color.YELLOW.toFloatBits())
+        shapeRenderer.filledCircle(x = position.x, y = position.y - 2f - solidElevation, radius = 2f, color = Color.YELLOW.toFloatBits())
     }
 
     override fun renderShadow(shapeRenderer: ShapeRenderer) {

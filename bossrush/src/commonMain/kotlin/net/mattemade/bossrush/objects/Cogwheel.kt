@@ -48,7 +48,7 @@ class Cogwheel(
         interpolation = 2,
         activeFrom = { x, y -> Random.nextFloat()*300f + (height - y)*30f },
         activeFor = { x, y -> 2000f},
-        timeToLive = 4000f,
+        timeToLive = 3000f,
         setStartColor = { a = 0f },
         setEndColor = { a = 1f },
         setStartPosition = { x, y ->

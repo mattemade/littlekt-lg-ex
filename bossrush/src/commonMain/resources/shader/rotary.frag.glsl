@@ -24,6 +24,6 @@ void main() {
     coordInSquare += halfTexture;
     coordInSquare.y = (coordInSquare.y - skewdOffset) / heightToWidthRatio;
     vec4 color =  texture2D(u_texture, coordInSquare);
-    color.a = u_alpha;
+    color.a *= u_alpha;
     gl_FragColor = color;
 }

@@ -11,3 +11,4 @@ const val GAME_WIDTH = VIRTUAL_WIDTH - UI_WIDTH
 const val HALF_VIRTUAL_WIDTH = VIRTUAL_WIDTH / 2f
 const val HALF_VIRTUAL_HEIGHT = VIRTUAL_HEIGHT / 2f
 const val ARENA_RADIUS = 120f
+const val DEBUG = false

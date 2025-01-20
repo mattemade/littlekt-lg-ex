@@ -42,6 +42,9 @@ class SpikeBall(
     private val halfHeight = height / 2f
     private var appearing = true
     private var disappearing = false
+    private var deactivated = false
+
+    override val solidHeight: Float = height
 
     private val appear = TextureParticles(
         context,
@@ -77,7 +80,7 @@ class SpikeBall(
             if (appearing) {
                 shadowRadii.scale(appear.liveFactor)
             }
-        } else {
+        } else if (!deactivated) {
             rotation += angularSpeed * dt.seconds
             position.set(movingRadius, 0f).rotate((rotation/* + arena.rotation*/).radians).add(centerPosition)
         }
@@ -99,10 +102,14 @@ class SpikeBall(
     }
 
 
-    override fun isActive(): Boolean = !appearing && !disappearing
+    override fun isActive(): Boolean = !appearing && !disappearing && !deactivated
 
     override fun startDisappearing() {
         disappearing = true
+    }
+
+    override fun deactivate() {
+        deactivated = true
     }
 
     override fun displace(displacement: Vec2f) {

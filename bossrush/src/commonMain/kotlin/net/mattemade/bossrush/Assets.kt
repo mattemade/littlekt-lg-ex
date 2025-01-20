@@ -56,6 +56,14 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
 
     val spikeBall by "texture/spikeball.png".pack()
 
+    val bossStand by "texture/i/stand.png".pack()
+    val bossFly by "texture/i/fly.png".pack()
+
+    val outro1 by prepare { context.vfs["texture/outro/1.png"].readTexture() }
+    val outro2 by prepare { context.vfs["texture/outro/2.png"].readTexture() }
+    val outro3 by prepare { context.vfs["texture/outro/3.png"].readTexture() }
+    val outro4 by prepare { context.vfs["texture/outro/4.png"].readTexture() }
+
     //val sequence by preparePlain(1) { arrayOf(/*down,*/ downRight, right, upRight/*, up*/) }
     //val sequence2 by preparePlain(2) { arrayOf(down, downRight, right, upRight, up) }
 }
