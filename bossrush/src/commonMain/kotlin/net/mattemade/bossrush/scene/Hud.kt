@@ -15,6 +15,7 @@ import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.UI_WIDTH
 import net.mattemade.bossrush.VIRTUAL_HEIGHT
+import net.mattemade.bossrush.VIRTUAL_WIDTH
 import net.mattemade.bossrush.objects.TextureParticles
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleFragmentShader
@@ -28,7 +29,6 @@ class Hud(
     private val particleShader: ShaderProgram<ParticleVertexShader, ParticleFragmentShader>,
     private val assets: Assets,
     private val player: Player,
-    private val bossHealth: () -> Float,
 ) {
 
     private var uiRenderer = PixelRender(
@@ -51,7 +51,6 @@ class Hud(
     private var uiShapeRenderer: ShapeRenderer? = null
     private var absoluteTime: Float = 0f
     private val tempVec2f = MutableVec2f()
-    var currentHour = 0
 
     fun updateAndRender(dt: Duration) {
         absoluteTime += dt.seconds
@@ -63,9 +62,9 @@ class Hud(
 
     private val fadeOutColor = Color.BLACK.toMutableColor().apply { a = 0.5f }.toFloatBits()
 
-    private val heartTextures = Array(5) { index ->
-        val startX = 10f + 9f * index
-        val startY = 7f
+    private val heartTextures = Array(20) { index ->
+        val startX = 10f + (assets.texture.heartFilled.width + 1) * (index % 10)
+        val startY = 7f + (assets.texture.heartFilled.height + 1) * (index / 10)
         TextureParticles(
             context,
             particleShader,
@@ -82,17 +81,19 @@ class Hud(
                     halfHeight - (halfHeight - y - 0.5f) * 5f,
                 )
             }
-        )
+        ).also {
+            it.addToTime(500f)
+        }
     }
 
     private fun renderUi(dt: Duration, batch: Batch) {
         (uiShapeRenderer ?: ShapeRenderer(batch).also { uiShapeRenderer = it }).let { shapeRenderer ->
 
-            for (i in 0..4) {
+            for (i in 0 until player.maxHearts) {
                 batch.draw(
                     assets.texture.heartEmpty,
-                    x = 10f + 9f * i,
-                    y = 7f,
+                    x = 10f + (assets.texture.heartFilled.width + 1) * (i % 10),
+                    y = 7f + (assets.texture.heartFilled.height + 1) * (i / 10),
                     width = 8f,
                     height = 6f
                 )
@@ -102,40 +103,15 @@ class Hud(
                 heartTexture.render(batch, shapeRenderer)
             }
 
-            batch.draw(assets.texture.clockBg, x = 24f, y = 24f, width = 57f, height = 57f)
-            //val bossNumber = 1
-            val totalMinutes = currentHour * 60 + (1 - bossHealth()) * 60// absoluteTime// * 20f
-            val minutes = (1 - bossHealth()) * 60f
-            val hours = currentHour + minutes / 60f
-            val minutesRotation = minutes * PI2_F / 60f// + PI_F/2f
-            val hoursRotation = hours * PI2_F / 4f// + PI_F/2f
-            tempVec2f.set(-57f / 2f, -57 / 2f).rotate(hoursRotation.radians)
-            batch.draw(
-                assets.texture.clockHour,
-                x = 24f + 57 / 2f + tempVec2f.x,
-                y = 24f + 57f / 2f + tempVec2f.y,
-                width = 57f,
-                height = 57f,
-                rotation = hoursRotation.radians
-            )
-            tempVec2f.set(-57f / 2f, -57 / 2f).rotate(minutesRotation.radians)
-            batch.draw(
-                assets.texture.clockMinute,
-                x = 24f + 57 / 2f + tempVec2f.x,
-                y = 24f + 57f / 2f + tempVec2f.y,
-                width = 57f,
-                height = 57f,
-                rotation = minutesRotation.radians
-            )
 
-
-            batch.draw(assets.texture.mock, x = 0f, y = 90f, width = 100f, height = 150f)
+            val offset = VIRTUAL_WIDTH - 100
+            batch.draw(assets.texture.mock, x = offset.toFloat(), y = 90f, width = 100f, height = 150f)
             for (i in 1..player.resources) {
                 val row = (i - 1) % 6
                 val column = (i - 1) / 6
                 batch.draw(
                     assets.texture.resource,
-                    x = 10f + 10f * column,
+                    x = offset + 10f + 10f * column,
                     y = 150f - 10f * row,
                     width = 9f,
                     height = 9f
@@ -145,7 +121,7 @@ class Hud(
             if (selectorPosition > 0f) {
                 batch.draw(
                     assets.texture.selector,
-                    x = 38f,
+                    x = offset + 38f,
                     y = 155f - selectorPosition * 19f,
                     width = 10f,
                     height = 5f
@@ -155,7 +131,7 @@ class Hud(
                 for (i in 1..3) {
                     if (i != trap) {
                         shapeRenderer.filledRectangle(
-                            x = 50f,
+                            x = offset + 50f,
                             y = 155f - i * 19f,
                             width = 50f,
                             height = 22f,
@@ -169,7 +145,7 @@ class Hud(
             val trapAvailable =
                 if (player.resources >= 10) 3 else if (player.resources >= 5) 2 else if (player.resources >= 2) 1 else 0
             shapeRenderer.filledRectangle(
-                x = 50f,
+                x = offset + 50f,
                 y = 155f - 3 * 19f,
                 width = 50f,
                 height = 22f + 2 * 19f - trapAvailable*19f,

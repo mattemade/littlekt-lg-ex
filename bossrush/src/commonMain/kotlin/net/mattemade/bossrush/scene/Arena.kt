@@ -1,20 +1,30 @@
 package net.mattemade.bossrush.scene
 
 import com.littlekt.Context
+import com.littlekt.graphics.Color
 import com.littlekt.graphics.g2d.Batch
+import com.littlekt.graphics.g2d.TextureSlice
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
+import com.littlekt.graphics.gl.State
+import com.littlekt.graphics.toFloatBits
+import com.littlekt.graphics.util.BlendMode
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.PI2_F
+import com.littlekt.math.PI_F
 import com.littlekt.math.Vec2f
 import com.littlekt.math.clamp
 import com.littlekt.math.geom.radians
+import com.littlekt.math.interpolate
 import com.littlekt.math.isFuzzyZero
+import com.littlekt.math.smoothStep
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.math.minimalRotation
 import net.mattemade.bossrush.objects.TextureParticles
 import net.mattemade.bossrush.shader.ParticleShader
 import net.mattemade.utils.math.fill
+import net.mattemade.utils.render.PixelRender
+import kotlin.math.pow
 import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlin.time.Duration
@@ -23,17 +33,78 @@ class Arena(
     var rotation: Float = 0f,
     private val assets: Assets,
     private val context: Context,
-    private val shader: ParticleShader
+    private val shader: ParticleShader,
+    private val bossLeft: () -> Float,
 ) {
 
     private val textureSize = Vec2f(assets.texture.arena.width.toFloat(), assets.texture.arena.height.toFloat())
     private val startPosition = Vec2f(-assets.texture.arena.width / 2f, -assets.texture.arena.height / 2f)
     private val tempVec2f = MutableVec2f()
+    var currentHour = 0
 
     var angularVelocity: Float = 0f
     private var turningToZeroAction: (() -> Unit)? = null
     private var deactivated: Boolean = false
 
+    private val clockMask = Color.WHITE.toMutableColor().apply {
+        a = 0f
+    }
+
+    private var lastHour = 0f
+
+    private val clockTextureSize = Vec2f(assets.texture.giantClock.width.toFloat(), assets.texture.giantClock.height.toFloat())
+    private val clockStartPosition = Vec2f(-assets.texture.giantClock.width / 2f, -assets.texture.giantClock.height / 2f)
+    private val clockRender = PixelRender(
+        context,
+        clockTextureSize.x.toInt(),
+        clockTextureSize.y.toInt(),
+        clockTextureSize.x.toInt(),
+        clockTextureSize.y.toInt(),
+        { dt, camera -> },
+        { dt, camera, batch ->
+
+            batch.draw(assets.texture.giantClock, x = clockStartPosition.x, y = clockStartPosition.y, width = clockTextureSize.x, height = clockTextureSize.y)
+            //val bossNumber = 1
+            //val totalMinutes = currentHour * 60 + (1 - bossProgress()) * 60// absoluteTime// * 20f
+            val minutes = movingMinute % 60f//(1f - bossProgress()) * 60f
+            val hours = /*currentHour +*/ movingMinute / 60f
+
+            if (hours != lastHour) {
+                println("hour changes from $lastHour to $hours")
+                lastHour = hours
+            }
+
+            if (hours >= 4) putHour(batch, assets.texture.giantClockX, 0f)
+            if (hours >= 1) putHour(batch, assets.texture.giantClockI, PI_F / 2f)
+            if (hours >= 2) putHour(batch, assets.texture.giantClockII, PI_F)
+            if (hours >= 3) putHour(batch, assets.texture.giantClockV, PI2_F * 0.75f)
+
+            val minutesRotation = minutes * PI2_F / 60f// + PI_F
+            val hoursRotation = hours * PI2_F / 4f// - PI_F/2f
+            tempVec2f.set(clockStartPosition).rotate(hoursRotation.radians)
+            batch.draw(
+                assets.texture.giantClockHour,
+                x = tempVec2f.x,
+                y = tempVec2f.y,
+                width = clockTextureSize.x,
+                height = clockTextureSize.y,
+                rotation = hoursRotation.radians,
+                //colorBits = clockColor
+            )
+            tempVec2f.set(clockStartPosition).rotate(minutesRotation.radians)
+            batch.draw(
+                assets.texture.giantClockMinute,
+                x = tempVec2f.x,
+                y = tempVec2f.y,
+                width = clockTextureSize.x,
+                height = clockTextureSize.y,
+                rotation = minutesRotation.radians,
+                //colorBits = clockColor
+            )
+        },
+        clear = true,
+    )
+    private val clockTexture = clockRender.texture
 
     private val disappear = TextureParticles(
         context,
@@ -60,6 +131,49 @@ class Arena(
     )
 
     var disappearing: Boolean = false
+    var previousProgress: Float = 0f
+    var showingClockFor: Float = 0f
+    val maxShowingClockFor: Float = 4f
+
+    var movingMinuteFrom = 0f
+    var movingMinute = 0f
+    var movingMinuteTo = 0f
+    val maxMovingClockFor: Float = maxShowingClockFor/2f
+
+    fun updateClock(dt: Duration) {
+        val progress = 1f - bossLeft()
+        //println("progress from $previousProgress to $progress")
+        if (previousProgress == 1f && progress == 0f || previousProgress == 0f && progress == 1f) {
+            println("progress spiked $previousProgress to $progress")
+            previousProgress = progress
+            movingMinuteFrom = currentHour*60f + progress * 60f
+            movingMinute = currentHour*60f + progress * 60f
+            movingMinuteTo = currentHour*60f + progress * 60f
+            println("spiking from $movingMinuteFrom to $movingMinuteTo")
+        } else if (previousProgress != progress) {
+            println("progress changed $previousProgress to $progress")
+            if (progress == 0f) {
+                val a = 0
+                val b = a + 1
+            }
+            movingMinuteFrom = movingMinute
+            movingMinuteTo = currentHour*60f + minOf(60f, progress * 60f)
+            showingClockFor = maxShowingClockFor
+            previousProgress = progress
+            println("moving from $movingMinuteFrom to $movingMinuteTo")
+        }
+        //clockMask.a = (clockMask.a + dt.seconds / 2f) % 1f
+        if (showingClockFor > 0f) {
+            showingClockFor = maxOf(0f, showingClockFor - dt.seconds)
+            val passed = maxShowingClockFor - showingClockFor
+            clockMask.a = if (passed < maxMovingClockFor) 1f else (showingClockFor / (maxShowingClockFor - maxMovingClockFor)).pow(2)
+            val minuteFactor = minOf(1f, passed / maxMovingClockFor)
+            movingMinute = smoothStep(0f, 1f, minuteFactor).interpolate(movingMinuteFrom, movingMinuteTo)// minuteFactor.interpolate(movingMinuteFrom, movingMinuteTo)
+
+        }
+
+        clockRender.render(dt)
+    }
 
     fun update(dt: Duration) {
         if (disappearing) {
@@ -110,6 +224,8 @@ class Arena(
             disappear.render(batch, shapeRenderer)
             return
         }
+
+
         val angle = rotation.radians
         tempVec2f.set(startPosition).rotate(angle)
         batch.draw(
@@ -120,6 +236,46 @@ class Arena(
             height = textureSize.y,
             rotation = angle
         )
+        /*batch.draw(
+            assets.texture.arenaForeground,
+            x = clockStartPosition.x,
+            y = clockStartPosition.y,
+            width = clockTextureSize.x,
+            height = clockTextureSize.y,
+        )*/
+        //shapeRenderer.filledRectangle(x = 0f, y = 0f, width = 200f, height = 200f, color = Color.BLACK.toFloatBits())
+
+
+        //val clockColor = clockMask.toFloatBits()
+        val oldBits = batch.colorBits
+        batch.colorBits = clockMask.toFloatBits()
+
+        context.gl.enable(State.BLEND)
+        //batch.setBlendFunctionSeparate(BlendFactor.SRC_COLOR, BlendFactor.ONE_MINUS_DST_COLOR, BlendFactor.SRC_ALPHA, BlendFactor.ONE_MINUS_SRC_ALPHA)
+        batch.setBlendFunction(BlendMode.Add)
+        batch.draw(
+            clockTexture,
+            x = clockStartPosition.x,
+            y = clockStartPosition.y,
+            width = clockTextureSize.x,
+            height = clockTextureSize.y,
+            flipY = true
+        )
+        batch.setToPreviousBlendFunction()
+        context.gl.disable(State.BLEND)
+        batch.colorBits = oldBits
+    }
+
+    private fun putHour(batch: Batch, texture: TextureSlice, angle: Float) {
+        tempVec2f.set(0f, -84f).subtract(texture.width / 2f, texture.height / 2f).rotate((angle/* - PI_F/2f*/).radians)
+        batch.draw(
+            texture,
+            x = tempVec2f.x,
+            y = tempVec2f.y,
+            width = texture.width.toFloat(),
+            height = texture.height.toFloat(),
+            rotation = angle.radians,
+        )
     }
 
     fun turnToZero(actionOnceDone: () -> Unit) {
@@ -128,5 +284,14 @@ class Arena(
 
     fun startDisappearing() {
         disappearing = true
+    }
+
+    fun setClockFactor(factor: Float) {
+        //println("settings factor to $factor")
+        clockMask.a = minOf(1f, factor * factor)
+    }
+    fun fadeClockOut() {
+        //println("fading out")
+        showingClockFor = maxShowingClockFor - maxMovingClockFor
     }
 }

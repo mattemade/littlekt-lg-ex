@@ -42,7 +42,8 @@ class Player(
         set(value) {
             field = minOf(value, 12)
         }
-    var hearts: Int = 5
+    var hearts: Int = 3
+    var maxHearts: Int = 3
     override val solidHeight: Float = 30f
     var dizziness: Float = 0f
     var dizzy: Boolean = false
@@ -298,10 +299,11 @@ class Player(
     fun trapped() {
         trappedForSeconds = 2f
         placingTrapForSeconds = 0f
+        bumpingDirection.set(0f, 0f)
     }
 
     fun damaged() {
-        if (damagedForSeconds == 0f) {
+        if (hearts > 0 && damagedForSeconds == 0f) {
             damagedForSeconds = 0.75f
             hearts--
             if (hearts == 0) {

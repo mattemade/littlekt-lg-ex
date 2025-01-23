@@ -55,7 +55,7 @@ class Cogwheel(
             fill(-width*2f + width * 4f * Random.nextFloat(), y - heightFloat*4f)
         },
         setEndPosition = {x, y ->
-            fill(x - halfWidth, y - 40f) // normal rendering offsets
+            fill(x - halfWidth - 1f, y - 43f) // normal rendering offsets
         },
     )
 
@@ -86,8 +86,8 @@ class Cogwheel(
             val segment = ((rotation / radInSegment).floorToInt() % positions + positions) % positions
             batch.draw(
                 segments[segment],
-                x = position.x - 16f,
-                y = position.y - 40f,
+                x = position.x - 16f - 1f,
+                y = position.y - 43f,
                 width = 32f,
                 height = 48f,
             )

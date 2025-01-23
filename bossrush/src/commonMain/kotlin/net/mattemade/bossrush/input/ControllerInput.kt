@@ -84,7 +84,7 @@ fun Context.bindInputs(): InputMapController<ControllerInput> =
             ControllerInput.PLACE_TRAP,
             buttons = listOf(GameButton.R1).any().action(),
             // JS configuration is messed up, and right/middle mouse buttons have different codes in browsers
-            pointers = listOf(Pointer.MOUSE_RIGHT, Pointer.MOUSE_MIDDLE),
+            pointers = listOf(Pointer.MOUSE_LEFT, Pointer.MOUSE_RIGHT, Pointer.MOUSE_MIDDLE),
         )
         addBinding(
             ControllerInput.SLOW_MODIFIER,

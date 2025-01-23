@@ -8,13 +8,14 @@ import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.toFloatBits
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.PI2_F
+import com.littlekt.math.PI_F
 import com.littlekt.math.Vec2f
-import com.littlekt.math.geom.degrees
 import com.littlekt.math.geom.radians
 import com.littlekt.math.geom.times
 import com.littlekt.util.fastForEach
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
+import net.mattemade.bossrush.DEBUG
 import net.mattemade.bossrush.NO_ROTATION
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleShader
@@ -33,6 +34,7 @@ class Boss(
     private val spawn: (Projectile) -> Unit,
     private val spawnCollectible: (Projectile) -> Unit,
     private val melee: (position: Vec2f, angle: Float, clockwise: Boolean) -> Unit,
+    private val destroyCollectibles: (Boss) -> Unit,
     override val position: MutableVec2f = MutableVec2f(0f, -100f),
     var health: Float = 1f,
 ) : TemporaryDepthRenderableObject {
@@ -53,7 +55,7 @@ class Boss(
     private val tempVec2f = MutableVec2f()
 
 
-    private val appearingFor = 3000f
+    private val appearingFor = if (DEBUG) 0f else 3000f
     private fun createParticles(texture: TextureSlice): TextureParticles {
         val width = texture.width
         val widthFloat = texture.width.toFloat()
@@ -98,6 +100,23 @@ class Boss(
     // program is a list of actions to choose from: "relative chance" to ("cooldown" to "action")
     private val stayingUpState: State =
         listOf(
+            0.25f to listOf(
+                1f to ::throwBoulder,
+            ),
+            0.1f to listOf(
+                0.25f to {
+                    elevatingRate = 200f
+                    targetElevation = 200f
+                },
+                0.25f to {
+                    elevatingRate = -200f
+                    targetElevation = 0f
+                },
+                4f to {
+                    destroyCollectibles(this)
+                    spawnBoulders()
+                }
+            ),
             1f to listOf(
                 2f to ::spinClockwise,
                 0f to ::stopSpinning,
@@ -162,27 +181,88 @@ class Boss(
         angularSpinningSpeed = 0f
     }
 
-    private fun simpleAttack() = fireProjectiles(1, 0f)
+    private fun spawnBoulders() {
+        for (i in 0..8) {
+            tempVec2f.set(Random.nextFloat() * 100f, 0f).rotate((Random.nextFloat() * PI2_F).radians)
+            val spawnElevation = 300f + Random.nextFloat() * 200f
+            spawn(
+                Projectile(
+                    texture = assets.texture.boulder,
+                    position = tempVec2f.toMutableVec2(),
+                    direction = MutableVec2f(0f, 0f),
+                    solidElevation = spawnElevation,
+                    elevationRate = 0f,
+                    onSolidImpact = {
+                        fireProjectiles(8, PI2_F, it.position, 60f, it.solidElevation + 6f, 50f, 100f, false, scale = 0.5f)
+                    },
+                    gravity = 100f,
+                    solidRadius = 8f,
+                    isReversible = false,
+                )
+            )
+        }
 
-    private fun strongAttack() = fireProjectiles(5, 90f)
+    }
 
-    private fun fireProjectiles(count: Int, angle: Float) {
-        val deltaAngle = (angle / count).degrees
-        val startAngle = (-count / 2).toFloat() * deltaAngle
-
-        val speed = 80f
+    private fun throwBoulder() {
+        val speed = 60f
         val distance = tempVec2f.set(player.position).subtract(position).length()
         val reachingInSeconds = distance / speed
-        tempVec2f.setLength(speed).rotate(startAngle)
+        tempVec2f.setLength(speed)
         val spawnElevation = solidElevation + 24f
+        spawn(
+            Projectile(
+                texture = assets.texture.boulder,
+                position = position.toMutableVec2(),
+                direction = MutableVec2f(tempVec2f),
+                solidElevation = spawnElevation,
+                elevationRate = 100f * reachingInSeconds,//-spawnElevation / reachingInSeconds * 0.7f, // to make them fly a bit longer,
+                onSolidImpact = {
+                    fireProjectiles(8, PI2_F, it.position, 60f, it.solidElevation + 6f, 50f, 100f, false, scale = 0.5f)
+                },
+                gravity = 200f,
+                solidRadius = 8f,
+                isReversible = false,
+            )
+        )
+    }
+
+    private fun simpleAttack() = fireProjectiles(1, 0f)
+
+    private fun strongAttack() = fireProjectiles(5, PI_F / 2f)
+
+    private fun fireProjectiles(
+        count: Int,
+        angle: Float,
+        from: Vec2f = position,
+        speed: Float = 80f,
+        elevation: Float = solidElevation + 24f,
+        elevationRateOverride: Float? = null,
+        gravity: Float? = null,
+        tracking: Boolean = false,
+        scale: Float = 1f,
+    ) {
+        val deltaAngle = (angle / count).radians
+        val startAngle = (-count / 2).toFloat() * deltaAngle
+
+        val distance = tempVec2f.set(player.position).subtract(from).length()
+        val reachingInSeconds = distance / speed
+        tempVec2f.setLength(speed)
+        if (tracking) {
+            tempVec2f.rotate(startAngle)
+        }
         for (i in 0 until count) {
             spawn(
                 Projectile(
-                    position = position.toMutableVec2(),
+                    texture = assets.texture.projectile,
+                    position = from.toMutableVec2(),
                     direction = MutableVec2f(tempVec2f),
-                    solidElevation = spawnElevation,
-                    elevationRate = -spawnElevation / reachingInSeconds * 0.7f, // to make them fly a bit longer,
-                    spawnCollectible = spawnCollectible,
+                    solidElevation = elevation,
+                    elevationRate = elevationRateOverride
+                        ?: (-elevation / reachingInSeconds * 0.7f), // to make them fly a bit longer,
+                    onSolidImpact = spawnCollectible,
+                    gravity = gravity ?: 0f,
+                    scale = scale,
                 )
             )
             tempVec2f.rotate(deltaAngle)
@@ -247,8 +327,8 @@ class Boss(
         }
 
         if (meleeCooldown == 0f && solidElevation < 30f && position.distance(player.position) < solidRadius + player.solidRadius + 40f) {
-            player.damaged()
             player.bumpFrom(position)
+            player.damaged()
             tempVec2f.set(player.position).subtract(position)
             melee(position, tempVec2f.angleTo(NO_ROTATION).radians, false)
             meleeCooldown = 2f

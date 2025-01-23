@@ -51,6 +51,11 @@ class Collectible(
         position.add(displacement)
     }
 
+    override fun startDisappearing() {
+        // TODO: disappear once texture is there
+        collected = true
+    }
+
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
         shapeRenderer.filledCircle(x = position.x, y = position.y - 2f - elevation, radius = 2f, color = Color.GREEN.toFloatBits())
     }

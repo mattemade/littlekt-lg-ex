@@ -4,6 +4,7 @@ import com.littlekt.Context
 import com.littlekt.ContextListener
 import com.littlekt.graphics.Camera
 import com.littlekt.graphics.Color
+import com.littlekt.graphics.Texture
 import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.gl.ClearBufferMask
 import com.littlekt.graphics.shader.ShaderProgram
@@ -16,6 +17,7 @@ import com.littlekt.math.PI_F
 import com.littlekt.math.clamp
 import com.littlekt.math.floor
 import com.littlekt.math.smoothStep
+import com.littlekt.util.fastForEach
 import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.input.ControllerInput
@@ -31,6 +33,8 @@ import net.mattemade.utils.releasing.Releasing
 import net.mattemade.utils.releasing.Self
 import net.mattemade.utils.render.DirectRender
 import net.mattemade.utils.render.PixelRender
+import kotlin.math.abs
+import kotlin.math.pow
 import kotlin.time.Duration
 
 class Game(
@@ -54,11 +58,19 @@ class Game(
     private val assets = Assets(context)
     private var audioReady: Boolean = false
     private var assetsReady: Boolean = false
-    private var showingIntro: Boolean = true
-    private var showingGame: Boolean = false
+    private var showingIntro: Boolean = !DEBUG
+    private var showingGame: Boolean = DEBUG
+    private var showingOutro: Boolean = false
     private var introStaysFor: Float = 0f
     private var introFadesOutIn: Float = 0f
     private var introRotation: Float = -PI2_F
+    private var outroRotation: Float = -PI_F
+    private val outroTextures by lazy { mutableListOf(
+        assets.texture.outro1,
+        assets.texture.outro2,
+        assets.texture.outro3,
+        assets.texture.outro4,
+    ).mapIndexed { index, texture -> OutroInstance(index, texture, 0f) } }
     private val directRender = DirectRender(context, width = 1920, height = 1080, ::update, ::render)
     private val pixelRender = PixelRender(
         context,
@@ -68,7 +80,7 @@ class Game(
         VIRTUAL_HEIGHT,
         ::updatePixels,
         ::renderPixels,
-        clear = true
+        clear = true,
     )
     lateinit var particleShader: ShaderProgram<ParticleVertexShader, ParticleFragmentShader>
     lateinit var rotaryShader: RotaryShader
@@ -95,7 +107,7 @@ class Game(
             vfs["shader/rotary.frag.glsl"].readString()
         ).also { it.prepare(this) }
 
-        fight = Fight(context, gameInput, assets, particleShader)
+        fight = Fight(context, gameInput, assets, particleShader, { showingOutro = true })
 
         input.addInputProcessor(object : InputProcessor {
             override fun keyDown(key: Key): Boolean {
@@ -152,7 +164,7 @@ class Game(
 
             if (focused && assetsReady) {
 
-                if (showingGame) {
+                if (showingGame && !showingOutro) {
                     fight.updateAndRender(dt)
                 }
                 pixelRender.render(dt)
@@ -170,7 +182,7 @@ class Game(
                             zoom = onLowPerformance(false)
                         }
                     }
-                    println("fps: ${framesRenderedInPeriod / 5f}")
+                    //println("fps: ${framesRenderedInPeriod / 5f}")
                     fpsCheckTimeout = 5000f
                     framesRenderedInPeriod = 0
                 }
@@ -187,14 +199,16 @@ class Game(
     }
 
     private fun renderPixels(dt: Duration, camera: Camera, batch: Batch) {
-        batch.draw(fight.texture, 0f, 0f, width = GAME_WIDTH.toFloat(), height = VIRTUAL_HEIGHT.toFloat())
-        batch.draw(
-            fight.uiTexture,
-            GAME_WIDTH.toFloat(),
-            0f,
-            width = UI_WIDTH.toFloat(),
-            height = VIRTUAL_HEIGHT.toFloat()
-        )
+        if (!showingOutro) {
+            batch.draw(fight.texture, 0f, 0f, width = GAME_WIDTH.toFloat(), height = VIRTUAL_HEIGHT.toFloat())
+            batch.draw(
+                fight.uiTexture,
+                0f,//GAME_WIDTH.toFloat(),
+                0f,
+                width = UI_WIDTH.toFloat(),
+                height = VIRTUAL_HEIGHT.toFloat()
+            )
+        }
 
         if (introFadesOutIn > 0f) {
             introFadesOutIn -= dt.seconds
@@ -236,6 +250,51 @@ class Game(
             )
             batch.shader = previousShader
         }
+        if (showingOutro) {
+            val previousShader = batch.shader
+            batch.shader = rotaryShader // automatically binds the shader
+            outroRotation = maxOf(-PI2_F * 2f, outroRotation + gameInput.dRotation) + dt.seconds
+
+            val idealAngle = PI2_F * 1.66f * (5) + PI2_F
+            val angleDifference = outroRotation - idealAngle
+            val alpha = 1f - abs(angleDifference / (PI2_F * 6f))
+            rotaryShader.fragmentShader.uTime.apply(rotaryShader, angleDifference)
+            rotaryShader.fragmentShader.uAlpha.apply(rotaryShader, alpha)
+            rotaryShader.fragmentShader.uScale.apply(rotaryShader, 0.5f)
+            batch.draw(
+                assets.texture.xviii,
+                0f,
+                0f,
+                width = VIRTUAL_WIDTH.toFloat(),
+                height = VIRTUAL_HEIGHT.toFloat(),
+                flipY = true
+            )
+            batch.flush()
+
+            outroTextures.fastForEach {
+                it.sortFactor = outroRotation - PI2_F * 1.66f * (it.order + 1) - PI_F
+            }
+            //outroTextures.sortedBy { abs(it.sortFactor) }
+
+            for (i in 0 .. 3) {
+                val outroInstance = outroTextures[i]
+                val angleDifference = outroInstance.sortFactor
+                val alpha = (1f - abs(angleDifference / (PI2_F * 6f))).clamp().pow(2)
+                rotaryShader.fragmentShader.uTime.apply(rotaryShader, angleDifference)
+                rotaryShader.fragmentShader.uAlpha.apply(rotaryShader, alpha)
+                rotaryShader.fragmentShader.uScale.apply(rotaryShader, 1f)
+                batch.draw(
+                    outroInstance.texture,
+                    0f,
+                    0f,
+                    width = VIRTUAL_WIDTH.toFloat(),
+                    height = VIRTUAL_HEIGHT.toFloat(),
+                    flipY = true
+                )
+                batch.flush()
+            }
+            batch.shader = previousShader
+        }
     }
 
     private fun update(duration: Duration, camera: Camera) {
@@ -259,8 +318,10 @@ class Game(
     }
 
     companion object {
-        const val TITLE = "Boss Rush game"
+        const val TITLE = "XVIII"
     }
 }
+
+private class OutroInstance(val order: Int, val texture: Texture, var sortFactor: Float)
 
 private fun Float.smoothStep(): Float = com.littlekt.math.smoothStep(0f, 1f, this)
