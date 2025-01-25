@@ -10,6 +10,8 @@ import com.littlekt.math.MutableVec2f
 import com.littlekt.math.PI2_F
 import com.littlekt.math.PI_F
 import com.littlekt.math.Vec2f
+import com.littlekt.math.floorToInt
+import com.littlekt.math.geom.abs
 import com.littlekt.math.geom.radians
 import com.littlekt.math.geom.times
 import com.littlekt.util.fastForEach
@@ -17,9 +19,13 @@ import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.DEBUG
 import net.mattemade.bossrush.NO_ROTATION
+import net.mattemade.bossrush.SOUND_VOLUME
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleShader
 import net.mattemade.utils.math.fill
+import kotlin.math.abs
+import kotlin.math.roundToInt
+import kotlin.math.sign
 import kotlin.random.Random
 import kotlin.time.Duration
 
@@ -43,12 +49,15 @@ class Boss(
     private val standTexture = assets.texture.bossStand
     private val flyTexture = assets.texture.bossFly
     private var damagedForSeconds: Float = 0f
+    private var starTimer = 0f
     private var trappedForSeconds = 0f
-    private var meleeCooldown = 0f
+    var meleeCooldown = 0f
     private val shadowRadii = MutableVec2f(0f, 0f)
     private val damageColor = Color.RED.toFloatBits()
     override var solidElevation: Float = 0f
     override val solidHeight: Float = 38f
+    private var dizziness = 0f
+    private var dizzinessSign = 0f
 
     override val solidRadius: Float
         get() = 8f
@@ -101,6 +110,9 @@ class Boss(
     private val stayingUpState: State =
         listOf(
             0.25f to listOf(
+                2f to ::shotgun,
+            ),
+            0.25f to listOf(
                 1f to ::throwBoulder,
             ),
             0.1f to listOf(
@@ -117,7 +129,7 @@ class Boss(
                     spawnBoulders()
                 }
             ),
-            1f to listOf(
+            0.5f to listOf(
                 2f to ::spinClockwise,
                 0f to ::stopSpinning,
                 1f to ::elevate,
@@ -184,9 +196,10 @@ class Boss(
     private fun spawnBoulders() {
         for (i in 0..8) {
             tempVec2f.set(Random.nextFloat() * 100f, 0f).rotate((Random.nextFloat() * PI2_F).radians)
-            val spawnElevation = 300f + Random.nextFloat() * 200f
+            val spawnElevation = 400f + Random.nextFloat() * 200f
             spawn(
                 Projectile(
+                    assets = assets,
                     texture = assets.texture.boulder,
                     position = tempVec2f.toMutableVec2(),
                     direction = MutableVec2f(0f, 0f),
@@ -212,6 +225,7 @@ class Boss(
         val spawnElevation = solidElevation + 24f
         spawn(
             Projectile(
+                assets = assets,
                 texture = assets.texture.boulder,
                 position = position.toMutableVec2(),
                 direction = MutableVec2f(tempVec2f),
@@ -227,9 +241,11 @@ class Boss(
         )
     }
 
-    private fun simpleAttack() = fireProjectiles(1, 0f)
+    private fun shotgun() = fireProjectiles(count = 8, angle = PI_F / 4f, tracking = true, speed = 120f, elevationRateOverride = 0f, scale = 0.5f, timeToLive = 0.6f)
 
-    private fun strongAttack() = fireProjectiles(5, PI_F / 2f)
+    private fun simpleAttack() = fireProjectiles(1, 0f, tracking = true, scale = 0.5f)
+
+    private fun strongAttack() = fireProjectiles(5, PI_F / 2f, tracking = true, scale = 0.5f)
 
     private fun fireProjectiles(
         count: Int,
@@ -239,21 +255,25 @@ class Boss(
         elevation: Float = solidElevation + 24f,
         elevationRateOverride: Float? = null,
         gravity: Float? = null,
-        tracking: Boolean = false,
+        tracking: Boolean = true,
         scale: Float = 1f,
+        timeToLive: Float = 0f,
     ) {
+        assets.sound.bossFire.play(volume = 20f, positionX = position.x, positionY = position.y)
+
         val deltaAngle = (angle / count).radians
         val startAngle = (-count / 2).toFloat() * deltaAngle
 
         val distance = tempVec2f.set(player.position).subtract(from).length()
         val reachingInSeconds = distance / speed
-        tempVec2f.setLength(speed)
-        if (tracking) {
+        tempVec2f.setLength(speed).rotate(if (tracking) startAngle else -tempVec2f.angleTo(NO_ROTATION))
+        /*if (tracking) {
             tempVec2f.rotate(startAngle)
-        }
+        }*/
         for (i in 0 until count) {
             spawn(
                 Projectile(
+                    assets = assets,
                     texture = assets.texture.projectile,
                     position = from.toMutableVec2(),
                     direction = MutableVec2f(tempVec2f),
@@ -263,6 +283,7 @@ class Boss(
                     onSolidImpact = spawnCollectible,
                     gravity = gravity ?: 0f,
                     scale = scale,
+                    timeToLive = timeToLive,
                 )
             )
             tempVec2f.rotate(deltaAngle)
@@ -270,6 +291,7 @@ class Boss(
     }
 
     override fun update(dt: Duration): Boolean {
+        starTimer = (starTimer + dt.seconds) % PI2_F
         if (disappearing) {
             appear.update(-dt)
             disappearing = appear.liveFactor > 0f
@@ -305,6 +327,13 @@ class Boss(
             if (trappedForSeconds > 0f) {
                 return true
             }
+            dizziness = 0f
+        }
+
+        if (dizziness > 0f) {
+            dizziness = maxOf(0f, dizziness - dt.seconds / 2f)
+        } else if (dizziness < 0f) {
+            dizziness = minOf(0f, dizziness + dt.seconds / 2f)
         }
 
         if (angularSpinningSpeed != 0f) {
@@ -366,10 +395,11 @@ class Boss(
             colorBits = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else batch.colorBits
         )
 
-        if (trappedForSeconds > 0f) {
-            for (i in 0..2) {
+        val startCount = if (trappedForSeconds > 0f) (trappedForSeconds + 1f).floorToInt() else abs(dizziness).floorToInt()
+        //if (trappedForSeconds > 0f) {
+            for (i in 0 until startCount) {
                 tempVec2f.set(10f, 0f)
-                    .rotate((trappedForSeconds * 3f + i * PI2_F / 3f).radians)
+                    .rotate((starTimer * 3f + i * PI2_F / 5f * dizzinessSign).radians)
                     .scale(1f, 0.5f)
                     .add(-4f, -4f) // offset the middle of the texture
                     .add(position) // offset into character position
@@ -381,7 +411,7 @@ class Boss(
                     height = 8f,
                 )
             }
-        }
+        //}
     }
 
     override fun isActive(): Boolean = !appearing && !disappearing && !deactivated
@@ -404,11 +434,27 @@ class Boss(
         /*if (health == 0f) {
             return
         }*/
-        damagedForSeconds = 0.75f
-        health -= if (strong) 0.1f else 0.05f
+        if (damagedForSeconds <= 0f) {
+            assets.sound.bossHit.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
+            damagedForSeconds = 0.75f
+            health -= if (strong) 0.1f else 0.05f
+        }
         /*if (health <= 0f) {
             health = 0f
             // TODO: next boss
         }*/
+    }
+
+    fun applyRotation(angle: Float) {
+        if (trappedForSeconds > 0f) {
+            return
+        }
+        dizziness += angle
+        if (dizziness != 0f) {
+            dizzinessSign = sign(dizziness)
+        }
+        if (abs(dizziness) > 5f) {
+            trapped()
+        }
     }
 }

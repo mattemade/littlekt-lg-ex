@@ -18,12 +18,14 @@ import com.littlekt.math.interpolate
 import com.littlekt.math.isFuzzyZero
 import com.littlekt.math.smoothStep
 import com.littlekt.util.seconds
+import kotlinx.coroutines.job
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.math.minimalRotation
 import net.mattemade.bossrush.objects.TextureParticles
 import net.mattemade.bossrush.shader.ParticleShader
 import net.mattemade.utils.math.fill
 import net.mattemade.utils.render.PixelRender
+import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -43,11 +45,21 @@ class Arena(
     var currentHour = 0
 
     var angularVelocity: Float = 0f
+        set(value) {
+            field = value
+            assets.sound.arenaRotating.volume = smoothStep(0f, 1f, abs(value))/2f// abs(value/ 2f).pow(2)
+        }
     private var turningToZeroAction: (() -> Unit)? = null
     private var deactivated: Boolean = false
 
     private val clockMask = Color.WHITE.toMutableColor().apply {
         a = 0f
+    }
+
+    init {
+        context.vfs.launch {
+            assets.sound.arenaRotating.play(volume = 0f, loop = true)
+        }
     }
 
     private var lastHour = 0f
@@ -70,7 +82,6 @@ class Arena(
             val hours = /*currentHour +*/ movingMinute / 60f
 
             if (hours != lastHour) {
-                println("hour changes from $lastHour to $hours")
                 lastHour = hours
             }
 
@@ -142,25 +153,16 @@ class Arena(
 
     fun updateClock(dt: Duration) {
         val progress = 1f - bossLeft()
-        //println("progress from $previousProgress to $progress")
         if (previousProgress == 1f && progress == 0f || previousProgress == 0f && progress == 1f) {
-            println("progress spiked $previousProgress to $progress")
             previousProgress = progress
             movingMinuteFrom = currentHour*60f + progress * 60f
             movingMinute = currentHour*60f + progress * 60f
             movingMinuteTo = currentHour*60f + progress * 60f
-            println("spiking from $movingMinuteFrom to $movingMinuteTo")
         } else if (previousProgress != progress) {
-            println("progress changed $previousProgress to $progress")
-            if (progress == 0f) {
-                val a = 0
-                val b = a + 1
-            }
             movingMinuteFrom = movingMinute
             movingMinuteTo = currentHour*60f + minOf(60f, progress * 60f)
             showingClockFor = maxShowingClockFor
             previousProgress = progress
-            println("moving from $movingMinuteFrom to $movingMinuteTo")
         }
         //clockMask.a = (clockMask.a + dt.seconds / 2f) % 1f
         if (showingClockFor > 0f) {
@@ -188,9 +190,7 @@ class Arena(
             angularVelocity = minimalRotation(rotation, 0f)
             rotation += dt.seconds * angularVelocity
             rotation = rotation.clamp(0f, PI2_F)
-            println("rotation: $rotation, ${(rotation - PI2_F)}")
             if (rotation.isFuzzyZero(eps = 0.01f) || (rotation - PI2_F).isFuzzyZero(eps = 0.01f)) {
-                println("EXECUTE!!!")
                 rotation = 0f
                 angularVelocity = 0f
                 turningToZeroAction?.invoke()
@@ -287,11 +287,9 @@ class Arena(
     }
 
     fun setClockFactor(factor: Float) {
-        //println("settings factor to $factor")
         clockMask.a = minOf(1f, factor * factor)
     }
     fun fadeClockOut() {
-        //println("fading out")
         showingClockFor = maxShowingClockFor - maxMovingClockFor
     }
 }

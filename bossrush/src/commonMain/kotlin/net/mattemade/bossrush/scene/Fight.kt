@@ -5,7 +5,6 @@ import com.littlekt.graphics.Camera
 import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.shader.ShaderProgram
-import com.littlekt.graphics.shader.generator.type.vec.Vec2
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.PI2_F
 import com.littlekt.math.PI_F
@@ -17,8 +16,8 @@ import com.littlekt.util.seconds
 import net.mattemade.bossrush.ARENA_RADIUS
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.DEBUG
-import net.mattemade.bossrush.GAME_WIDTH
 import net.mattemade.bossrush.NO_ROTATION
+import net.mattemade.bossrush.SOUND_VOLUME
 import net.mattemade.bossrush.VIRTUAL_HEIGHT
 import net.mattemade.bossrush.VIRTUAL_WIDTH
 import net.mattemade.bossrush.input.GameInput
@@ -154,6 +153,8 @@ class Fight(
             cameraStart.y + (cameraTarget.y - cameraStart.y) * cameraFactor,
             0f
         )
+        context.audio.setListenerPosition(camera.position.x, camera.position.y, -50f)
+        assets.sound.arenaRotating.setPosition(camera.position.x, camera.position.y)
         camera.update()
 
         gameObjects.fastIterateRemove { obj ->
@@ -169,6 +170,9 @@ class Fight(
         }
         arena.adjustVelocity(player.previousPosition, player.position, 0.05f)
         arena.update(dt)
+        bosses.fastForEach {
+            it.applyRotation(arena.angularVelocity * dt.seconds * 2f)
+        }
 
         solidObjects.fastForEach {
             if (it != player) {
@@ -212,33 +216,46 @@ class Fight(
                 }
 
                 is Projectile -> {
-                    if (obj.timeToLive > 0f) {
+                    if (obj.timeToLive >= 0f) {
                         // collision check
                         var collide = false
                         solidObjects.fastForEach { solid ->
-                            if (obj.canDamageBoss || !bosses.contains(solid)) { // do not collide with boss if we can't damage
-                                solid.solidRadius?.let { solidRadius ->
-                                    if (solid.position.distance(obj.position) < solidRadius + obj.solidRadius && obj.solidElevation >= solid.solidElevation
-                                        && obj.solidElevation <= solid.solidElevation + solid.solidHeight
-                                    ) {
-                                        if (solid === player) {
-                                            player.damaged()
-                                            obj.onPlayerImpact(obj)
-                                            collide = true
-                                        } else if (solid is Boss && solid.isActive()) {
-                                            solid.damaged()
-                                            collide = true
-                                        } else if (solid.isActive() && (solid is Column || solid is SpikeBall)) {
-                                            obj.direction.set(0f, 0f)
-                                            obj.onSolidImpact(obj)
-                                            //spawnCollectible(obj)
-                                            collide = true
-                                        } else if (solid is Collectible) {
-                                            // noop
+                            val itIsBoss = bosses.contains(solid)
+                            if (obj.canDamageBoss || !itIsBoss) { // do not collide with boss if we can't damage
+                                    solid.solidRadius?.let { solidRadius ->
+                                        if (solid.position.distance(obj.position) < solidRadius + obj.solidRadius && obj.solidElevation >= solid.solidElevation
+                                            && obj.solidElevation <= solid.solidElevation + solid.solidHeight
+                                        ) {
+                                            if (solid === player) {
+                                                player.damaged()
+                                                obj.onPlayerImpact(obj)
+                                                collide = true
+                                            } else if (solid is Boss && solid.isActive()) {
+                                                solid.damaged()
+                                                collide = true
+                                            } else if (solid.isActive() && (solid is Column || solid is SpikeBall)) {
+                                                obj.direction.set(0f, 0f)
+                                                assets.sound.projectileLand.play(
+                                                    volume = SOUND_VOLUME,
+                                                    positionX = obj.position.x,
+                                                    positionY = obj.position.y
+                                                )
+                                                obj.onSolidImpact(obj)
+                                                //spawnCollectible(obj)
+                                                collide = true
+                                            } else if (solid is Collectible) {
+                                                // noop
+                                            }
+                                        } else if (solid is Boss && solid.meleeCooldown == 0f && solid.position.distance(obj.position) < 20f) {
+                                            val angle = tempVec2f.set(obj.position).subtract(solid.position).angleTo(NO_ROTATION).radians
+                                            swing(solid.position, angle, clockwise = true, powerful = true, powerfulAngularSpeedScale = 2f) {
+                                                player::position to { 16f }
+                                            }
+                                            solid.meleeCooldown = 2f
                                         }
                                     }
                                 }
-                            }
+
                         }
                         collide
                     } else {
@@ -254,6 +271,7 @@ class Fight(
                     }
                     if (obj.isActive() && rotationFactor > 1f) {
                         arena.fadeClockOut()
+                        destroyCollectibles(obj.position)
                         when (arena.currentHour) {
                             0 -> {
                                 delay(extraDelay / 2f) {
@@ -466,7 +484,7 @@ class Fight(
         if (!bossScheduled && !cogwheelFound && (totalBossHealth <= 0f || playerIsDead)) {
             bosses.clear()
             solidObjects.fastIterateRemove {
-                var removing = it !is Player && (it !is Collectible || playerIsDead)
+                var removing = it !is Player && it !is Collectible
                 if (it is Column || it is SpikeBall || it is Boss) {
                     it.deactivate()
                     if (playerIsDead) {
@@ -475,10 +493,19 @@ class Fight(
                         delay(if (it is Boss) 1f else 2f, it::startDisappearing)
                     }
                     removing = false
-                } else if (removing) {
+                }
+                if (removing) {
                     gameObjects.remove(it)
                 }
                 removing
+            }
+            gameObjects.fastIterateRemove {
+                if (it is Projectile) {
+                    spawnCollectible(it)
+                    true
+                } else {
+                    false
+                }
             }
             if (playerIsDead) {
                 extraDelay = maxOf(0f, extraDelay - 2f)
@@ -518,6 +545,9 @@ class Fight(
                 cogwheelScheduled = false
             }
             cogwheelScheduled = true
+        } else if (playerIsDead) {
+            // player is dead between stages, just restore 1 heart
+            player.hearts = 1
         }
         arena.updateClock(dt)
     }
@@ -547,11 +577,15 @@ class Fight(
                 // heal
                 player.resources -= 10
                 player.hearts = minOf(player.maxHearts, player.hearts + (player.maxHearts + 1) / 2)
-                // TODO: play healing animation
             } else if (seconds >= 1f && player.resources >= 5) {
                 player.resources -= 5
                 Trap(MutableVec2f(player.racketPosition), assets).save()
             } else if (seconds >= 0f && player.resources >= 2) {
+                assets.sound.placeBall.play(
+                    volume = SOUND_VOLUME,
+                    positionX = player.racketPosition.x,
+                    positionY = player.racketPosition.y
+                )
                 player.resources -= 2
                 ReadyBall(MutableVec2f(player.racketPosition)).save()
             }
@@ -559,33 +593,50 @@ class Fight(
     }
 
     private fun swing(angle: Float, clockwise: Boolean, powerful: Boolean) {
-        val swing = Swing(player.position, angle, clockwise, assets, powerful).save()
+        swing(player.position, angle, clockwise, powerful, 1f) {
+            if (powerful) {
+                val ballRotation = it.direction.angleTo(NO_ROTATION).radians
+                val targetBoss = bosses.minByOrNull { boss ->
+                    tempVec2f.set(player.position).subtract(boss.position)
+                    minimalRotation(
+                        ballRotation,
+                        tempVec2f.angleTo(NO_ROTATION).radians,
+                    )
+                }
+                targetBoss?.let { boss ->
+                    boss::position to { boss.solidElevation + boss.solidHeight / 2f }
+                }
+            } else {
+                null
+            }
+        }
+    }
+
+    private fun swing(from: MutableVec2f, angle: Float, clockwise: Boolean, powerful: Boolean, powerfulAngularSpeedScale: Float, getTarget: ((Projectile) -> Pair<() -> Vec2f, () -> Float>?)?) {
+        if (powerful) {
+            assets.sound.strongSwing.sound.play(volume = 20f, positionX = from.x, positionY = from.y)
+        } else {
+            assets.sound.lightSwing.sound.play(volume = 20f, positionX = from.x, positionY = from.y)
+        }
+        val swing = Swing(from, angle, clockwise, assets, powerful).save()
         gameObjects.fastForEach {
             if (it is Projectile) {
                 if (it.isReversible && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius &&
                     swing.hitBackPosition.distance(it.position) > swing.hitBackRadius
                 ) {
                     it.canDamageBoss = true
+                    it.timeToLive = 0f
                     if (powerful) {
-                        tempVec2f.set(it.position).subtract(player.position)
+                        tempVec2f.set(it.position).subtract(from)
                             .rotate((if (clockwise) -PI_F * 0.4f else PI_F * 0.4f).radians)
-                        it.direction.scale(1.25f).rotateTowards(tempVec2f)
-                        val ballRotation = it.direction.angleTo(NO_ROTATION).radians
-                        val targetBoss = bosses.minByOrNull { boss ->
-                            tempVec2f.set(player.position).subtract(boss.position)
-                            minimalRotation(
-                                ballRotation,
-                                tempVec2f.angleTo(NO_ROTATION).radians,
-                            )
-                        }
-                        targetBoss?.let { boss ->
-                            it.target = boss::position
-                            it.targetElevation = { boss.solidElevation + boss.solidHeight / 2f }
-                        }
-                        it.angularSpeedScale = 1f
+                        it.direction.setLength(120f).rotateTowards(tempVec2f)
+                        val target = getTarget?.invoke(it)
+                        it.target = target?.first
+                        it.targetElevation = target?.second
+                        it.angularSpeedScale = powerfulAngularSpeedScale
                     } else {
-                        tempVec2f.set(it.position).subtract(player.position)
-                        it.direction.rotateTowards(tempVec2f)
+                        tempVec2f.set(it.position).subtract(from)
+                        it.direction.setLength(80f).rotateTowards(tempVec2f)
                     }
                 }
             } else if (it is Boss && it.isActive()) {
@@ -598,24 +649,26 @@ class Fight(
                 swing.hitBackPosition.distance(it.position) > swing.hitBackRadius
             ) {
                 gameObjects.remove(it)
-                tempVec2f.set(it.position).subtract(player.position)
+                tempVec2f.set(it.position).subtract(from)
                     .rotate((if (clockwise) -PI_F * 0.4f else PI_F * 0.4f).radians)
                 val ballDirection = MutableVec2f(200f, 0f).also { it.rotateTowards(tempVec2f) }
                 val ballRotation = ballDirection.angleTo(NO_ROTATION).radians
                 val targetBoss = bosses.minByOrNull { boss ->
-                    tempVec2f.set(player.position).subtract(boss.position)
+                    tempVec2f.set(from).subtract(boss.position)
                     minimalRotation(
                         ballRotation,
                         tempVec2f.angleTo(NO_ROTATION).radians,
                     )
                 }
                 Projectile(
+                    assets = assets,
                     texture = assets.texture.projectile,
                     position = it.position.toMutableVec2(),
                     direction = ballDirection,
                     solidElevation = it.elevation,
                     elevationRate = 120f,
                     onSolidImpact = ::spawnCollectible,
+                    scale = 0.5f,
                 ).also {
                     targetBoss?.let { boss ->
                         it.target = boss::position
@@ -644,9 +697,13 @@ class Fight(
     }
 
     private fun destroyCollectibles(by: Boss) {
+        destroyCollectibles(by.position)
+    }
+
+    private fun destroyCollectibles(from: Vec2f) {
         gameObjects.fastForEach {
             if (it is Collectible) {
-                delay(tempVec2f.set(by.position).subtract(it.position).length() / 400f) {
+                delay(tempVec2f.set(from).subtract(it.position).length() / 400f) {
                     it.startDisappearing()
                 }
             }

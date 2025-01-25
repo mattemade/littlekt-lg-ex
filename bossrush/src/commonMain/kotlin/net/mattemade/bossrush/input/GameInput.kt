@@ -23,22 +23,27 @@ class GameInput(private val context: Context, private val input: InputMapControl
     var previousDRotation: Float = 0f
     var dRotation: Float = 0f
     var cursorCentered: Boolean = false
+    var gamepadInput: Boolean = false
 
     fun update(dt: Duration) {
         val gamepadSwingHorizontal = input.axis(ControllerInput.SWING_HORIZONTAL)
         val gamepadSwingVertical = input.axis(ControllerInput.SWING_VERTICAL)
 
-        if (gamepadSwingHorizontal != 0f || gamepadSwingVertical != 0f) {
+
+        gamepadInput = if (gamepadSwingHorizontal != 0f || gamepadSwingVertical != 0f) {
             cursorPosition.set(gamepadSwingHorizontal, gamepadSwingVertical).scale(20f)
+            true
         } else {
             cursorPosition.add(context.input.deltaX / 4f, context.input.deltaY / 4f)
+            false
         }
         val length = cursorPosition.length()
         if (length > 20f) {
             cursorPosition.setLength(20f)
         }
 
-        if (length < 4f) {
+        val deadzone = if (gamepadInput) 0f else 4f
+        if (length < deadzone) {
             rotation = previousRotation
             dRotation = 0f
             cursorCentered = true

@@ -1,16 +1,22 @@
 package net.mattemade.bossrush
 
+import co.touchlab.stately.collections.ConcurrentMutableList
 import com.littlekt.Context
 import com.littlekt.PreparableGameAsset
+import com.littlekt.audio.AudioClipEx
+import com.littlekt.file.vfs.readAudioClipEx
+import com.littlekt.file.vfs.readAudioStreamEx
 import com.littlekt.file.vfs.readTexture
 import com.littlekt.graphics.g2d.TextureSlice
 import net.mattemade.utils.asset.AssetPack
 import net.mattemade.utils.atlas.RuntimeTextureAtlasPacker
+import kotlin.random.Random
 
 class Assets(context: Context) : AssetPack(context) {
     private val runtimeTextureAtlasPacker = RuntimeTextureAtlasPacker(context).releasing()
 
     val texture by pack { Textures(context, runtimeTextureAtlasPacker) }
+    val sound by pack { Sound(context) }
 
     private val atlas by prepare(1) { runtimeTextureAtlasPacker.packAtlas() }
 }
@@ -63,4 +69,73 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val outro2 by prepare { context.vfs["texture/outro/2.png"].readTexture() }
     val outro3 by prepare { context.vfs["texture/outro/3.png"].readTexture() }
     val outro4 by prepare { context.vfs["texture/outro/4.png"].readTexture() }
+}
+
+class Sound(context:Context): AssetPack(context) {
+    val lightSwing by pack {
+        SoundPack(context, listOf(
+            "sound/Light Hit 1.wav",
+            "sound/Light Hit 2.wav",
+            "sound/Light hit 3.wav",
+            "sound/Light hit 4.wav",
+        ))
+    }
+    val strongSwing by pack {
+        SoundPack(context, listOf(
+            "sound/Heavy Hit 1.wav",
+            "sound/Heavy Hit 2.wav",
+        ))
+    }
+
+    val arenaRotating by prepare {
+        context.resourcesVfs["sound/Floor Rotating.wav"].readAudioStreamEx()
+    }
+
+    val bossFire by prepare {
+        context.resourcesVfs["sound/Boss Firing.wav"].readAudioClipEx()
+    }
+
+    val bossHit by prepare {
+        context.resourcesVfs["sound/Boss gets hit.wav"].readAudioClipEx()
+    }
+
+    val playerHit by prepare {
+        context.resourcesVfs["sound/Player gets hit.mp3"].readAudioClipEx()
+    }
+
+    val placeBall by prepare {
+        context.resourcesVfs["sound/Placing Ball.wav"].readAudioClipEx()
+    }
+
+    val projectileLand by prepare {
+        context.resourcesVfs["sound/Ball hits wall or floor.mp3"].readAudioClipEx()
+    }
+
+
+}
+
+
+class SoundPack(context: Context, val fileNames: List<String>, val randomize: Boolean = true) :
+    AssetPack(context) {
+
+    private val size = fileNames.size
+    private var nextIndex = 0
+        get() {
+            val currentValue = field
+            field = (currentValue + 1) % size
+            return currentValue
+        }
+
+    val sound: AudioClipEx
+        get() = concurrentSounds.get(if (randomize) Random.nextInt(size) else nextIndex)
+
+    private val concurrentSounds = ConcurrentMutableList<AudioClipEx>()
+
+    init {
+        fileNames.forEach {
+            prepare {
+                context.resourcesVfs[it].readAudioClipEx().also { concurrentSounds.add(it) }
+            }
+        }
+    }
 }

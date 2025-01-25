@@ -8,10 +8,13 @@ import com.littlekt.graphics.toFloatBits
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.Vec2f
 import com.littlekt.util.seconds
+import net.mattemade.bossrush.Assets
+import net.mattemade.bossrush.SOUND_VOLUME
 import net.mattemade.bossrush.math.rotateTowards
 import kotlin.time.Duration
 
 class Projectile(
+    val assets: Assets,
     val texture: TextureSlice,
     override val position: MutableVec2f = MutableVec2f(),
     val direction: MutableVec2f = MutableVec2f(),
@@ -21,12 +24,12 @@ class Projectile(
     override val solidRadius: Float = texture.width / 2f,
     val scale: Float = 1f,
     val isReversible: Boolean = true,
+    var timeToLive: Float = 0f,
     val onPlayerImpact: (Projectile) -> Unit = {},
     val onSolidImpact: (Projectile) -> Unit,
 ) : TemporaryDepthRenderableObject {
 
-    var timeToLive = 10f
-    private val shadowRadii = Vec2f(texture.width * scale / 2f, texture.height * scale / 4f)
+    private val shadowRadii = MutableVec2f(texture.width * scale / 2f, texture.height * scale / 4f)
     private val tempVec2f = MutableVec2f()
     var target: (() -> Vec2f?)? = null
     var targetElevation: (() -> Float)? = null
@@ -34,7 +37,12 @@ class Projectile(
     var canDamageBoss: Boolean = false
 
     override fun update(dt: Duration): Boolean {
-        //timeToLive -= dt.seconds
+        if (timeToLive > 0f) {
+            timeToLive -= dt.seconds
+            if (timeToLive <= 0f) {
+                return false
+            }
+        }
 
         targetElevation?.invoke()?.let { targetElevation ->
             solidElevation += (targetElevation - solidElevation) * dt.seconds
@@ -42,6 +50,7 @@ class Projectile(
             elevationRate -= gravity * dt.seconds
             solidElevation += elevationRate * dt.seconds
             if (solidElevation <= 0f) {
+                assets.sound.projectileLand.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
                 onSolidImpact(this)
                 return false
             }
@@ -52,7 +61,7 @@ class Projectile(
         }
         tempVec2f.set(direction).scale(dt.seconds)
         position.add(tempVec2f)
-        return timeToLive > 0f
+        return true
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
@@ -68,7 +77,7 @@ class Projectile(
     override fun renderShadow(shapeRenderer: ShapeRenderer) {
         shapeRenderer.filledEllipse(
             position,
-            shadowRadii,
+            shadowRadii.set(texture.width / 2f, texture.height / 4f).scale(if (solidElevation < 10f) 1f else if (solidElevation > 400f) 0f else 1f - 1f * (solidElevation - 10f) / (400f - 10f)).scale(scale),
             innerColor = Color.BLUE.toFloatBits(),
             outerColor = Color.BLACK.toFloatBits()
         )

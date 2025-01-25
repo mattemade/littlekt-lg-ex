@@ -17,6 +17,8 @@ import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.ARENA_RADIUS
 import net.mattemade.bossrush.Assets
+import net.mattemade.bossrush.NO_ROTATION
+import net.mattemade.bossrush.SOUND_VOLUME
 import net.mattemade.bossrush.SWING_ANGLE
 import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.math.minimalRotation
@@ -31,7 +33,7 @@ import kotlin.time.Duration
 
 class Player(
     private val context: Context,
-    private val input: GameInput,//InputMapController<ControllerInput>,
+    private val input: GameInput,
     private val assets: Assets,
     private val shader: ParticleShader,
     private val placingTrap: (seconds: Float, released: Boolean) -> Unit,
@@ -54,6 +56,7 @@ class Player(
     //var rotation = 0f
     //var relativeRacketPosition = MutableVec2f(0f, 0f)
     var racketPosition = MutableVec2f(0f, 0f)
+    var starTime = 0f
     var trappedForSeconds = 0f
     var damagedForSeconds = 0f
     private val damageColor = Color.RED.toFloatBits()
@@ -61,6 +64,7 @@ class Player(
         get() = 4f
 
     var isReadyToSwing = true
+    var lastInputRotation = 0f
     //var previousDRotation = 0f
 
     private val disappearingFor = 10000f
@@ -127,6 +131,10 @@ class Player(
     private val tempVec2f = MutableVec2f()
 
     override fun update(dt: Duration): Boolean {
+        starTime = (starTime + dt.seconds) % PI2_F
+
+        racketPosition.set(position).add(input.cursorPosition)
+
         disappear?.let {
             it.update(-dt)
             shadowRadii.set(10f, 5f).scale(it.liveFactor)
@@ -142,13 +150,17 @@ class Player(
             dizziness = 5f
         }
         if (dizziness > 0f) {
-            dizziness = maxOf(0f, dizziness - dt.seconds)
+            dizziness = maxOf(0f, dizziness - if (dizzy) dt.seconds * 2f else dt.seconds)
+            if (dizziness == 0f) {
+                dizzy = false
+            }
         }
         if (dizzy) {
             return true
         }
 
         if (trappedForSeconds > 0f) {
+            dizzy = false
             dizziness = 0f
             trappedForSeconds = maxOf(0f, trappedForSeconds - dt.seconds)
             if (trappedForSeconds > 0f) {
@@ -157,17 +169,25 @@ class Player(
         }
 
 
-        racketPosition.set(position).add(input.cursorPosition)
 
         val rotation = input.rotation
+        lastInputRotation = rotation
         val swingingAngleDifference = minimalRotation(previousRotationStopOrPivot, rotation)
         val absSwingingAngleDifference = abs(swingingAngleDifference)
         swingingForMillis += dt.milliseconds
+
         if (isReadyToSwing && absSwingingAngleDifference >= PI_F * SWING_ANGLE) {
+            val movementLength = input.movement.length() / dt.seconds
+            val movementAngle = input.movement.angleTo(NO_ROTATION).radians
+            val angleDiff = minimalRotation(rotation, movementAngle)
+            val swingingTowardsMoving = sign(swingingAngleDifference) == sign(angleDiff)
+            val absAngleDiff = abs(angleDiff)
+            val strongBlow = movementLength > 35f && swingingTowardsMoving && absAngleDiff < PI_F*0.75f
+            dizziness += 1f
             swing(
                 rotation,
                 swingingAngleDifference < 0f,
-                swingingForMillis <= 120f
+                strongBlow
             )
             previousRotationStopOrPivot = rotation
             isReadyToSwing = false
@@ -176,7 +196,7 @@ class Player(
 
         val rotationSpeed = abs(input.dRotation) / dt.milliseconds // slow 0.02 light 0.04 quick
         if (rotationSpeed == 0f) {
-            isReadyToSwing = false
+            //isReadyToSwing = false
         } else {
             val pivoting = sign(input.previousDRotation) * sign(input.dRotation) < 0f
             if (rotationSpeed < 0.005f || pivoting) {
@@ -230,7 +250,7 @@ class Player(
             )
         }
 
-        val segment = ((input.rotation / radInSegment).floorToInt() % positions + positions) % positions
+        val segment = ((lastInputRotation / radInSegment).floorToInt() % positions + positions) % positions
         batch.draw(
             textureSequence[segment],
             x = position.x - 20f,
@@ -241,10 +261,11 @@ class Player(
             colorBits = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else batch.colorBits,
         )
 
-        if (trappedForSeconds > 0f) {
-            for (i in 0..2) {
+        val starCount = if (trappedForSeconds > 0f) (trappedForSeconds*2f).floorToInt() + 1 else if (dizzy) ((dizziness+1f).floorToInt()) else dizziness.floorToInt()
+        if (starCount > 0) {
+            for (i in 0 until starCount) {
                 tempVec2f.set(10f, 0f)
-                    .rotate((trappedForSeconds * 3f + i * PI2_F / 3f).radians)
+                    .rotate((starTime * 3f + i * PI2_F / 5).radians)
                     .scale(1f, 0.5f)
                     .add(-4f, -4f) // offset the middle of the texture
                     .add(position) // offset into character position
@@ -304,6 +325,7 @@ class Player(
 
     fun damaged() {
         if (hearts > 0 && damagedForSeconds == 0f) {
+            assets.sound.playerHit.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
             damagedForSeconds = 0.75f
             hearts--
             if (hearts == 0) {
