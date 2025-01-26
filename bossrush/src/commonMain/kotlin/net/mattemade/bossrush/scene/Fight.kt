@@ -181,17 +181,37 @@ class Fight(
                         if (it is Collectible && !it.collected) {
                             it.collected = true
                             player.resources++
-                        } else if (it is SpikeBall && player.damagedForSeconds == 0f && it.isActive()) {
+                        } else if (player.damagedForSeconds == 0f && (it is SpikeBall || it is Boss && it.isDashing) && it.isActive()) {
                             player.bumpFrom(it.position)
                             player.damaged()
-                        } else if (it.isActive()) {
-                            // push player away
-                            tempVec2f.set(player.position).subtract(it.position)
-                                .setLength(player.solidRadius + solidRadius)
-                            player.position.set(it.position).add(tempVec2f)
+                        } else if (it.isActive()) { // non-dashing boss or column
+                            if (player.damagedForSeconds > 0f && it is Boss && it.isDashing) {
+                                // let the boss fly through
+                            } else {
+                                // push player away
+                                tempVec2f.set(player.position).subtract(it.position)
+                                    .setLength(player.solidRadius + solidRadius)
+                                player.position.set(it.position).add(tempVec2f)
+                            }
+                        }
+                    }
+                    if (it !is Boss) {
+                        bosses.forEach { boss ->
+                            if (boss.position.distance(it.position) < boss.solidRadius + solidRadius) {
+                                if (it.isActive()) {
+                                    // push boss away
+                                    tempVec2f.set(boss.position).subtract(it.position)
+                                        .setLength(boss.solidRadius + solidRadius)
+                                    boss.position.set(it.position).add(tempVec2f)
+                                    if (boss.isDashing) {
+                                        boss.trapped()
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+
             }
             // TODO: the same for boss? maybe let it go throw walls unless it does dash attack
         }
@@ -222,39 +242,46 @@ class Fight(
                         solidObjects.fastForEach { solid ->
                             val itIsBoss = bosses.contains(solid)
                             if (obj.canDamageBoss || !itIsBoss) { // do not collide with boss if we can't damage
-                                    solid.solidRadius?.let { solidRadius ->
-                                        if (solid.position.distance(obj.position) < solidRadius + obj.solidRadius && obj.solidElevation >= solid.solidElevation
-                                            && obj.solidElevation <= solid.solidElevation + solid.solidHeight
-                                        ) {
-                                            if (solid === player) {
-                                                player.damaged()
-                                                obj.onPlayerImpact(obj)
-                                                collide = true
-                                            } else if (solid is Boss && solid.isActive()) {
-                                                solid.damaged()
-                                                collide = true
-                                            } else if (solid.isActive() && (solid is Column || solid is SpikeBall)) {
-                                                obj.direction.set(0f, 0f)
-                                                assets.sound.projectileLand.play(
-                                                    volume = SOUND_VOLUME,
-                                                    positionX = obj.position.x,
-                                                    positionY = obj.position.y
-                                                )
-                                                obj.onSolidImpact(obj)
-                                                //spawnCollectible(obj)
-                                                collide = true
-                                            } else if (solid is Collectible) {
-                                                // noop
-                                            }
-                                        } else if (solid is Boss && solid.meleeCooldown == 0f && solid.position.distance(obj.position) < 20f) {
-                                            val angle = tempVec2f.set(obj.position).subtract(solid.position).angleTo(NO_ROTATION).radians
-                                            swing(solid.position, angle, clockwise = true, powerful = true, powerfulAngularSpeedScale = 2f) {
-                                                player::position to { 16f }
-                                            }
-                                            solid.meleeCooldown = 2f
+                                solid.solidRadius?.let { solidRadius ->
+                                    if (solid.position.distance(obj.position) < solidRadius + obj.solidRadius && obj.solidElevation >= solid.solidElevation
+                                        && obj.solidElevation <= solid.solidElevation + solid.solidHeight
+                                    ) {
+                                        if (solid === player) {
+                                            player.damaged()
+                                            obj.onPlayerImpact(obj)
+                                            collide = true
+                                        } else if (solid is Boss && solid.isActive()) {
+                                            solid.damage()
+                                            collide = true
+                                        } else if (solid.isActive() && (solid is Column || solid is SpikeBall)) {
+                                            obj.direction.set(0f, 0f)
+                                            assets.sound.projectileLand.play(
+                                                volume = SOUND_VOLUME,
+                                                positionX = obj.position.x,
+                                                positionY = obj.position.y
+                                            )
+                                            obj.onSolidImpact(obj)
+                                            //spawnCollectible(obj)
+                                            collide = true
+                                        } else if (solid is Collectible) {
+                                            // noop
                                         }
+                                    } else if (solid is Boss && solid.meleeCooldown == 0f && solid.position.distance(obj.position) < 20f) {
+                                        val angle = tempVec2f.set(obj.position).subtract(solid.position)
+                                            .angleTo(NO_ROTATION).radians
+                                        swing(
+                                            solid.position,
+                                            angle,
+                                            clockwise = true,
+                                            powerful = true,
+                                            powerfulAngularSpeedScale = 2f
+                                        ) {
+                                            player::position to { 16f }
+                                        }
+                                        solid.meleeCooldown = 2f
                                     }
                                 }
+                            }
 
                         }
                         collide
@@ -559,7 +586,7 @@ class Fight(
     }
 
     private fun render(batch: Batch) {
-        (shapeRenderer ?: ShapeRenderer(batch).also { shapeRenderer = it }).let { shapeRenderer ->
+        (shapeRenderer ?: ShapeRenderer(batch, slice = assets.texture.whitePixel).also { shapeRenderer = it }).let { shapeRenderer ->
             arena.render(batch, shapeRenderer)
             gameObjects.sort()
             gameObjects.fastForEach {
@@ -612,7 +639,14 @@ class Fight(
         }
     }
 
-    private fun swing(from: MutableVec2f, angle: Float, clockwise: Boolean, powerful: Boolean, powerfulAngularSpeedScale: Float, getTarget: ((Projectile) -> Pair<() -> Vec2f, () -> Float>?)?) {
+    private fun swing(
+        from: MutableVec2f,
+        angle: Float,
+        clockwise: Boolean,
+        powerful: Boolean,
+        powerfulAngularSpeedScale: Float,
+        getTarget: ((Projectile) -> Pair<() -> Vec2f, () -> Float>?)?
+    ) {
         if (powerful) {
             assets.sound.strongSwing.sound.play(volume = 20f, positionX = from.x, positionY = from.y)
         } else {
@@ -621,29 +655,35 @@ class Fight(
         val swing = Swing(from, angle, clockwise, assets, powerful).save()
         gameObjects.fastForEach {
             if (it is Projectile) {
-                if (it.isReversible && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius &&
+                if (it.isReversible && it.solidElevation <= 30f && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius &&
                     swing.hitBackPosition.distance(it.position) > swing.hitBackRadius
                 ) {
-                    it.canDamageBoss = true
-                    it.timeToLive = 0f
-                    if (powerful) {
-                        tempVec2f.set(it.position).subtract(from)
-                            .rotate((if (clockwise) -PI_F * 0.4f else PI_F * 0.4f).radians)
-                        it.direction.setLength(120f).rotateTowards(tempVec2f)
-                        val target = getTarget?.invoke(it)
-                        it.target = target?.first
-                        it.targetElevation = target?.second
-                        it.angularSpeedScale = powerfulAngularSpeedScale
+                    println("got with ${it.solidElevation}")
+                    if (it.isBomb) {
+                        it.onSolidImpact(it)
+                        it.timeToLive = 0.00000001f
                     } else {
-                        tempVec2f.set(it.position).subtract(from)
-                        it.direction.setLength(80f).rotateTowards(tempVec2f)
+                        it.canDamageBoss = true
+                        it.timeToLive = 0f
+                        if (powerful) {
+                            tempVec2f.set(it.position).subtract(from)
+                                .rotate((if (clockwise) -PI_F * 0.4f else PI_F * 0.4f).radians)
+                            it.direction.setLength(120f).rotateTowards(tempVec2f)
+                            val target = getTarget?.invoke(it)
+                            it.target = target?.first
+                            it.targetElevation = target?.second
+                            it.angularSpeedScale = powerfulAngularSpeedScale
+                        } else {
+                            tempVec2f.set(it.position).subtract(from)
+                            it.direction.setLength(80f).rotateTowards(tempVec2f)
+                        }
                     }
                 }
             } else if (it is Boss && it.isActive()) {
                 if (it.solidElevation < 20f && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius + it.solidRadius &&
                     swing.hitBackPosition.distance(it.position) > swing.hitBackRadius
                 ) {
-                    it.damaged(strong = powerful)
+                    it.damage(strong = powerful)
                 }
             } else if (it is ReadyBall && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius &&
                 swing.hitBackPosition.distance(it.position) > swing.hitBackRadius

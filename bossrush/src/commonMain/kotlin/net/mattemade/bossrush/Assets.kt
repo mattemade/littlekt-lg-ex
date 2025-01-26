@@ -25,6 +25,8 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     private fun String.pack(): PreparableGameAsset<TextureSlice> =
         preparePlain { packer.pack(this).await() }
 
+    val whitePixel by "texture/white_pixel.png".pack()
+
     val swingLight by "texture/swing_light.png".pack()
     val swingStrong by "texture/swing_strong.png".pack()
 
@@ -37,7 +39,9 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val littleStar by "texture/little_star.png".pack()
     val column by "texture/column.png".pack()
     val boulder by "texture/boulder.png".pack()
+    val bomb by "texture/bomb.png".pack()
     val projectile by "texture/projectile.png".pack()
+    val bombProjectile by "texture/bomb_projectile.png".pack()
 
     val heartFilled by "texture/hud/heart_filled.png".pack()
     val heartEmpty by "texture/hud/heart_empty.png".pack()

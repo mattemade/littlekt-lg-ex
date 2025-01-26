@@ -87,7 +87,7 @@ class Hud(
     }
 
     private fun renderUi(dt: Duration, batch: Batch) {
-        (uiShapeRenderer ?: ShapeRenderer(batch).also { uiShapeRenderer = it }).let { shapeRenderer ->
+        (uiShapeRenderer ?: ShapeRenderer(batch, slice = assets.texture.whitePixel).also { uiShapeRenderer = it }).let { shapeRenderer ->
 
             for (i in 0 until player.maxHearts) {
                 batch.draw(

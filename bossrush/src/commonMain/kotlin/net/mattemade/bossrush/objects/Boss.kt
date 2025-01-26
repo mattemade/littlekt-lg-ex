@@ -11,21 +11,23 @@ import com.littlekt.math.PI2_F
 import com.littlekt.math.PI_F
 import com.littlekt.math.Vec2f
 import com.littlekt.math.floorToInt
-import com.littlekt.math.geom.abs
 import com.littlekt.math.geom.radians
 import com.littlekt.math.geom.times
 import com.littlekt.util.fastForEach
+import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.DEBUG
 import net.mattemade.bossrush.NO_ROTATION
 import net.mattemade.bossrush.SOUND_VOLUME
+import net.mattemade.bossrush.math.minimalRotation
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleShader
 import net.mattemade.utils.math.fill
 import kotlin.math.abs
-import kotlin.math.roundToInt
+import kotlin.math.cos
 import kotlin.math.sign
+import kotlin.math.sin
 import kotlin.random.Random
 import kotlin.time.Duration
 
@@ -46,6 +48,7 @@ class Boss(
 ) : TemporaryDepthRenderableObject {
 
 
+    private val notSpawnCollectible: (Projectile) -> Unit = {}
     private val standTexture = assets.texture.bossStand
     private val flyTexture = assets.texture.bossFly
     private var damagedForSeconds: Float = 0f
@@ -58,10 +61,16 @@ class Boss(
     override val solidHeight: Float = 38f
     private var dizziness = 0f
     private var dizzinessSign = 0f
+    var canMeleeAttack: Boolean = false
 
     override val solidRadius: Float
         get() = 8f
     private val tempVec2f = MutableVec2f()
+    private var dashingTowards: Vec2f? = null
+    private var dangerousDashing: Boolean = false
+    private var dashingSpeed: Float = 80f
+    val isDashing: Boolean
+        get() = dangerousDashing && dashingTowards != null
 
 
     private val appearingFor = if (DEBUG) 0f else 3000f
@@ -106,46 +115,102 @@ class Boss(
 
     private var appear = createParticles(standTexture)
 
+    private val returnToPosition: State =
+        listOf(
+            1f to listOf(
+                2f to {
+                    println("returnting to position")
+                    dashingTowards = tempVec2f.set(position).setLength(100f).toVec2()
+                    dashingSpeed = 80f
+                },
+                0f to {
+                    currentState = stayingUpState
+                },
+            )
+        )
+
     // program is a list of actions to choose from: "relative chance" to ("cooldown" to "action")
     private val stayingUpState: State =
         listOf(
-            0.25f to listOf(
-                2f to ::shotgun,
+            1f to listOf(
+                1f to ::throwBomb,
+                1f to ::throwBomb,
+                1f to ::throwBomb,
             ),
-            0.25f to listOf(
-                1f to ::throwBoulder,
-            ),
-            0.1f to listOf(
-                0.25f to {
-                    elevatingRate = 200f
-                    targetElevation = 200f
+            1f to listOf(
+                //2f to ::spinClockwise,
+                //0f to ::stopSpinning,
+                2f to ::startCharging,
+                0f to ::stopCharging,
+                10f to {
+                    val angleToCenter = position.angleTo(NO_ROTATION).radians
+                    val angleHorde = tempVec2f.set(position).subtract(player.position).angleTo(NO_ROTATION).radians
+                    val diff = minimalRotation(angleToCenter, angleHorde)
+                    val rotationAngle = PI_F - diff * 2f
+                    tempVec2f.set(position).rotate((-rotationAngle).radians)
+                    dashingTowards = tempVec2f.toVec2()
+                    dangerousDashing = true
+                    dashingSpeed = 200f
                 },
-                0.25f to {
-                    elevatingRate = -200f
-                    targetElevation = 0f
-                },
-                4f to {
-                    destroyCollectibles(this)
-                    spawnBoulders()
-                }
-            ),
-            0.5f to listOf(
+                2f to {}, // wait
+            )
+            /*1f to listOf(
+                2f to ::stopCharging, // wait
                 2f to ::spinClockwise,
                 0f to ::stopSpinning,
-                1f to ::elevate,
-                1f to ::simpleAttack,
-                1f to ::simpleAttack,
-                1f to ::land
-            ),
-            0.5f to listOf(
-                1f to ::spinCounterClockwise,
-                0f to ::stopSpinning,
-                1f to ::elevate,
-                0.5f to ::simpleAttack,
-                0.5f to ::simpleAttack,
-                2f to ::strongAttack,
-                1f to ::land
-            )
+                2f to ::startCharging,
+                0f to ::stopCharging,
+                10f to {
+                    val angleToCenter = position.angleTo(NO_ROTATION).radians
+                    val angleHorde = tempVec2f.set(position).subtract(player.position).angleTo(NO_ROTATION).radians
+                    val diff = minimalRotation(angleToCenter, angleHorde)
+                    val rotationAngle = PI_F - diff * 2f
+                    tempVec2f.set(position).rotate((-rotationAngle).radians)
+                    dashingTowards = tempVec2f.toVec2()
+                    dashingSpeed = 200f
+                }
+            ),*/
+            /*1f to listOf(
+                1f to ::followPlayer,
+                0f to ::stopFollowing,
+            ),*/
+            /* 0.25f to listOf(
+                 2f to ::shotgun,
+             ),
+             0.25f to listOf(
+                 1f to ::throwBoulder,
+             ),
+             0.1f to listOf(
+                 0.25f to {
+                     elevatingRate = 200f
+                     targetElevation = 200f
+                 },
+                 0.25f to {
+                     elevatingRate = -200f
+                     targetElevation = 0f
+                 },
+                 4f to {
+                     destroyCollectibles(this)
+                     spawnBoulders()
+                 }
+             ),
+             0.5f to listOf(
+                 2f to ::spinClockwise,
+                 0f to ::stopSpinning,
+                 1f to ::elevate,
+                 1f to ::simpleAttack,
+                 1f to ::simpleAttack,
+                 1f to ::land
+             ),
+             0.5f to listOf(
+                 1f to ::spinCounterClockwise,
+                 0f to ::stopSpinning,
+                 1f to ::elevate,
+                 0.5f to ::simpleAttack,
+                 0.5f to ::simpleAttack,
+                 2f to ::strongAttack,
+                 1f to ::land
+             )*/
         )
 
     private fun State.getWeightedRandomProgram(): Program {
@@ -162,7 +227,31 @@ class Boss(
         return this.last().second
     }
 
+    private val charge = TextureParticles(
+        context, shader, assets.texture.whitePixel, position,
+        activeFrom = { x, y -> Random.nextFloat() * 1000f },
+        activeFor = { x, y -> 1000f },
+        timeToLive = 2000f,
+        doubles = 2000,
+        interpolation = 0,
+        setStartColor = { a = 0f },
+        setEndColor = { a = 1f },
+        setStartPosition = { x, y ->
+            val length = 200f + Random.nextFloat() * 500f
+            val angle = Random.nextFloat() * PI2_F
+            fill(length * cos(angle), length * sin(angle))
+        },
+        setEndPosition = { x, y -> fill(0f, -16f) })
+    private var charging = false
+
     private var currentState: State = stayingUpState
+        set(value) {
+            field = value
+            println("state set")
+            currentProgram = value.getWeightedRandomProgram()
+            currentProgramIndex = -1
+            toNextProgramIndex = 0f
+        }
     private var currentProgram: Program = currentState.getWeightedRandomProgram()
     private var currentProgramIndex = -1
     private var toNextProgramIndex = 0f
@@ -170,6 +259,7 @@ class Boss(
     private var angularSpinningSpeed = 0f
     private var targetElevation = 0f
     private var elevatingRate = 0f
+    private var followingPlayer = false
 
     private fun elevate() {
         targetElevation = 20f
@@ -179,6 +269,29 @@ class Boss(
     private fun land() {
         targetElevation = 0f
         elevatingRate = -20f
+    }
+
+    private fun dashIntoPlayer() {
+
+    }
+
+    private fun startCharging() {
+        println("start charging")
+        charge.addToTime(-200000f)
+        charging = true
+    }
+
+    private fun stopCharging() {
+        println("stop charging")
+        charging = false
+    }
+
+    private fun followPlayer() {
+        followingPlayer = true
+    }
+
+    private fun stopFollowing() {
+        followingPlayer = false
     }
 
     private fun spinClockwise() {
@@ -206,7 +319,17 @@ class Boss(
                     solidElevation = spawnElevation,
                     elevationRate = 0f,
                     onSolidImpact = {
-                        fireProjectiles(8, PI2_F, it.position, 60f, it.solidElevation + 6f, 50f, 100f, false, scale = 0.5f)
+                        fireProjectiles(
+                            8,
+                            PI2_F,
+                            it.position,
+                            60f,
+                            it.solidElevation + 6f,
+                            50f,
+                            100f,
+                            false,
+                            scale = 0.5f
+                        )
                     },
                     gravity = 100f,
                     solidRadius = 8f,
@@ -241,7 +364,68 @@ class Boss(
         )
     }
 
-    private fun shotgun() = fireProjectiles(count = 8, angle = PI_F / 4f, tracking = true, speed = 120f, elevationRateOverride = 0f, scale = 0.5f, timeToLive = 0.6f)
+
+    private fun throwBomb() {
+        val speed = 60f
+        val distance = tempVec2f.set(player.position).subtract(position).length()
+        val reachingInSeconds = distance / speed
+        tempVec2f.setLength(speed)
+        val spawnElevation = solidElevation + 24f
+        spawn(
+            Projectile(
+                assets = assets,
+                texture = assets.texture.bomb,
+                position = position.toMutableVec2(),
+                direction = MutableVec2f(tempVec2f),
+                solidElevation = spawnElevation,
+                elevationRate = 50f * reachingInSeconds,//-spawnElevation / reachingInSeconds * 0.7f, // to make them fly a bit longer,
+                onSolidImpact = {
+                    fireProjectiles(
+                        32,
+                        PI2_F,
+                        it.position,
+                        80f,
+                        maxOf(0f, it.solidElevation) + 0.1f,
+                        elevationRateOverride = 10f,
+                        tracking = false,
+                        scale = 0.5f,
+                        isReversible = false,
+                        spawnsCollectible = false,
+                        timeToLive = 0.5f,
+                        texture = assets.texture.bombProjectile
+                    )
+                    fireProjectiles(
+                        32,
+                        PI2_F,
+                        it.position,
+                        60f,
+                        maxOf(0f, it.solidElevation) + 0.1f,
+                        elevationRateOverride = 10f,
+                        tracking = false,
+                        scale = 0.5f,
+                        isReversible = false,
+                        spawnsCollectible = false,
+                        timeToLive = 0.5f,
+                        texture = assets.texture.projectile
+                    )
+                },
+                gravity = 100f,
+                solidRadius = 2f,
+                isBomb = true,
+                scale = 0.5f
+            )
+        )
+    }
+
+    private fun shotgun() = fireProjectiles(
+        count = 8,
+        angle = PI_F / 4f,
+        tracking = true,
+        speed = 120f,
+        elevationRateOverride = 0f,
+        scale = 0.5f,
+        timeToLive = 0.6f
+    )
 
     private fun simpleAttack() = fireProjectiles(1, 0f, tracking = true, scale = 0.5f)
 
@@ -258,6 +442,9 @@ class Boss(
         tracking: Boolean = true,
         scale: Float = 1f,
         timeToLive: Float = 0f,
+        isReversible: Boolean = true,
+        spawnsCollectible: Boolean = true,
+        texture: TextureSlice = assets.texture.projectile,
     ) {
         assets.sound.bossFire.play(volume = 20f, positionX = position.x, positionY = position.y)
 
@@ -274,16 +461,17 @@ class Boss(
             spawn(
                 Projectile(
                     assets = assets,
-                    texture = assets.texture.projectile,
+                    texture = texture,
                     position = from.toMutableVec2(),
                     direction = MutableVec2f(tempVec2f),
                     solidElevation = elevation,
                     elevationRate = elevationRateOverride
                         ?: (-elevation / reachingInSeconds * 0.7f), // to make them fly a bit longer,
-                    onSolidImpact = spawnCollectible,
+                    onSolidImpact = if (spawnsCollectible) spawnCollectible else notSpawnCollectible,
                     gravity = gravity ?: 0f,
                     scale = scale,
                     timeToLive = timeToLive,
+                    isReversible = isReversible,
                 )
             )
             tempVec2f.rotate(deltaAngle)
@@ -340,6 +528,19 @@ class Boss(
             position.rotate((angularSpinningSpeed * dt.seconds).radians)
         }
 
+        dashingTowards?.let { dashingTowards ->
+            tempVec2f.set(dashingTowards).subtract(position)
+            val distanceToTarget = tempVec2f.length()
+            tempVec2f.setLength(dashingSpeed).scale(dt.seconds)
+            if (tempVec2f.length() > distanceToTarget) {
+                position.set(dashingTowards)
+                this.dashingTowards = null
+                toNextProgramIndex = 0f
+                println("dash completed")
+            } else {
+                position.add(tempVec2f)
+            }
+        }
 
         toNextProgramIndex -= dt.seconds
         while (toNextProgramIndex < 0f) {
@@ -355,7 +556,19 @@ class Boss(
             currentAction.second.invoke()
         }
 
-        if (meleeCooldown == 0f && solidElevation < 30f && position.distance(player.position) < solidRadius + player.solidRadius + 40f) {
+        if (followingPlayer) {
+            tempVec2f.set(player.position).subtract(position)
+            if (tempVec2f.length() > solidRadius * 2f + player.solidRadius) {
+                tempVec2f.setLength(20f).scale(dt.seconds)
+                position.add(tempVec2f)
+            }
+        }
+
+        if (charging) {
+            charge.addToTime(dt.milliseconds)
+        }
+
+        if (canMeleeAttack && meleeCooldown == 0f && solidElevation < 30f && position.distance(player.position) < solidRadius + player.solidRadius + 40f) {
             player.bumpFrom(position)
             player.damaged()
             tempVec2f.set(player.position).subtract(position)
@@ -386,6 +599,10 @@ class Boss(
             return
         }
 
+        if (charging) {
+            charge.render(batch, shapeRenderer)
+        }
+
         batch.draw(
             slice = if (solidElevation == 0f) standTexture else flyTexture,
             x = position.x - 16f,
@@ -395,22 +612,23 @@ class Boss(
             colorBits = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else batch.colorBits
         )
 
-        val startCount = if (trappedForSeconds > 0f) (trappedForSeconds + 1f).floorToInt() else abs(dizziness).floorToInt()
+        val startCount =
+            if (trappedForSeconds > 0f) (trappedForSeconds + 1f).floorToInt() else abs(dizziness).floorToInt()
         //if (trappedForSeconds > 0f) {
-            for (i in 0 until startCount) {
-                tempVec2f.set(10f, 0f)
-                    .rotate((starTimer * 3f + i * PI2_F / 5f * dizzinessSign).radians)
-                    .scale(1f, 0.5f)
-                    .add(-4f, -4f) // offset the middle of the texture
-                    .add(position) // offset into character position
-                batch.draw(
-                    assets.texture.littleStar,
-                    x = tempVec2f.x,
-                    y = tempVec2f.y - 30f - solidElevation,
-                    width = 8f,
-                    height = 8f,
-                )
-            }
+        for (i in 0 until startCount) {
+            tempVec2f.set(10f, 0f)
+                .rotate((starTimer * 3f + i * PI2_F / 5f * dizzinessSign).radians)
+                .scale(1f, 0.5f)
+                .add(-4f, -4f) // offset the middle of the texture
+                .add(position) // offset into character position
+            batch.draw(
+                assets.texture.littleStar,
+                x = tempVec2f.x,
+                y = tempVec2f.y - 30f - solidElevation,
+                width = 8f,
+                height = 8f,
+            )
+        }
         //}
     }
 
@@ -428,16 +646,20 @@ class Boss(
         trappedForSeconds = 5f
         targetElevation = 0f
         elevatingRate = -60f
+        dashingTowards = null
+        dangerousDashing = false
+        charging = false
+        currentState = returnToPosition
     }
 
-    fun damaged(strong: Boolean = false) {
+    fun damage(strong: Boolean = false) {
         /*if (health == 0f) {
             return
         }*/
         if (damagedForSeconds <= 0f) {
             assets.sound.bossHit.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
             damagedForSeconds = 0.75f
-            health -= if (strong) 0.1f else 0.05f
+            health -= /*if (strong) 0.1f else*/ 0.05f
         }
         /*if (health <= 0f) {
             health = 0f

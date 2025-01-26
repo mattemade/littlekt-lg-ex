@@ -24,6 +24,7 @@ class Projectile(
     override val solidRadius: Float = texture.width / 2f,
     val scale: Float = 1f,
     val isReversible: Boolean = true,
+    val isBomb: Boolean = true,
     var timeToLive: Float = 0f,
     val onPlayerImpact: (Projectile) -> Unit = {},
     val onSolidImpact: (Projectile) -> Unit,
@@ -77,7 +78,7 @@ class Projectile(
     override fun renderShadow(shapeRenderer: ShapeRenderer) {
         shapeRenderer.filledEllipse(
             position,
-            shadowRadii.set(texture.width / 2f, texture.height / 4f).scale(if (solidElevation < 10f) 1f else if (solidElevation > 400f) 0f else 1f - 1f * (solidElevation - 10f) / (400f - 10f)).scale(scale),
+            shadowRadii.set(texture.width / 2f, texture.height / 4f).scale(scale).scale(if (solidElevation < 10f) 1f else if (solidElevation > 400f) 0f else 1f - 1f * (solidElevation - 10f) / (400f - 10f)),
             innerColor = Color.BLUE.toFloatBits(),
             outerColor = Color.BLACK.toFloatBits()
         )
