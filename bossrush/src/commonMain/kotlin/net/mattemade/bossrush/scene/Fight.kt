@@ -34,12 +34,14 @@ import net.mattemade.bossrush.objects.SpikeBall
 import net.mattemade.bossrush.objects.Swing
 import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import net.mattemade.bossrush.objects.Trap
+import net.mattemade.bossrush.objects.boss.BossI
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleFragmentShader
 import net.mattemade.bossrush.shader.ParticleVertexShader
 import net.mattemade.utils.releasing.Releasing
 import net.mattemade.utils.releasing.Self
 import net.mattemade.utils.render.PixelRender
+import kotlin.math.abs
 import kotlin.time.Duration
 
 class Fight(
@@ -144,7 +146,9 @@ class Fight(
 
         cameraTarget.set(player.position)
         bosses.fastForEach {
-            cameraTarget.add(it.position)
+            if (it.importantForCamera) {
+                cameraTarget.add(it.position)
+            }
         }
         cameraTarget.scale(1f / (1f + bosses.size))
 
@@ -197,16 +201,15 @@ class Fight(
                     }
                     if (it !is Boss) {
                         bosses.forEach { boss ->
-                            if (boss.position.distance(it.position) < boss.solidRadius + solidRadius) {
-                                if (it.isActive()) {
-                                    // push boss away
-                                    tempVec2f.set(boss.position).subtract(it.position)
-                                        .setLength(boss.solidRadius + solidRadius)
-                                    boss.position.set(it.position).add(tempVec2f)
-                                    if (boss.isDashing) {
-                                        boss.trapped()
-                                    }
+                            if (it.isActive() && it !is Collectible && boss.position.distance(it.position) < boss.solidRadius + solidRadius) {
+                                // push boss away
+                                tempVec2f.set(boss.position).subtract(it.position)
+                                    .setLength(boss.solidRadius + solidRadius)
+                                boss.position.set(it.position).add(tempVec2f)
+                                if (boss.isDashing) {
+                                    boss.trapped()
                                 }
+
                             }
                         }
                     }
@@ -266,12 +269,13 @@ class Fight(
                                         } else if (solid is Collectible) {
                                             // noop
                                         }
-                                    } else if (solid is Boss && solid.meleeCooldown == 0f && solid.position.distance(obj.position) < 20f) {
+                                    } else if (solid is Boss && solid.canSwing && solid.meleeCooldown == 0f && solid.position.distance(obj.position) < 20f) {
                                         val angle = tempVec2f.set(obj.position).subtract(solid.position)
                                             .angleTo(NO_ROTATION).radians
                                         swing(
                                             solid.position,
                                             angle,
+                                            solid.solidElevation,
                                             clockwise = true,
                                             powerful = true,
                                             powerfulAngularSpeedScale = 2f
@@ -303,7 +307,7 @@ class Fight(
                             0 -> {
                                 delay(extraDelay / 2f) {
                                     bosses.add(
-                                        Boss(
+                                        BossI(
                                             context,
                                             particleShader,
                                             player,
@@ -312,11 +316,12 @@ class Fight(
                                             ::spawnCollectible,
                                             ::bossMeleeAttack,
                                             ::destroyCollectibles,
-                                            MutableVec2f(0f, 100f),
-                                            health = 0.289f
+                                            { camera.startMovement() },
+                                            /*MutableVec2f(0f, 100f),*/
+                                            //health = 0.289f
                                         ).solid()
                                     )
-                                    maxBossHealth = 0.289f
+                                    maxBossHealth = bosses.sumOf { it.health }
                                     totalBossHealth = maxBossHealth
                                     camera.startMovement()
                                     bossScheduled = false
@@ -356,7 +361,7 @@ class Fight(
                                             health = 0.4f
                                         ).solid()
                                     )
-                                    maxBossHealth = 0.4f
+                                    maxBossHealth = bosses.sumOf { it.health }
                                     totalBossHealth = maxBossHealth
                                     camera.startMovement()
                                     bossScheduled = false
@@ -405,7 +410,7 @@ class Fight(
                                             health = 0.25f
                                         ).solid()
                                     )
-                                    maxBossHealth = 0.5f
+                                    maxBossHealth = bosses.sumOf { it.health }
                                     totalBossHealth = maxBossHealth
                                     camera.startMovement()
                                     bossScheduled = false
@@ -454,7 +459,7 @@ class Fight(
                                             health = 0.3f
                                         ).solid()
                                     )
-                                    maxBossHealth = 0.3f
+                                    maxBossHealth = bosses.sumOf { it.health }
                                     totalBossHealth = maxBossHealth
                                     camera.startMovement()
                                     bossScheduled = false
@@ -614,13 +619,13 @@ class Fight(
                     positionY = player.racketPosition.y
                 )
                 player.resources -= 2
-                ReadyBall(MutableVec2f(player.racketPosition)).save()
+                ReadyBall(MutableVec2f(player.racketPosition), assets).save()
             }
         }
     }
 
     private fun swing(angle: Float, clockwise: Boolean, powerful: Boolean) {
-        swing(player.position, angle, clockwise, powerful, 1f) {
+        swing(player.position, angle, 0f, clockwise, powerful, 1f) {
             if (powerful) {
                 val ballRotation = it.direction.angleTo(NO_ROTATION).radians
                 val targetBoss = bosses.minByOrNull { boss ->
@@ -642,6 +647,7 @@ class Fight(
     private fun swing(
         from: MutableVec2f,
         angle: Float,
+        elevation: Float,
         clockwise: Boolean,
         powerful: Boolean,
         powerfulAngularSpeedScale: Float,
@@ -652,13 +658,12 @@ class Fight(
         } else {
             assets.sound.lightSwing.sound.play(volume = 20f, positionX = from.x, positionY = from.y)
         }
-        val swing = Swing(from, angle, clockwise, assets, powerful).save()
+        val swing = Swing(from, angle, elevation, clockwise, assets, powerful).save()
         gameObjects.fastForEach {
             if (it is Projectile) {
-                if (it.isReversible && it.solidElevation <= 30f && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius &&
+                if (it.isReversible && abs(it.solidElevation - elevation) <= 30f && swing.hitFrontPosition.distance(it.position) < swing.hitFrontRadius &&
                     swing.hitBackPosition.distance(it.position) > swing.hitBackRadius
                 ) {
-                    println("got with ${it.solidElevation}")
                     if (it.isBomb) {
                         it.onSolidImpact(it)
                         it.timeToLive = 0.00000001f
@@ -676,6 +681,7 @@ class Fight(
                         } else {
                             tempVec2f.set(it.position).subtract(from)
                             it.direction.setLength(80f).rotateTowards(tempVec2f)
+                            it.elevationRate = -it.elevationRate
                         }
                     }
                 }

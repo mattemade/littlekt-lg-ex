@@ -34,7 +34,7 @@ import kotlin.time.Duration
 typealias Program = List<Pair<Float, () -> Unit>>
 typealias State = List<Pair<Float, Program>>
 
-class Boss(
+open class Boss(
     private val context: Context,
     private val shader: ParticleShader,
     private val player: Player,
@@ -45,12 +45,19 @@ class Boss(
     private val destroyCollectibles: (Boss) -> Unit,
     override val position: MutableVec2f = MutableVec2f(0f, -100f),
     var health: Float = 1f,
+    private val standTexture: TextureSlice = assets.texture.bossIStand,
+    private val flyTexture: TextureSlice = assets.texture.bossIFly,
+    private val projectileTexture: TextureSlice = assets.texture.projectile,
 ) : TemporaryDepthRenderableObject {
 
 
+    protected var nextFireIn = 0f
+    protected var fireEvery = 0f
+        set(value) {
+            field = value
+            nextFireIn = value
+        }
     private val notSpawnCollectible: (Projectile) -> Unit = {}
-    private val standTexture = assets.texture.bossStand
-    private val flyTexture = assets.texture.bossFly
     private var damagedForSeconds: Float = 0f
     private var starTimer = 0f
     private var trappedForSeconds = 0f
@@ -60,20 +67,19 @@ class Boss(
     override var solidElevation: Float = 0f
     override val solidHeight: Float = 38f
     private var dizziness = 0f
-    private var dizzinessSign = 0f
+    private var dizzinessSign = 1f
     var canMeleeAttack: Boolean = false
+    var canSwing: Boolean = false
 
     override val solidRadius: Float
         get() = 8f
-    private val tempVec2f = MutableVec2f()
-    private var dashingTowards: Vec2f? = null
-    private var dangerousDashing: Boolean = false
-    private var dashingSpeed: Float = 80f
-    val isDashing: Boolean
-        get() = dangerousDashing && dashingTowards != null
+    protected val tempVec2f = MutableVec2f()
+    protected var dashingTowards: Vec2f? = null
+    protected var dashingSpeed: Float = 80f
+    var isDashing: Boolean = false
 
 
-    private val appearingFor = if (DEBUG) 0f else 3000f
+    private val appearingFor = if (DEBUG) 0f else 3500f
     private fun createParticles(texture: TextureSlice): TextureParticles {
         val width = texture.width
         val widthFloat = texture.width.toFloat()
@@ -97,7 +103,7 @@ class Boss(
                 fill(-width * 2f + width * 4f * Random.nextFloat(), y - heightFloat * 4f)
             },
             setEndPosition = { x, y ->
-                fill(x - halfWidth, y - 45f - solidElevation) // normal rendering offsets
+                fill(x - halfWidth, y - heightFloat*0.8f - solidElevation) // normal rendering offsets
             },
         )
     }
@@ -115,11 +121,10 @@ class Boss(
 
     private var appear = createParticles(standTexture)
 
-    private val returnToPosition: State =
+    protected open val returnToPosition: State =
         listOf(
             1f to listOf(
                 2f to {
-                    println("returnting to position")
                     dashingTowards = tempVec2f.set(position).setLength(100f).toVec2()
                     dashingSpeed = 80f
                 },
@@ -142,16 +147,7 @@ class Boss(
                 //0f to ::stopSpinning,
                 2f to ::startCharging,
                 0f to ::stopCharging,
-                10f to {
-                    val angleToCenter = position.angleTo(NO_ROTATION).radians
-                    val angleHorde = tempVec2f.set(position).subtract(player.position).angleTo(NO_ROTATION).radians
-                    val diff = minimalRotation(angleToCenter, angleHorde)
-                    val rotationAngle = PI_F - diff * 2f
-                    tempVec2f.set(position).rotate((-rotationAngle).radians)
-                    dashingTowards = tempVec2f.toVec2()
-                    dangerousDashing = true
-                    dashingSpeed = 200f
-                },
+                10f to ::dashIntoPlayer,
                 2f to {}, // wait
             )
             /*1f to listOf(
@@ -215,7 +211,7 @@ class Boss(
 
     private fun State.getWeightedRandomProgram(): Program {
         var sum = 0f
-        this.fastForEach { sum += it.first }
+        fastForEach { sum += it.first }
         sum *= Random.nextFloat()
         for (i in indices) {
             val currentItem = this[i]
@@ -224,11 +220,11 @@ class Boss(
                 return currentItem.second
             }
         }
-        return this.last().second
+        return last().second
     }
 
     private val charge = TextureParticles(
-        context, shader, assets.texture.whitePixel, position,
+        context, shader, assets.texture.whitePixel, position.toMutableVec2(),
         activeFrom = { x, y -> Random.nextFloat() * 1000f },
         activeFor = { x, y -> 1000f },
         timeToLive = 2000f,
@@ -241,13 +237,12 @@ class Boss(
             val angle = Random.nextFloat() * PI2_F
             fill(length * cos(angle), length * sin(angle))
         },
-        setEndPosition = { x, y -> fill(0f, -16f) })
+        setEndPosition = { x, y -> fill(0f, standTexture.width/2f) })
     private var charging = false
 
-    private var currentState: State = stayingUpState
+    protected open var currentState: State = stayingUpState
         set(value) {
             field = value
-            println("state set")
             currentProgram = value.getWeightedRandomProgram()
             currentProgramIndex = -1
             toNextProgramIndex = 0f
@@ -256,33 +251,39 @@ class Boss(
     private var currentProgramIndex = -1
     private var toNextProgramIndex = 0f
 
-    private var angularSpinningSpeed = 0f
-    private var targetElevation = 0f
-    private var elevatingRate = 0f
+    var angularSpinningSpeed = 0f
+    protected var targetElevation = 0f
+    var elevatingRate = 0f
     private var followingPlayer = false
+    var importantForCamera = true
 
-    private fun elevate() {
+    protected fun elevate() {
         targetElevation = 20f
         elevatingRate = 20f
     }
 
-    private fun land() {
+    protected fun land() {
         targetElevation = 0f
         elevatingRate = -20f
     }
 
-    private fun dashIntoPlayer() {
-
+    protected fun dashIntoPlayer() {
+        val angleToCenter = position.angleTo(NO_ROTATION).radians
+        val angleHorde = tempVec2f.set(position).subtract(player.position).angleTo(NO_ROTATION).radians
+        val diff = minimalRotation(angleToCenter, angleHorde)
+        val rotationAngle = PI_F - diff * 2f
+        tempVec2f.set(position).rotate((-rotationAngle).radians)
+        dashingTowards = tempVec2f.toVec2()
+        isDashing = true
+        dashingSpeed = 200f
     }
 
-    private fun startCharging() {
-        println("start charging")
+    protected fun startCharging() {
         charge.addToTime(-200000f)
         charging = true
     }
 
-    private fun stopCharging() {
-        println("stop charging")
+    protected fun stopCharging() {
         charging = false
     }
 
@@ -294,15 +295,15 @@ class Boss(
         followingPlayer = false
     }
 
-    private fun spinClockwise() {
+    protected fun spinClockwise() {
         angularSpinningSpeed = 0.5f
     }
 
-    private fun spinCounterClockwise() {
+    protected fun spinCounterClockwise() {
         angularSpinningSpeed = -0.5f
     }
 
-    private fun stopSpinning() {
+    protected fun stopSpinning() {
         angularSpinningSpeed = 0f
     }
 
@@ -328,7 +329,7 @@ class Boss(
                             50f,
                             100f,
                             false,
-                            scale = 0.5f
+                            scale = 0.5f,
                         )
                     },
                     gravity = 100f,
@@ -365,7 +366,7 @@ class Boss(
     }
 
 
-    private fun throwBomb() {
+    protected fun throwBomb() {
         val speed = 60f
         val distance = tempVec2f.set(player.position).subtract(position).length()
         val reachingInSeconds = distance / speed
@@ -427,9 +428,9 @@ class Boss(
         timeToLive = 0.6f
     )
 
-    private fun simpleAttack() = fireProjectiles(1, 0f, tracking = true, scale = 0.5f)
+    protected fun simpleAttack() = fireProjectiles(1, 0f, tracking = true, /*scale = 0.5f*/)
 
-    private fun strongAttack() = fireProjectiles(5, PI_F / 2f, tracking = true, scale = 0.5f)
+    protected fun strongAttack() = fireProjectiles(5, PI_F / 2f, tracking = true, /*scale = 0.5f*/)
 
     private fun fireProjectiles(
         count: Int,
@@ -444,7 +445,7 @@ class Boss(
         timeToLive: Float = 0f,
         isReversible: Boolean = true,
         spawnsCollectible: Boolean = true,
-        texture: TextureSlice = assets.texture.projectile,
+        texture: TextureSlice = projectileTexture,
     ) {
         assets.sound.bossFire.play(volume = 20f, positionX = position.x, positionY = position.y)
 
@@ -536,7 +537,6 @@ class Boss(
                 position.set(dashingTowards)
                 this.dashingTowards = null
                 toNextProgramIndex = 0f
-                println("dash completed")
             } else {
                 position.add(tempVec2f)
             }
@@ -566,6 +566,14 @@ class Boss(
 
         if (charging) {
             charge.addToTime(dt.milliseconds)
+        }
+
+        if (nextFireIn > 0f) {
+            nextFireIn -= dt.seconds
+            while (nextFireIn <= 0f) {
+                simpleAttack()
+                nextFireIn += fireEvery
+            }
         }
 
         if (canMeleeAttack && meleeCooldown == 0f && solidElevation < 30f && position.distance(player.position) < solidRadius + player.solidRadius + 40f) {
@@ -599,23 +607,24 @@ class Boss(
             return
         }
 
+        val slice = if (solidElevation == 0f) standTexture else flyTexture
         if (charging) {
+            charge.position.set(position).add(0f, -solidElevation - slice.height)
             charge.render(batch, shapeRenderer)
         }
 
         batch.draw(
-            slice = if (solidElevation == 0f) standTexture else flyTexture,
-            x = position.x - 16f,
-            y = position.y - 45f - solidElevation,
-            width = 32f,
-            height = 48f,
+            slice = slice,
+            x = position.x - slice.width/2f,
+            y = position.y - slice.height * 0.8f - solidElevation,
+            width = slice.width.toFloat(),
+            height = slice.height.toFloat(),
             colorBits = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else batch.colorBits
         )
 
-        val startCount =
+        val starCount =
             if (trappedForSeconds > 0f) (trappedForSeconds + 1f).floorToInt() else abs(dizziness).floorToInt()
-        //if (trappedForSeconds > 0f) {
-        for (i in 0 until startCount) {
+        for (i in 0 until starCount) {
             tempVec2f.set(10f, 0f)
                 .rotate((starTimer * 3f + i * PI2_F / 5f * dizzinessSign).radians)
                 .scale(1f, 0.5f)
@@ -629,7 +638,6 @@ class Boss(
                 height = 8f,
             )
         }
-        //}
     }
 
     override fun isActive(): Boolean = !appearing && !disappearing && !deactivated
@@ -646,8 +654,11 @@ class Boss(
         trappedForSeconds = 5f
         targetElevation = 0f
         elevatingRate = -60f
+        angularSpinningSpeed = 0f
+        fireEvery = 0f
+        importantForCamera = true
         dashingTowards = null
-        dangerousDashing = false
+        isDashing = false
         charging = false
         currentState = returnToPosition
     }

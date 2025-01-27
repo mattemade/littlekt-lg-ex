@@ -25,7 +25,7 @@ class Cogwheel(
 ) : TemporaryDepthRenderableObject {
 
     var rotation = 0f
-    private val textures = listOf(assets.texture.cogwheelTurn0, assets.texture.cogwheelTurn1, assets.texture.cogwheelTurn2)
+    private val textures = assets.texture.cogwheel.slice(sliceWidth = assets.texture.cogwheel.width / 3, sliceHeight = assets.texture.cogwheel.height)[0]//listOf(assets.texture.cogwheelTurn0, assets.texture.cogwheelTurn1, assets.texture.cogwheelTurn2)
     private val segments = listOf(0, 1, 2, 0, 1, 2).map { textures[it] }
     private val positions = segments.size
     private val radInSegment = PI2_F / positions
@@ -55,7 +55,7 @@ class Cogwheel(
             fill(-width*2f + width * 4f * Random.nextFloat(), y - heightFloat*4f)
         },
         setEndPosition = {x, y ->
-            fill(x - halfWidth - 1f, y - 43f) // normal rendering offsets
+            fill(x - halfWidth - 1f, y - heightFloat * 0.8f) // normal rendering offsets
         },
     )
 
@@ -84,12 +84,13 @@ class Cogwheel(
             appear.render(batch, shapeRenderer)
         } else {
             val segment = ((rotation / radInSegment).floorToInt() % positions + positions) % positions
+            val slice = segments[segment]
             batch.draw(
-                segments[segment],
-                x = position.x - 16f - 1f,
-                y = position.y - 43f,
-                width = 32f,
-                height = 48f,
+                slice,
+                x = position.x - slice.width/2f - 1f,
+                y = position.y - slice.height * 0.8f,
+                width = slice.width.toFloat(),
+                height = slice.height.toFloat(),
             )
         }
     }

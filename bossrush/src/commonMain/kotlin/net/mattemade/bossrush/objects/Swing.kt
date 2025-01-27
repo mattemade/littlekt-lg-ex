@@ -15,6 +15,7 @@ import kotlin.time.Duration
 class Swing(
     private val playerPosition: MutableVec2f,
     private val playerRotation: Float,
+    private val elevation: Float,
     private val clockwise: Boolean,
     private val assets: Assets,
     private val powerful: Boolean
@@ -53,11 +54,11 @@ class Swing(
         batch.draw(
             texture,
             x = position.x,
-            y = position.y,
+            y = position.y - elevation,
             width = texture.width.toFloat(),
             height = texture.height.toFloat(),
             rotation = (playerRotation + PI_F/2f).radians,
-            flipX = clockwise,
+            flipX = !clockwise,
         )
     }
 }

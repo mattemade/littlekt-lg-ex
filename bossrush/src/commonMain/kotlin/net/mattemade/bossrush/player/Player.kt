@@ -110,7 +110,7 @@ class Player(
     private val shadowRadii = MutableVec2f(10f, 5f)
     private var circleInFront: Boolean = false
     //private var circleRotation: Float = 0f
-    private val textureSlices = assets.texture.robot.slice(sliceWidth = 40, sliceHeight = 34)[0]
+    private val textureSlices = assets.texture.robot.slice(sliceWidth = assets.texture.robot.width / 8, sliceHeight = assets.texture.robot.height)[0]
     private val textureSequence = listOf(1, 0, 7, 6, 4, 3, 2).map { textureSlices[it] }
     private val positions = textureSequence.size/* * 2*/
 
@@ -251,12 +251,13 @@ class Player(
         }
 
         val segment = ((lastInputRotation / radInSegment).floorToInt() % positions + positions) % positions
+        val slice = textureSequence[segment]
         batch.draw(
-            textureSequence[segment],
-            x = position.x - 20f,
-            y = position.y - 30f,
-            width = 40f,
-            height = 34f,
+            slice,
+            x = position.x - slice.width/2f,
+            y = position.y - slice.height * 0.8f,
+            width = slice.width.toFloat(),
+            height = slice.height.toFloat(),
             flipX = false,
             colorBits = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else batch.colorBits,
         )

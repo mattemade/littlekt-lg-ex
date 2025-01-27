@@ -7,13 +7,16 @@ import com.littlekt.graphics.toFloatBits
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.Vec2f
 import com.littlekt.util.seconds
+import net.mattemade.bossrush.Assets
 import kotlin.math.sin
 import kotlin.time.Duration
 
 class ReadyBall(
     override val position: MutableVec2f = MutableVec2f(),
+    private val assets: Assets,
 ): TemporaryDepthRenderableObject {
 
+    private val texture = assets.texture.ball
     private val shadowRadii = Vec2f(2f, 1f)
     private val tempVec2f = MutableVec2f()
 
@@ -33,7 +36,8 @@ class ReadyBall(
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledCircle(x = position.x, y = position.y - elevation, radius = 2f, color = Color.BLUE.toFloatBits())
+        batch.draw(texture, x = position.x - texture.width /2f, y = position.y - elevation - texture.height)
+        //shapeRenderer.filledCircle(x = position.x, y = position.y - elevation, radius = 2f, color = Color.BLUE.toFloatBits())
     }
 
     override fun renderShadow(shapeRenderer: ShapeRenderer) {

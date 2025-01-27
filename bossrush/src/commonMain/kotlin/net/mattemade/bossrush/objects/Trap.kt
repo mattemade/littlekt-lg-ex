@@ -32,12 +32,13 @@ class Trap(override val position: MutableVec2f, private val assets: Assets): Tem
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
+        val slice = if (activatedTimeToLive > 0f) textureActivated else texture
         batch.draw(
-            if (activatedTimeToLive > 0f) textureActivated else texture,
-            x = position.x - 16f,
-            y = position.y - 24f,
-            width = 32f,
-            height = 32f,
+            slice,
+            x = position.x - slice.width / 2f,
+            y = position.y - slice.height / 2f,
+            width = slice.width.toFloat(),
+            height = slice.height.toFloat(),
         )
     }
 

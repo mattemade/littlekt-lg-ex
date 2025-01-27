@@ -57,18 +57,19 @@ class Hud(
         uiRenderer.render(dt)
     }
 
-    val halfWidth = assets.texture.heartFilled.width / 2f
-    val halfHeight = assets.texture.heartFilled.height / 2f
+    private val heartSlices = assets.texture.heart.slice(sliceWidth = assets.texture.heart.width / 2, sliceHeight = assets.texture.heart.height)[0]
+    val halfWidth = heartSlices[0].width / 2f
+    val halfHeight = heartSlices[0].height / 2f
 
     private val fadeOutColor = Color.BLACK.toMutableColor().apply { a = 0.5f }.toFloatBits()
 
     private val heartTextures = Array(20) { index ->
-        val startX = 10f + (assets.texture.heartFilled.width + 1) * (index % 10)
-        val startY = 7f + (assets.texture.heartFilled.height + 1) * (index / 10)
+        val startX = 10f + (heartSlices[0].width + 1) * (index % 10)
+        val startY = 7f + (heartSlices[0].height + 1) * (index / 10)
         TextureParticles(
             context,
             particleShader,
-            assets.texture.heartFilled,
+            heartSlices[0],
             position = MutableVec2f(startX, startY),
             activeFrom = { _, _ -> 0f },
             activeFor = { _, _ -> 500f },
@@ -91,11 +92,11 @@ class Hud(
 
             for (i in 0 until player.maxHearts) {
                 batch.draw(
-                    assets.texture.heartEmpty,
-                    x = 10f + (assets.texture.heartFilled.width + 1) * (i % 10),
-                    y = 7f + (assets.texture.heartFilled.height + 1) * (i / 10),
-                    width = 8f,
-                    height = 6f
+                    heartSlices[1],
+                    x = 10f + (heartSlices[1].width + 1) * (i % 10),
+                    y = 7f + (heartSlices[1].height + 1) * (i / 10),
+                    width = heartSlices[1].width.toFloat(),
+                    height = heartSlices[1].height.toFloat()
                 )
 
                 val heartTexture = heartTextures[i]

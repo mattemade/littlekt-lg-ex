@@ -30,19 +30,21 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val swingLight by "texture/swing_light.png".pack()
     val swingStrong by "texture/swing_strong.png".pack()
 
-    val robot by "texture/character/mc_bot_sprites-static.png".pack()
+    val robot by "texture/mc_bot_sprites-static.png".pack()
 
 
     val arena by "texture/arena.png".pack()
+    val ball by "texture/ball.png".pack()
     val trap by "texture/trap.png".pack()
-    val trapActivated by "texture/trap_activated.png".pack()
-    val littleStar by "texture/little_star.png".pack()
+    val trapActivated by "texture/trap_trigger.png".pack()
+    val littleStar by "texture/star.png".pack()
     val column by "texture/column.png".pack()
     val boulder by "texture/boulder.png".pack()
     val bomb by "texture/bomb.png".pack()
     val projectile by "texture/projectile.png".pack()
     val bombProjectile by "texture/bomb_projectile.png".pack()
 
+    val heart by "texture/heart.png".pack()
     val heartFilled by "texture/hud/heart_filled.png".pack()
     val heartEmpty by "texture/hud/heart_empty.png".pack()
 
@@ -52,14 +54,16 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val mock by "texture/hud/mock.png".pack()
     val xviii by prepare { context.vfs["texture/xviii.png"].readTexture() }
 
-    val cogwheelTurn0 by "texture/cogwheel/turn_0.png".pack()
-    val cogwheelTurn1 by "texture/cogwheel/turn_1.png".pack()
-    val cogwheelTurn2 by "texture/cogwheel/turn_2.png".pack()
+    val cogwheel by "texture/cogwheel.png".pack()
 
     val spikeBall by "texture/spikeball.png".pack()
 
-    val bossStand by "texture/i/stand.png".pack()
-    val bossFly by "texture/i/fly.png".pack()
+    val bossIStand by "texture/boss_1_land.png".pack()
+    val bossIFly by "texture/boss_1_fly.png".pack()
+    val bossIProjectile by "texture/boss_1_projectile.png".pack()
+
+    val bossIIStand by "texture/i/stand.png".pack()
+    val bossIIFly by "texture/i/fly.png".pack()
 
     val giantClock by "texture/giant_clock.png".pack()
     val giantClockMinute by "texture/giant_clock_minute.png".pack()

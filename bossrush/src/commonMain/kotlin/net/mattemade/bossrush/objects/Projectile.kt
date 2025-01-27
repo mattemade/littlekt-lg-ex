@@ -24,7 +24,7 @@ class Projectile(
     override val solidRadius: Float = texture.width / 2f,
     val scale: Float = 1f,
     val isReversible: Boolean = true,
-    val isBomb: Boolean = true,
+    val isBomb: Boolean = false,
     var timeToLive: Float = 0f,
     val onPlayerImpact: (Projectile) -> Unit = {},
     val onSolidImpact: (Projectile) -> Unit,
