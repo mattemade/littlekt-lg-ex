@@ -155,16 +155,4 @@ class Hud(
 
         }
     }
-
-    private fun drawFilledHearts(batch: Batch, limit: Int) {
-        for (i in 0..4) {
-            batch.draw(
-                if (i < limit) assets.texture.heartFilled else assets.texture.heartEmpty,
-                x = 10f + 9f * i,
-                y = 7f,
-                width = 8f,
-                height = 6f
-            )
-        }
-    }
 }

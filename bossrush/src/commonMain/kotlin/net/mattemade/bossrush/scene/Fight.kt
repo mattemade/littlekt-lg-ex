@@ -35,6 +35,7 @@ import net.mattemade.bossrush.objects.Swing
 import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import net.mattemade.bossrush.objects.Trap
 import net.mattemade.bossrush.objects.boss.BossI
+import net.mattemade.bossrush.objects.boss.BossII
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleFragmentShader
 import net.mattemade.bossrush.shader.ParticleVertexShader
@@ -348,7 +349,7 @@ class Fight(
                                 }
                                 delay(extraDelay) {
                                     bosses.add(
-                                        Boss(
+                                        BossII(
                                             context,
                                             particleShader,
                                             player,
@@ -357,8 +358,9 @@ class Fight(
                                             ::spawnCollectible,
                                             ::bossMeleeAttack,
                                             ::destroyCollectibles,
-                                            MutableVec2f(0f, -100f),
-                                            health = 0.4f
+                                            { camera.startMovement() },
+                                            /*MutableVec2f(0f, -100f),
+                                            health = 0.4f*/
                                         ).solid()
                                     )
                                     maxBossHealth = bosses.sumOf { it.health }

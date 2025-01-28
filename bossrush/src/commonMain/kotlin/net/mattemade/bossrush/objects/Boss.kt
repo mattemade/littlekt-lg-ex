@@ -57,6 +57,7 @@ open class Boss(
             field = value
             nextFireIn = value
         }
+    protected var periodicShot: () -> Unit = ::simpleAttack
     private val notSpawnCollectible: (Projectile) -> Unit = {}
     private var damagedForSeconds: Float = 0f
     private var starTimer = 0f
@@ -69,6 +70,7 @@ open class Boss(
     private var dizziness = 0f
     private var dizzinessSign = 1f
     var canMeleeAttack: Boolean = false
+    var meleeAttackRadius = 40f
     var canSwing: Boolean = false
 
     override val solidRadius: Float
@@ -257,12 +259,12 @@ open class Boss(
     private var followingPlayer = false
     var importantForCamera = true
 
-    protected fun elevate() {
+    protected fun floatUp() {
         targetElevation = 20f
         elevatingRate = 20f
     }
 
-    protected fun land() {
+    protected fun floatDown() {
         targetElevation = 0f
         elevatingRate = -20f
     }
@@ -287,27 +289,27 @@ open class Boss(
         charging = false
     }
 
-    private fun followPlayer() {
+    protected fun followPlayer() {
         followingPlayer = true
     }
 
-    private fun stopFollowing() {
+    protected fun stopFollowing() {
         followingPlayer = false
     }
 
     protected fun spinClockwise() {
-        angularSpinningSpeed = 0.5f
+        angularSpinningSpeed = 1f
     }
 
     protected fun spinCounterClockwise() {
-        angularSpinningSpeed = -0.5f
+        angularSpinningSpeed = -1f
     }
 
     protected fun stopSpinning() {
         angularSpinningSpeed = 0f
     }
 
-    private fun spawnBoulders() {
+    fun spawnBoulders() {
         for (i in 0..8) {
             tempVec2f.set(Random.nextFloat() * 100f, 0f).rotate((Random.nextFloat() * PI2_F).radians)
             val spawnElevation = 400f + Random.nextFloat() * 200f
@@ -321,7 +323,7 @@ open class Boss(
                     elevationRate = 0f,
                     onSolidImpact = {
                         fireProjectiles(
-                            8,
+                            4,
                             PI2_F,
                             it.position,
                             60f,
@@ -341,7 +343,7 @@ open class Boss(
 
     }
 
-    private fun throwBoulder() {
+    protected fun throwBoulder() {
         val speed = 60f
         val distance = tempVec2f.set(player.position).subtract(position).length()
         val reachingInSeconds = distance / speed
@@ -356,7 +358,7 @@ open class Boss(
                 solidElevation = spawnElevation,
                 elevationRate = 100f * reachingInSeconds,//-spawnElevation / reachingInSeconds * 0.7f, // to make them fly a bit longer,
                 onSolidImpact = {
-                    fireProjectiles(8, PI2_F, it.position, 60f, it.solidElevation + 6f, 50f, 100f, false, scale = 0.5f)
+                    fireProjectiles(4, PI2_F, it.position, 60f, it.solidElevation + 6f, 50f, 100f, false, scale = 0.5f)
                 },
                 gravity = 200f,
                 solidRadius = 8f,
@@ -571,12 +573,12 @@ open class Boss(
         if (nextFireIn > 0f) {
             nextFireIn -= dt.seconds
             while (nextFireIn <= 0f) {
-                simpleAttack()
+                periodicShot()
                 nextFireIn += fireEvery
             }
         }
 
-        if (canMeleeAttack && meleeCooldown == 0f && solidElevation < 30f && position.distance(player.position) < solidRadius + player.solidRadius + 40f) {
+        if (canMeleeAttack && meleeCooldown == 0f && solidElevation < 30f && position.distance(player.position) < solidRadius + player.solidRadius + meleeAttackRadius) {
             player.bumpFrom(position)
             player.damaged()
             tempVec2f.set(player.position).subtract(position)

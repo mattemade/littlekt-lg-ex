@@ -31,16 +31,12 @@ class BossI(
     spawnCollectible,
     melee,
     destroyCollectibles,
-    position = MutableVec2f(0f, -100f),
-    health = 2f,
+    position = MutableVec2f(100f, 0f),
+    health = 0.375f,
     standTexture = assets.texture.bossIStand,
     flyTexture = assets.texture.bossIFly,
     projectileTexture = assets.texture.bossIProjectile,
 ) {
-
-    init {
-
-    }
 
     override val returnToPosition: State = listOf(
         1f to listOf(
@@ -50,7 +46,7 @@ class BossI(
                 targetElevation = 0.01f
                 elevatingRate = 20f * sign(targetElevation - solidElevation)
             },
-            1f to ::elevate,
+            1f to ::floatUp,
             1f to {},
             0f to {
                 currentState = flyingAround
@@ -67,7 +63,7 @@ class BossI(
                     elevatingRate = 20f
                 },
                 1f to {
-                    elevate()
+                    floatUp()
                 },
                 1f to {},
                 0f to { currentState = flyingAround }
@@ -76,21 +72,21 @@ class BossI(
 
     private val flyingAround: State =
         listOf(
-            1f to listOf( // stop and throw 3 balls
+            1.5f to listOf( // stop and throw 3 balls
                 1.5f to ::randomSpin,
                 0.5f to ::stopSpinning,
                 0.5f to ::simpleAttack,
                 0.5f to ::simpleAttack,
                 0.5f to ::simpleAttack,
             ),
-            1f to listOf( // stop and throw 2 balls and 5 balls
+            1.5f to listOf( // stop and throw 2 balls and 5 balls
                 1.5f to ::randomSpin,
                 0.5f to ::stopSpinning,
                 1f to ::simpleAttack,
                 1f to ::simpleAttack,
                 2f to ::strongAttack,
             ),
-            0.5f to listOf(
+            0.1f to listOf(
                 2f to ::startCharging,
                 0f to ::stopCharging,
                 5f to {
@@ -105,8 +101,8 @@ class BossI(
                     startCameraMovement()
                 }
             ),
-            1f to listOf(
-                1f to ::land,
+            0.25f to listOf(
+                1f to ::floatDown,
                 2f to ::startCharging,
                 0.1f to {
                     stopCharging()
@@ -119,7 +115,7 @@ class BossI(
                     elevatingRate = -200f
                 },
                 1f to {},
-                1f to ::elevate,
+                1f to ::floatUp,
                 1f to {},
             )
         )
