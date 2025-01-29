@@ -75,6 +75,13 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val outro2 by prepare { context.vfs["texture/outro/2.png"].readTexture() }
     val outro3 by prepare { context.vfs["texture/outro/3.png"].readTexture() }
     val outro4 by prepare { context.vfs["texture/outro/4.png"].readTexture() }
+
+    val menuContinue by prepare { context.vfs["texture/menu_continue.png"].readTexture() }
+    val menuControls by prepare { context.vfs["texture/menu_controls.png"].readTexture() }
+    val menuVolume by prepare { context.vfs["texture/menu_volume.png"].readTexture() }
+    val submenuControlsManual by prepare { context.vfs["texture/submenu_manual_controls.png"].readTexture() }
+    val submenuControlsAutomatic by prepare { context.vfs["texture/submenu_automatic_controls.png"].readTexture() }
+    val submenuControlsSens by prepare { context.vfs["texture/submenu_mouse_sensitivity.png"].readTexture() }
 }
 
 class Sound(context:Context): AssetPack(context) {

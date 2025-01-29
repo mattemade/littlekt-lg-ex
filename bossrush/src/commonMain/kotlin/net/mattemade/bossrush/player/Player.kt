@@ -52,7 +52,7 @@ class Player(
     override var position = MutableVec2f(0f, -80f)
     var previousPosition = position.toMutableVec2()
     var previousRotationStopOrPivot = 0f
-    var swingingForMillis = 0f
+    //var swingingForMillis = 0f
     //var rotation = 0f
     //var relativeRacketPosition = MutableVec2f(0f, 0f)
     var racketPosition = MutableVec2f(0f, 0f)
@@ -65,6 +65,7 @@ class Player(
 
     var isReadyToSwing = true
     var lastInputRotation = 0f
+    var stayingStillFor = 0f
     //var previousDRotation = 0f
 
     private val disappearingFor = 10000f
@@ -168,43 +169,48 @@ class Player(
             }
         }
 
-
-
         val rotation = input.rotation
         lastInputRotation = rotation
+
+        val rotationSpeed = abs(input.dRotation) / dt.milliseconds // slow 0.02 light 0.04 quick
+        if (rotationSpeed == 0f) {
+            stayingStillFor += dt.seconds
+            if (stayingStillFor > 0.125f) {
+                previousRotationStopOrPivot = input.previousRotation
+                isReadyToSwing = true
+            }
+            //isReadyToSwing = false
+        } else {
+            val pivoting = sign(input.previousMeaningfulDRotation) * sign(input.dRotation) < 0f
+            if (rotationSpeed < 0.005f || pivoting) {
+                previousRotationStopOrPivot = input.previousRotation
+                isReadyToSwing = true
+                //swingingForMillis = 0f
+            }
+        }
+
         val swingingAngleDifference = minimalRotation(previousRotationStopOrPivot, rotation)
         val absSwingingAngleDifference = abs(swingingAngleDifference)
-        swingingForMillis += dt.milliseconds
-
-        if (isReadyToSwing && absSwingingAngleDifference >= PI_F * SWING_ANGLE) {
+        //swingingForMillis += dt.milliseconds
+        if (isReadyToSwing && absSwingingAngleDifference >= PI_F * SWING_ANGLE && input.canSwing()) {
             val movementLength = input.movement.length() / dt.seconds
             val movementAngle = input.movement.angleTo(NO_ROTATION).radians
-            val angleDiff = minimalRotation(rotation, movementAngle)
+            val swingRotation = rotation - input.dRotation/2f
+            val angleDiff = minimalRotation(swingRotation, movementAngle)
             val swingingTowardsMoving = sign(swingingAngleDifference) == sign(angleDiff)
             val absAngleDiff = abs(angleDiff)
             val strongBlow = movementLength > 35f && swingingTowardsMoving && absAngleDiff < PI_F*0.75f
             dizziness += 1f
             swing(
-                rotation,
+                swingRotation,
                 swingingAngleDifference < 0f,
                 strongBlow
             )
             previousRotationStopOrPivot = rotation
             isReadyToSwing = false
-            swingingForMillis = 0f
+//            swingingForMillis = 0f
         }
 
-        val rotationSpeed = abs(input.dRotation) / dt.milliseconds // slow 0.02 light 0.04 quick
-        if (rotationSpeed == 0f) {
-            //isReadyToSwing = false
-        } else {
-            val pivoting = sign(input.previousDRotation) * sign(input.dRotation) < 0f
-            if (rotationSpeed < 0.005f || pivoting) {
-                previousRotationStopOrPivot = rotation
-                isReadyToSwing = true
-                swingingForMillis = 0f
-            }
-        }
 
         position.add(input.movement)
 
@@ -224,7 +230,7 @@ class Player(
             placingTrapForSeconds += dt.seconds
             placingTrap(placingTrapForSeconds, false)
             isReadyToSwing = false
-            swingingForMillis = 0f
+            //swingingForMillis = 0f
         }
         return true
     }

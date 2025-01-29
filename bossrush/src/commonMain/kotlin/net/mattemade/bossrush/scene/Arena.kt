@@ -18,8 +18,8 @@ import com.littlekt.math.interpolate
 import com.littlekt.math.isFuzzyZero
 import com.littlekt.math.smoothStep
 import com.littlekt.util.seconds
-import kotlinx.coroutines.job
 import net.mattemade.bossrush.Assets
+import net.mattemade.bossrush.SOUND_VOLUME
 import net.mattemade.bossrush.math.minimalRotation
 import net.mattemade.bossrush.objects.TextureParticles
 import net.mattemade.bossrush.shader.ParticleShader
@@ -47,7 +47,7 @@ class Arena(
     var angularVelocity: Float = 0f
         set(value) {
             field = value
-            assets.sound.arenaRotating.volume = smoothStep(0f, 1f, abs(value))/2f// abs(value/ 2f).pow(2)
+            assets.sound.arenaRotating.volume = smoothStep(0f, 1f, abs(value)) * SOUND_VOLUME / 20f / 2f// abs(value/ 2f).pow(2)
         }
     private var turningToZeroAction: (() -> Unit)? = null
     private var deactivated: Boolean = false

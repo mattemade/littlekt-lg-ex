@@ -3,9 +3,10 @@ package net.mattemade.bossrush.input
 import com.littlekt.Context
 import com.littlekt.input.InputMapController
 import com.littlekt.math.MutableVec2f
-import com.littlekt.math.PI2_F
 import com.littlekt.util.milliseconds
+import net.mattemade.bossrush.MOUSE_SENS
 import net.mattemade.bossrush.NO_ROTATION
+import net.mattemade.bossrush.SHOULD_USE_SWING_MODIFIER
 import net.mattemade.bossrush.math.minimalRotation
 import kotlin.time.Duration
 
@@ -19,8 +20,10 @@ class GameInput(private val context: Context, private val input: InputMapControl
         set(value) {
             field = value
         }
+
     //var absoluteRotation: Float = -PI2_F // for the intro swirl
     var previousDRotation: Float = 0f
+    var previousMeaningfulDRotation: Float = 0f
     var dRotation: Float = 0f
     var cursorCentered: Boolean = false
     var gamepadInput: Boolean = false
@@ -34,7 +37,7 @@ class GameInput(private val context: Context, private val input: InputMapControl
             cursorPosition.set(gamepadSwingHorizontal, gamepadSwingVertical).scale(20f)
             true
         } else {
-            cursorPosition.add(context.input.deltaX / 4f, context.input.deltaY / 4f)
+            cursorPosition.add(context.input.deltaX * MOUSE_SENS / 4f, context.input.deltaY * MOUSE_SENS / 4f)
             false
         }
         val length = cursorPosition.length()
@@ -50,6 +53,9 @@ class GameInput(private val context: Context, private val input: InputMapControl
         } else {
             previousRotation = rotation
             previousDRotation = dRotation
+            if (dRotation != 0f) {
+                previousMeaningfulDRotation = dRotation
+            }
             rotation = cursorPosition.angleTo(NO_ROTATION).radians
             dRotation = minimalRotation(previousRotation, rotation)
             if (cursorCentered) {
@@ -72,9 +78,17 @@ class GameInput(private val context: Context, private val input: InputMapControl
         }
     }
 
-    fun shouldUseItem(): Boolean = input.released(ControllerInput.PLACE_TRAP)
+    fun canSwing(): Boolean = !SHOULD_USE_SWING_MODIFIER || input.down(ControllerInput.SWING_MODIFIER)
 
-    fun shouldChargeItem(): Boolean = input.down(ControllerInput.PLACE_TRAP)
+    fun shouldUseItem(): Boolean =
+        if (SHOULD_USE_SWING_MODIFIER) input.released(ControllerInput.PLACE_TRAP) && !input.released(ControllerInput.SWING_MODIFIER) else input.released(
+            ControllerInput.PLACE_TRAP
+        )
+
+    fun shouldChargeItem(): Boolean =
+        if (SHOULD_USE_SWING_MODIFIER) input.down(ControllerInput.PLACE_TRAP) && !input.down(ControllerInput.SWING_MODIFIER) else input.down(
+            ControllerInput.PLACE_TRAP
+        )
 
     private fun MutableVec2f.limit(maxLength: Float): MutableVec2f =
         if (length() > maxLength) {

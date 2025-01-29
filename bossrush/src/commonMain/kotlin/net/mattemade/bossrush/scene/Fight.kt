@@ -614,7 +614,7 @@ class Fight(
             } else if (seconds >= 1f && player.resources >= 5) {
                 player.resources -= 5
                 Trap(MutableVec2f(player.racketPosition), assets).save()
-            } else if (seconds >= 0f && player.resources >= 2) {
+            } else if (seconds > 0f && player.resources >= 2) {
                 assets.sound.placeBall.play(
                     volume = SOUND_VOLUME,
                     positionX = player.racketPosition.x,
@@ -656,9 +656,9 @@ class Fight(
         getTarget: ((Projectile) -> Pair<() -> Vec2f, () -> Float>?)?
     ) {
         if (powerful) {
-            assets.sound.strongSwing.sound.play(volume = 20f, positionX = from.x, positionY = from.y)
+            assets.sound.strongSwing.sound.play(volume = SOUND_VOLUME, positionX = from.x, positionY = from.y)
         } else {
-            assets.sound.lightSwing.sound.play(volume = 20f, positionX = from.x, positionY = from.y)
+            assets.sound.lightSwing.sound.play(volume = SOUND_VOLUME, positionX = from.x, positionY = from.y)
         }
         val swing = Swing(from, angle, elevation, clockwise, assets, powerful).save()
         gameObjects.fastForEach {

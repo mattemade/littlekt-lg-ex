@@ -18,8 +18,9 @@ class RotaryFragmentShader(private val sourceText: String) : FragmentShaderModel
     val uTime = ShaderParameter.UniformFloat("u_time")
     val uAlpha = ShaderParameter.UniformFloat("u_alpha")
     val uScale = ShaderParameter.UniformFloat("u_scale")
+    val uHeightToWidthRatio = ShaderParameter.UniformFloat("u_heightToWidthRatio")
 
-    override val parameters: LinkedHashSet<ShaderParameter> = linkedSetOf(uTime, uAlpha, uScale)
+    override val parameters: LinkedHashSet<ShaderParameter> = linkedSetOf(uTime, uAlpha, uScale, uHeightToWidthRatio)
 
     override var source: String = sourceText
 }

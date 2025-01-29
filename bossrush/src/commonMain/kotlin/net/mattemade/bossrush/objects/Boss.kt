@@ -449,7 +449,7 @@ open class Boss(
         spawnsCollectible: Boolean = true,
         texture: TextureSlice = projectileTexture,
     ) {
-        assets.sound.bossFire.play(volume = 20f, positionX = position.x, positionY = position.y)
+        assets.sound.bossFire.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
 
         val deltaAngle = (angle / count).radians
         val startAngle = (-count / 2).toFloat() * deltaAngle

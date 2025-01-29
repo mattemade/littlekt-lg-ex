@@ -6,18 +6,23 @@ import com.littlekt.graphics.Camera
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.Texture
 import com.littlekt.graphics.g2d.Batch
+import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.gl.ClearBufferMask
 import com.littlekt.graphics.shader.ShaderProgram
+import com.littlekt.graphics.toFloatBits
 import com.littlekt.input.InputMapController
 import com.littlekt.input.InputProcessor
 import com.littlekt.input.Key
 import com.littlekt.input.Pointer
+import com.littlekt.math.MutableVec2f
 import com.littlekt.math.PI2_F
 import com.littlekt.math.PI_F
+import com.littlekt.math.Vec2f
 import com.littlekt.math.clamp
 import com.littlekt.math.floor
 import com.littlekt.math.smoothStep
 import com.littlekt.util.fastForEach
+import com.littlekt.util.fastForEachWithIndex
 import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.input.ControllerInput
@@ -65,12 +70,14 @@ class Game(
     private var introFadesOutIn: Float = 0f
     private var introRotation: Float = -PI2_F
     private var outroRotation: Float = -PI_F
-    private val outroTextures by lazy { mutableListOf(
-        assets.texture.outro1,
-        assets.texture.outro2,
-        assets.texture.outro3,
-        assets.texture.outro4,
-    ).mapIndexed { index, texture -> OutroInstance(index, texture, 0f) } }
+    private val outroTextures by lazy {
+        mutableListOf(
+            assets.texture.outro1,
+            assets.texture.outro2,
+            assets.texture.outro3,
+            assets.texture.outro4,
+        ).mapIndexed { index, texture -> OutroInstance(index, texture, 0f) }
+    }
     private val directRender = DirectRender(context, width = 1920, height = 1080, ::update, ::render)
     private val pixelRender = PixelRender(
         context,
@@ -89,6 +96,22 @@ class Game(
     private var scale = 0f
 
     private var absoluteGameTime = 0f
+    private var showMenu: Boolean = false
+    private var submenuRotation: Float = 0f
+    private var showSubmenu: Boolean = false
+        set(value) {
+            field = value
+            submenuRotation = 0f
+        }
+    private var menuSelection: Int = 0
+    private var menuRotation: Float = 0f
+    private val menuItems by lazy {
+        listOf(
+            MenuItem(assets.texture.menuContinue, Vec2f(VIRTUAL_WIDTH/2f, VIRTUAL_HEIGHT*0.75f), { showMenu = false }),
+            MenuItem(assets.texture.menuControls, Vec2f(VIRTUAL_WIDTH*0.75f, VIRTUAL_HEIGHT*0.25f), { showSubmenu = true }),
+            MenuItem(assets.texture.menuVolume, Vec2f(VIRTUAL_WIDTH*0.25f, VIRTUAL_HEIGHT*0.25f), { showSubmenu = true }),
+        )
+    }
 
     private var fpsCheckTimeout: Float = 5000f
     private var framesRenderedInPeriod: Int = 0
@@ -116,8 +139,24 @@ class Game(
                 }
                 if (key == Key.ESCAPE) {
                     releaseCursor()
+                }
+                if (key == Key.ESCAPE || key == Key.BACKSPACE || key == Key.ENTER || key == Key.P) {
+                    if (showSubmenu) {
+                        showSubmenu = false
+                    } else if (showMenu) {
+                        showMenu = false
+                    } else if (!showingIntro && !showingOutro && showingGame){
+                        showMenu = true
+                        menuSelection = 0
+                        menuRotation = 0f
+                    }
                 } else {
-                    captureCursor()
+                    if (!gameInput.gamepadInput) {
+                        captureCursor()
+                    }
+                    if (showMenu) {
+                        menuItems[menuSelection].action()
+                    }
                 }
                 return false
             }
@@ -125,6 +164,25 @@ class Game(
             override fun touchUp(screenX: Float, screenY: Float, pointer: Pointer): Boolean {
                 if (!focused) {
                     focused = true
+                }
+
+                if (pointer == Pointer.MOUSE_LEFT) {
+                    if (showSubmenu) {
+                        when (menuSelection) {
+                            1 -> { //controls
+                                SHOULD_USE_SWING_MODIFIER = !SHOULD_USE_SWING_MODIFIER
+                            }
+                            2 -> { // volume
+                                showSubmenu = false
+                            }
+                        }
+                    } else if (showMenu) {
+                        menuItems[menuSelection].action()
+                    }
+                } else if (showSubmenu) {
+                    showSubmenu = false
+                } else {
+                    showMenu = false
                 }
                 return false
             }
@@ -164,7 +222,7 @@ class Game(
 
             if (focused && assetsReady) {
 
-                if (showingGame && !showingOutro) {
+                if (showingGame && !showingOutro && !showMenu) {
                     fight.updateAndRender(dt)
                 }
                 pixelRender.render(dt)
@@ -198,8 +256,26 @@ class Game(
         camera.update()
     }
 
+    private var shapeRenderer: ShapeRenderer? = null
+    private val menuBackgroundTint = Color.BLACK.toMutableColor()
+    private val indicatorColor = Color(1f, 1f, 1f, 0.75f).toFloatBits()
+    private val tempVec2f = MutableVec2f()
+
     private fun renderPixels(dt: Duration, camera: Camera, batch: Batch) {
+        val shapeRenderer = shapeRenderer ?: ShapeRenderer(batch, assets.texture.whitePixel).also { shapeRenderer = it }
+        val previousShader = batch.shader
         if (!showingOutro) {
+            if (showMenu) {
+                /*menuRotation = (menuRotation + gameInput.dRotation) % (menuItems.size * PI2_F)
+                batch.shader = rotaryShader // automatically binds the shader
+                rotaryShader.fragmentShader.uHeightToWidthRatio.apply(
+                    rotaryShader,
+                    VIRTUAL_HEIGHT / VIRTUAL_WIDTH.toFloat()
+                )
+                rotaryShader.fragmentShader.uTime.apply(rotaryShader, menuRotation)
+                rotaryShader.fragmentShader.uAlpha.apply(rotaryShader, 1f)
+                rotaryShader.fragmentShader.uScale.apply(rotaryShader, 1f - PI_F / abs(menuRotation))*/
+            }
             batch.draw(fight.texture, 0f, 0f, width = GAME_WIDTH.toFloat(), height = VIRTUAL_HEIGHT.toFloat())
             batch.draw(
                 fight.uiTexture,
@@ -208,6 +284,82 @@ class Game(
                 width = UI_WIDTH.toFloat(),
                 height = VIRTUAL_HEIGHT.toFloat()
             )
+            if (showMenu) {
+                //batch.shader = previousShader
+            }
+        }
+
+        if (showMenu) {
+            if (!showSubmenu) {
+                menuRotation = (menuRotation + gameInput.dRotation) % (menuItems.size * PI2_F)
+            }
+            menuBackgroundTint.a = 0.75f//maxOf(0f, abs(menuRotation / PI_F))
+            shapeRenderer.filledRectangle(
+                x = 0f,
+                y = 0f,
+                width = VIRTUAL_WIDTH.toFloat(),
+                height = VIRTUAL_HEIGHT.toFloat(),
+                color = menuBackgroundTint.toFloatBits()
+            )
+            batch.shader = rotaryShader // automatically binds the shader
+            menuItems.fastForEachWithIndex { index, it ->
+                if (!showSubmenu || index == menuSelection) {
+                    rotaryShader.fragmentShader.uHeightToWidthRatio.apply(
+                        rotaryShader,
+                        it.texture.height / it.texture.width.toFloat()
+                    )
+                    for (i in 0..2) { // repeat multiple times for overlap over 0 rad
+                        val currentRotation = if (showSubmenu && index == menuSelection) 0f else menuRotation - index * PI2_F + (i - 1f) * PI2_F * menuItems.size
+                        val currentRotationFactor = (abs(currentRotation) / PI2_F).clamp(0f, 1.1f)
+                        if (currentRotationFactor < 0.5f) {
+                            menuSelection = index
+                        }
+                        rotaryShader.fragmentShader.uTime.apply(rotaryShader, currentRotation)
+                        rotaryShader.fragmentShader.uAlpha.apply(rotaryShader, 1f - currentRotationFactor / 1.1f)
+                        rotaryShader.fragmentShader.uScale.apply(rotaryShader, 0.5f)
+                        batch.draw(
+                            it.texture,
+                            it.position.x - it.texture.width / 2f,
+                            it.position.y - it.texture.height / 2f,
+                            width = it.texture.width.toFloat(),
+                            height = it.texture.height.toFloat(),
+                            flipY = true
+                        )
+                        batch.flush()
+                    }
+                }
+            }
+            batch.shader = previousShader
+
+            if (showSubmenu) {
+                when (menuSelection) {
+                    1 -> { // controls
+                        MOUSE_SENS = (MOUSE_SENS + gameInput.dRotation / 10f).clamp(0.2f, 5f)
+                        batch.draw(
+                            if (SHOULD_USE_SWING_MODIFIER) assets.texture.submenuControlsManual else assets.texture.submenuControlsAutomatic,
+                            0f,
+                            0f,
+                            width = 240f,
+                            height = 240f,
+                            flipY = true
+                        )
+                        batch.draw(
+                           assets.texture.submenuControlsSens,
+                            275f,
+                            VIRTUAL_HEIGHT - 26f,
+                            flipY = true
+                        )
+                        shapeRenderer.circle(335f, 177f, 20f, thickness = 1f, color = Color.WHITE.toFloatBits())
+                        shapeRenderer.filledCircle(x = 335f, 177f, 20f * MOUSE_SENS, color = indicatorColor)
+                    }
+                    2 -> { // volume
+                        SOUND_VOLUME = (SOUND_VOLUME + gameInput.dRotation).clamp(0f, 40f)
+                        shapeRenderer.circle(VIRTUAL_WIDTH/2f, VIRTUAL_HEIGHT/2f, 40f, thickness = 1f, color = Color.WHITE.toFloatBits())
+                        shapeRenderer.filledCircle(x = VIRTUAL_WIDTH/2f, VIRTUAL_HEIGHT/2f, 2f * SOUND_VOLUME, color = indicatorColor)
+                        // TODO: update playing music
+                    }
+                }
+            }
         }
 
         if (introFadesOutIn > 0f) {
@@ -224,15 +376,24 @@ class Game(
             }
         }
         if (showingIntro) {
-            val previousShader = batch.shader
             batch.shader = rotaryShader // automatically binds the shader
+            rotaryShader.fragmentShader.uHeightToWidthRatio.apply(
+                rotaryShader,
+                assets.texture.xviii.height / assets.texture.xviii.width.toFloat()
+            )
             if (introFadesOutIn > 0f) {
-                rotaryShader.fragmentShader.uTime.apply(rotaryShader, 1f + (3f - introFadesOutIn/2f)*(6f - introFadesOutIn))
+                rotaryShader.fragmentShader.uTime.apply(
+                    rotaryShader,
+                    1f + (3f - introFadesOutIn / 2f) * (6f - introFadesOutIn)
+                )
                 rotaryShader.fragmentShader.uAlpha.apply(rotaryShader, smoothStep(0f, 6f, introFadesOutIn))
-                rotaryShader.fragmentShader.uScale.apply(rotaryShader, 0.5f + smoothStep(0f, 0.75f, 0.75f - introFadesOutIn/8f))
+                rotaryShader.fragmentShader.uScale.apply(
+                    rotaryShader,
+                    0.5f + smoothStep(0f, 0.75f, 0.75f - introFadesOutIn / 8f)
+                )
             } else {
                 introRotation = (introRotation + gameInput.dRotation).clamp(-PI2_F * 2f, 0f)
-                val rotation = if (introStaysFor > 0f) 1f - introStaysFor/2f else introRotation
+                val rotation = if (introStaysFor > 0f) 1f - introStaysFor / 2f else introRotation
                 rotaryShader.fragmentShader.uTime.apply(rotaryShader, rotation)
                 rotaryShader.fragmentShader.uAlpha.apply(rotaryShader, 1f)
                 rotaryShader.fragmentShader.uScale.apply(rotaryShader, 0.5f)
@@ -251,7 +412,6 @@ class Game(
             batch.shader = previousShader
         }
         if (showingOutro) {
-            val previousShader = batch.shader
             batch.shader = rotaryShader // automatically binds the shader
             outroRotation = maxOf(-PI2_F * 2f, outroRotation + gameInput.dRotation) + dt.seconds
 
@@ -261,6 +421,10 @@ class Game(
             rotaryShader.fragmentShader.uTime.apply(rotaryShader, angleDifference)
             rotaryShader.fragmentShader.uAlpha.apply(rotaryShader, alpha)
             rotaryShader.fragmentShader.uScale.apply(rotaryShader, 0.5f)
+            rotaryShader.fragmentShader.uHeightToWidthRatio.apply(
+                rotaryShader,
+                assets.texture.xviii.height / assets.texture.xviii.width.toFloat()
+            )
             batch.draw(
                 assets.texture.xviii,
                 0f,
@@ -276,13 +440,17 @@ class Game(
             }
             //outroTextures.sortedBy { abs(it.sortFactor) }
 
-            for (i in 0 .. 3) {
+            for (i in 0..3) {
                 val outroInstance = outroTextures[i]
                 val angleDifference = outroInstance.sortFactor
                 val alpha = (1f - abs(angleDifference / (PI2_F * 6f))).clamp().pow(2)
                 rotaryShader.fragmentShader.uTime.apply(rotaryShader, angleDifference)
                 rotaryShader.fragmentShader.uAlpha.apply(rotaryShader, alpha)
                 rotaryShader.fragmentShader.uScale.apply(rotaryShader, 1f)
+                rotaryShader.fragmentShader.uHeightToWidthRatio.apply(
+                    rotaryShader,
+                    outroInstance.texture.height / outroInstance.texture.width.toFloat()
+                )
                 batch.draw(
                     outroInstance.texture,
                     0f,
@@ -293,7 +461,6 @@ class Game(
                 )
                 batch.flush()
             }
-            batch.shader = previousShader
         }
     }
 
@@ -321,6 +488,8 @@ class Game(
         const val TITLE = "XVIII"
     }
 }
+
+private class MenuItem(val texture: Texture, val position: Vec2f, val action: () -> Unit)
 
 private class OutroInstance(val order: Int, val texture: Texture, var sortFactor: Float)
 
