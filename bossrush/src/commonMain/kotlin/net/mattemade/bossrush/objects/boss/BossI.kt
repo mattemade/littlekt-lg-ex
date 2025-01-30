@@ -41,6 +41,7 @@ class BossI(
     override val returnToPosition: State = listOf(
         1f to listOf(
             2f to {
+                isDashing = false
                 dashingTowards = tempVec2f.set(position).setLength(100f).toVec2()
                 dashingSpeed = 80f
                 targetElevation = 0.01f
@@ -97,6 +98,7 @@ class BossI(
                     startCameraMovement()
                 },
                 0f to {
+                    isDashing = false
                     trapped()
                     startCameraMovement()
                 }

@@ -36,6 +36,7 @@ import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import net.mattemade.bossrush.objects.Trap
 import net.mattemade.bossrush.objects.boss.BossI
 import net.mattemade.bossrush.objects.boss.BossII
+import net.mattemade.bossrush.objects.boss.BossV
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleFragmentShader
 import net.mattemade.bossrush.shader.ParticleVertexShader
@@ -380,12 +381,14 @@ class Fight(
                                         60f,
                                         0.66f,
                                         assets,
-                                        arena
+                                        arena,
+                                        scale = 0.75f,
+                                        solidElevation = 10f,
                                     ).solid()
                                 }
                                 delay(extraDelay) {
                                     bosses.add(
-                                        Boss(
+                                        BossV(
                                             context,
                                             particleShader,
                                             player,
@@ -394,12 +397,13 @@ class Fight(
                                             ::spawnCollectible,
                                             ::bossMeleeAttack,
                                             ::destroyCollectibles,
+                                            { camera.startMovement() },
                                             MutableVec2f(-100f, 0f),
-                                            health = 0.25f
+                                            /*health = 0.25f*/
                                         ).solid()
                                     )
                                     bosses.add(
-                                        Boss(
+                                        BossV(
                                             context,
                                             particleShader,
                                             player,
@@ -408,8 +412,9 @@ class Fight(
                                             ::spawnCollectible,
                                             ::bossMeleeAttack,
                                             ::destroyCollectibles,
+                                            { camera.startMovement() },
                                             MutableVec2f(100f, 0f),
-                                            health = 0.25f
+                                        /*health = 0.25f*/
                                         ).solid()
                                     )
                                     maxBossHealth = bosses.sumOf { it.health }

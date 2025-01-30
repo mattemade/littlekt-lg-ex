@@ -11,7 +11,7 @@ import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleShader
 import kotlin.random.Random
 
-class BossII(
+class BossV(
     context: Context,
     shader: ParticleShader,
     player: Player,
@@ -21,6 +21,7 @@ class BossII(
     melee: (Vec2f, Float, Boolean) -> Unit,
     destroyCollectibles: (Boss) -> Unit,
     startCameraMovement: () -> Unit,
+    position: MutableVec2f,
 ) : Boss(
     context,
     shader,
@@ -30,8 +31,8 @@ class BossII(
     spawnCollectible,
     melee,
     destroyCollectibles,
-    position = MutableVec2f(0f, 100f),
-    health = 0.489f,
+    position,
+    health = 0.689f / 2f,
     standTexture = assets.texture.bossIIStand,
     flyTexture = assets.texture.bossIIFly,
     projectileTexture = assets.texture.projectile,
@@ -39,8 +40,9 @@ class BossII(
 
     init {
         canMeleeAttack = true
-        meleeAttackRadius = 20f
-        periodicShot = ::throwBoulder
+        meleeAttackRadius = 10f
+        followingPlayerSpeed = 20f
+        periodicShot = ::throwBomb
     }
 
     val jump = 0.25f to {
@@ -63,29 +65,20 @@ class BossII(
     override val returnToPosition: State = listOf(
         1f to listOf(
             2f to {
-                isDashing = false
                 dashingTowards = tempVec2f.set(position).setLength(100f).toVec2()
                 dashingSpeed = 80f
-                elevatingRate = 100f
-                targetElevation = 20f
+                isDashing = false
+                //elevatingRate = 100f
+                //targetElevation = 20f
                 //elevatingRate = 20f * sign(targetElevation - solidElevation)
             },
-            1f to {
-                elevatingRate = -100f
-                targetElevation = 0f
-            },
-            1f to {},
-            jump,
-            fall,
-            jump,
-            fall,
-            jump,
-            fall,
-            4f to {
-                destroyCollectibles(this)
-                spawnBoulders()
+            5f to {
+                fireEvery = 1f
+                angularSpinningSpeed = if (Random.nextBoolean()) 1f else -1f
             },
             0f to {
+                fireEvery = 0f
+                angularSpinningSpeed = 0f
                 currentState = walkingAround
             },
         )
@@ -94,7 +87,7 @@ class BossII(
     private val startSequence: State =
         listOf(
             1f to listOf(
-                1f to {},
+                /*1f to {},
                 smallJump,
                 smallFall,
                 0.25f to {},
@@ -103,7 +96,7 @@ class BossII(
                 0.25f to {},
                 smallJump,
                 smallFall,
-                1f to {},
+                1f to {},*/
                 0f to { currentState = walkingAround }
             )
         )
@@ -113,16 +106,16 @@ class BossII(
 
     private val walkingAround: State =
         listOf(
-            2f to listOf(
+            1.5f to listOf(
                 3f to ::followPlayer,
                 0f to ::stopFollowing,
                 1f to {},
-                1f to ::throwBoulder,
-                1f to ::throwBoulder,
-                1f to ::throwBoulder,
+                1f to ::shotgun,
+                1f to ::shotgun,
+                1f to ::shotgun,
                 1f to {},
             ),
-            1f to listOf(
+            0.25f to listOf(
                 20f to {
                     dashingTowards = tempVec2f.set(position).setLength(100f).toVec2()
                     dashingSpeed = 40f

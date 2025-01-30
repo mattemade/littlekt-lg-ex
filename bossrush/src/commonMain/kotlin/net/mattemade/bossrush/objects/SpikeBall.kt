@@ -29,6 +29,7 @@ class SpikeBall(
     private val assets: Assets,
     private val arena: Arena,
     private val scale: Float = 1f,
+    override val solidElevation: Float = 0f,
 ) : TemporaryDepthRenderableObject {
 
     override val position =  MutableVec2f()
@@ -61,7 +62,7 @@ class SpikeBall(
             fill(-width*2f + width * 4f * Random.nextFloat(), y - height*4f)
         },
         setEndPosition = {x, y ->
-            fill(x * scale - halfWidth, y * scale - 50f*scale) // normal rendering offsets
+            fill(x * scale - halfWidth, y * scale - texture.height*scale - solidElevation) // normal rendering offsets
         },
     )
 
@@ -94,9 +95,9 @@ class SpikeBall(
             batch.draw(
                 texture,
                 x = position.x - halfWidth,
-                y = position.y - 50f * scale,
-                width = 48f * scale,
-                height = 48f * scale,
+                y = position.y - texture.height * scale - solidElevation,
+                width = texture.width * scale,
+                height = texture.height * scale,
             )
         }
     }

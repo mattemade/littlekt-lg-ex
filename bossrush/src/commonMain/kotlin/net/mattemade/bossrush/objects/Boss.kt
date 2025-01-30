@@ -257,6 +257,7 @@ open class Boss(
     protected var targetElevation = 0f
     var elevatingRate = 0f
     private var followingPlayer = false
+    protected var followingPlayerSpeed = 20f
     var importantForCamera = true
 
     protected fun floatUp() {
@@ -394,7 +395,7 @@ open class Boss(
                         scale = 0.5f,
                         isReversible = false,
                         spawnsCollectible = false,
-                        timeToLive = 0.5f,
+                        timeToLive = 0.3f,
                         texture = assets.texture.bombProjectile
                     )
                     fireProjectiles(
@@ -408,7 +409,7 @@ open class Boss(
                         scale = 0.5f,
                         isReversible = false,
                         spawnsCollectible = false,
-                        timeToLive = 0.5f,
+                        timeToLive = 0.3f,
                         texture = assets.texture.projectile
                     )
                 },
@@ -420,7 +421,7 @@ open class Boss(
         )
     }
 
-    private fun shotgun() = fireProjectiles(
+    protected fun shotgun() = fireProjectiles(
         count = 8,
         angle = PI_F / 4f,
         tracking = true,
@@ -538,6 +539,7 @@ open class Boss(
             if (tempVec2f.length() > distanceToTarget) {
                 position.set(dashingTowards)
                 this.dashingTowards = null
+                isDashing = false
                 toNextProgramIndex = 0f
             } else {
                 position.add(tempVec2f)
@@ -561,7 +563,7 @@ open class Boss(
         if (followingPlayer) {
             tempVec2f.set(player.position).subtract(position)
             if (tempVec2f.length() > solidRadius * 2f + player.solidRadius) {
-                tempVec2f.setLength(20f).scale(dt.seconds)
+                tempVec2f.setLength(followingPlayerSpeed).scale(dt.seconds)
                 position.add(tempVec2f)
             }
         }
