@@ -42,10 +42,18 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val boulder by "texture/boulder.png".pack()
     val bomb by "texture/bomb.png".pack()
     val projectile by "texture/projectile.png".pack()
-    val bombProjectile by "texture/bomb_projectile.png".pack()
+    val dangerousProjectile by "texture/dangerous_projectile.png".pack()
+    val bombParticles by "texture/explosion_particles.png".pack()
+    val bullet by "texture/bullet.png".pack()
+    val stone by "texture/stone.png".pack()
+    val spinningBall by "texture/spinning_ball.png".pack()
+    val collectible by "texture/collectible.png".pack()
 
     val heart by "texture/heart.png".pack()
-    val resource by "texture/hud/resource.png".pack()
+    val resource by "texture/collectible.png".pack()
+    val ballIcon by "texture/hud_ball_icon.png".pack()
+    val trapIcon by "texture/hud_trap_icon.png".pack()
+    val healIcon by "texture/hud_heal_icon.png".pack()
 
     val xviii by prepare { context.vfs["texture/xviii.png"].readTexture() }
 
@@ -57,12 +65,17 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val bossIFly by "texture/boss_1_fly.png".pack()
     val bossIProjectile by "texture/boss_1_projectile.png".pack()
 
-    val bossIIStand by "texture/i/stand.png".pack()
-    val bossIIFly by "texture/i/fly.png".pack()
+    val bossIIStand by "texture/boss_2_land.png".pack()
+    val bossIIFly by "texture/boss_2_jump.png".pack()
+    val bossV1 by "texture/boss_3_1_land.png".pack()
+    val bossV2 by "texture/boss_3_2_land.png".pack()
+    val bossXVIIIStand by "texture/boss_4_land.png".pack()
+    val bossXVIIIFly by "texture/boss_4_fly.png".pack()
 
-    val giantClock by "texture/giant_clock.png".pack()
-    val giantClockMinute by "texture/giant_clock_minute.png".pack()
-    val giantClockHour by "texture/giant_clock_hour.png".pack()
+
+    val giantClock by "texture/giant_clock_face.png".pack()
+    val giantClockMinute by "texture/giant_clock_minute_hand.png".pack()
+    val giantClockHour by "texture/giant_clock_hour_hand.png".pack()
     val giantClockI by "texture/giant_clock_i.png".pack()
     val giantClockII by "texture/giant_clock_ii.png".pack()
     val giantClockV by "texture/giant_clock_v.png".pack()

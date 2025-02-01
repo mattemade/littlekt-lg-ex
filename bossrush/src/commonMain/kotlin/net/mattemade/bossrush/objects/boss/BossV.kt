@@ -1,6 +1,7 @@
 package net.mattemade.bossrush.objects.boss
 
 import com.littlekt.Context
+import com.littlekt.graphics.g2d.TextureSlice
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.Vec2f
 import net.mattemade.bossrush.Assets
@@ -22,6 +23,7 @@ class BossV(
     destroyCollectibles: (Boss) -> Unit,
     startCameraMovement: () -> Unit,
     position: MutableVec2f,
+    textureSlice: TextureSlice,
 ) : Boss(
     context,
     shader,
@@ -33,8 +35,8 @@ class BossV(
     destroyCollectibles,
     position,
     health = 0.689f / 2f,
-    standTexture = assets.texture.bossIIStand,
-    flyTexture = assets.texture.bossIIFly,
+    standTexture = textureSlice,//assets.texture.bossIIStand,
+    flyTexture = textureSlice,//assets.texture.bossIIFly,
     projectileTexture = assets.texture.projectile,
 ) {
 
@@ -45,6 +47,7 @@ class BossV(
         periodicShot = ::throwBomb
     }
 
+    override val solidHeight: Float = 26f
     override val returnToPosition: State = listOf(
         1f to listOf(
             2f to {

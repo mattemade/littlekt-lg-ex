@@ -8,6 +8,7 @@ import com.littlekt.math.MutableVec2f
 import com.littlekt.math.Vec2f
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.ARENA_RADIUS
+import net.mattemade.bossrush.Assets
 import kotlin.time.Duration
 
 class Collectible(
@@ -16,9 +17,10 @@ class Collectible(
     var elevation: Float = 2f,
     var elevationImpulse: Float = 35f,
     var gravity: Float = 100f,
+    val assets: Assets,
 ): TemporaryDepthRenderableObject {
 
-    private val shadowRadii = Vec2f(2f, 1f)
+    private val shadowRadii = Vec2f(3f, 1.5f)
     private val tempVec2f = MutableVec2f()
     var static: Boolean = false
     var collected: Boolean = false
@@ -57,7 +59,8 @@ class Collectible(
     }
 
     override fun render(batch: Batch, shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledCircle(x = position.x, y = position.y - 2f - elevation, radius = 2f, color = Color.GREEN.toFloatBits())
+        batch.draw(assets.texture.collectible, x = position.x - assets.texture.collectible.width/2f, y = position.y - assets.texture.collectible.height - elevation)
+        //shapeRenderer.filledCircle(x = position.x, y = position.y - 2f - elevation, radius = 2f, color = Color.GREEN.toFloatBits())
     }
 
     override fun renderShadow(shapeRenderer: ShapeRenderer) {

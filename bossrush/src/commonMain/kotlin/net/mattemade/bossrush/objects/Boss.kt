@@ -80,6 +80,7 @@ open class Boss(
     protected var dashingTowards: Vec2f? = null
     protected var dashingSpeed: Float = 80f
     var isDashing: Boolean = false
+    protected open val verticalOffset: Float = 0f
 
     val jump = 0.25f to {
         elevatingRate = 200f
@@ -97,6 +98,7 @@ open class Boss(
         elevatingRate = -100f
         targetElevation = 0f
     }
+    protected val bombParticles by lazy { assets.texture.bombParticles.slice(15, 15, 0)[0] }
 
     private val appearingFor = if (DEBUG) 0f else 3500f
     private fun createParticles(texture: TextureSlice): TextureParticles {
@@ -122,7 +124,7 @@ open class Boss(
                 fill(-width * 2f + width * 4f * Random.nextFloat(), y - heightFloat * 4f)
             },
             setEndPosition = { x, y ->
-                fill(x - halfWidth, y - heightFloat*0.8f - solidElevation) // normal rendering offsets
+                fill(x - halfWidth, y - heightFloat * 0.8f - solidElevation) // normal rendering offsets
             },
         )
     }
@@ -256,7 +258,7 @@ open class Boss(
             val angle = Random.nextFloat() * PI2_F
             fill(length * cos(angle), length * sin(angle))
         },
-        setEndPosition = { x, y -> fill(0f, standTexture.width/2f) })
+        setEndPosition = { x, y -> fill(0f, standTexture.width / 2f) })
     protected var charging = false
     protected var chargingTimeMultiplier = 1f
 
@@ -350,7 +352,8 @@ open class Boss(
                             50f,
                             100f,
                             false,
-                            scale = 0.5f,
+                            scale = 1f,
+                            texture = assets.texture.stone,
                         )
                     },
                     gravity = 100f,
@@ -360,6 +363,7 @@ open class Boss(
             )
         }
     }
+
     fun spawnBombs() {
         for (i in 0..8) {
             spawnRandomFloatingBomb(200f, 200f)
@@ -379,20 +383,22 @@ open class Boss(
                 elevationRate = 0f,
                 onSolidImpact = {
                     fireProjectiles(
-                        32,
+                        8,
                         PI2_F,
                         it.position,
                         80f,
                         maxOf(0f, it.solidElevation) + 0.1f,
                         elevationRateOverride = 10f,
                         tracking = false,
-                        scale = 0.5f,
+                        scale = 1f,
                         isReversible = false,
                         spawnsCollectible = false,
                         timeToLive = 0.3f,
-                        texture = assets.texture.bombProjectile
+                        texture = bombParticles[0],
+                        animation = bombParticles,
+                        timePerFrame = 0.3f/5f,
                     )
-                    fireProjectiles(
+                    /*fireProjectiles(
                         32,
                         PI2_F,
                         it.position,
@@ -405,12 +411,12 @@ open class Boss(
                         spawnsCollectible = false,
                         timeToLive = 0.3f,
                         texture = assets.texture.projectile
-                    )
+                    )*/
                 },
                 gravity = 50f,
                 solidRadius = 2f,
                 isBomb = true,
-                scale = 0.5f
+                scale = 1f
             )
         )
     }
@@ -430,7 +436,18 @@ open class Boss(
                 solidElevation = spawnElevation,
                 elevationRate = 100f * reachingInSeconds,//-spawnElevation / reachingInSeconds * 0.7f, // to make them fly a bit longer,
                 onSolidImpact = {
-                    fireProjectiles(4, PI2_F, it.position, 60f, it.solidElevation + 6f, 50f, 100f, false, scale = 0.5f)
+                    fireProjectiles(
+                        4,
+                        PI2_F,
+                        it.position,
+                        60f,
+                        it.solidElevation + 6f,
+                        50f,
+                        100f,
+                        false,
+                        scale = 1f,
+                        texture = assets.texture.stone,
+                    )
                 },
                 gravity = 200f,
                 solidRadius = 8f,
@@ -446,7 +463,7 @@ open class Boss(
         val reachingInSeconds = distance / speed
         tempVec2f.setLength(speed)
         val spawnElevation = solidElevation + 24f
-        makeBomb(spawnElevation,  50f * reachingInSeconds, MutableVec2f(tempVec2f))
+        makeBomb(spawnElevation, 50f * reachingInSeconds, MutableVec2f(tempVec2f))
     }
 
     protected fun makeBomb(spawnElevation: Float, elevationRate: Float, direction: MutableVec2f) {
@@ -460,20 +477,22 @@ open class Boss(
                 elevationRate = elevationRate,
                 onSolidImpact = {
                     fireProjectiles(
-                        32,
+                        8,
                         PI2_F,
                         it.position,
                         80f,
                         maxOf(0f, it.solidElevation) + 0.1f,
                         elevationRateOverride = 10f,
                         tracking = false,
-                        scale = 0.5f,
+                        scale = 1f,
                         isReversible = false,
                         spawnsCollectible = false,
                         timeToLive = 0.3f,
-                        texture = assets.texture.bombProjectile
+                        texture = bombParticles[0],
+                        animation = bombParticles,
+                        timePerFrame = 0.3f/5f,
                     )
-                    fireProjectiles(
+                    /*fireProjectiles(
                         32,
                         PI2_F,
                         it.position,
@@ -486,12 +505,12 @@ open class Boss(
                         spawnsCollectible = false,
                         timeToLive = 0.3f,
                         texture = assets.texture.projectile
-                    )
+                    )*/
                 },
                 gravity = 100f,
                 solidRadius = 2f,
                 isBomb = true,
-                scale = 0.5f
+                scale = 1f
             )
         )
     }
@@ -501,14 +520,17 @@ open class Boss(
         angle = PI_F / 4f,
         tracking = true,
         speed = 120f,
-        elevationRateOverride = -solidElevation*3f,
-        scale = 0.5f,
-        timeToLive = 0.6f
+        elevation = solidHeight * 0.75f,
+        elevationRateOverride = -solidElevation * 3f,
+        scale = 1f,
+        timeToLive = 0.6f,
+        texture = assets.texture.bullet,
+        rotating = true,
     )
 
-    protected fun simpleAttack() = fireProjectiles(1, 0f, tracking = true, /*scale = 0.5f*/)
+    protected fun simpleAttack() = fireProjectiles(1, 0f, tracking = true /*scale = 0.5f*/)
 
-    protected fun strongAttack() = fireProjectiles(5, PI_F / 2f, tracking = true, /*scale = 0.5f*/)
+    protected fun strongAttack() = fireProjectiles(5, PI_F / 2f, tracking = true /*scale = 0.5f*/)
 
     protected fun fireProjectiles(
         count: Int,
@@ -525,6 +547,9 @@ open class Boss(
         spawnsCollectible: Boolean = true,
         texture: TextureSlice = projectileTexture,
         extraAngle: Float = 0f,
+        rotating: Boolean = false,
+        animation: Array<TextureSlice>? = null,
+        timePerFrame: Float = 0.2f,
     ) {
         assets.sound.bossFire.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
 
@@ -533,7 +558,8 @@ open class Boss(
 
         val distance = tempVec2f.set(player.position).subtract(from).length()
         val reachingInSeconds = distance / speed
-        tempVec2f.setLength(speed).rotate((if (tracking) startAngle else -tempVec2f.angleTo(NO_ROTATION)) + extraAngle.radians)
+        tempVec2f.setLength(speed)
+            .rotate((if (tracking) startAngle else -tempVec2f.angleTo(NO_ROTATION)) + extraAngle.radians)
         /*if (tracking) {
             tempVec2f.rotate(startAngle)
         }*/
@@ -552,6 +578,9 @@ open class Boss(
                     scale = scale,
                     timeToLive = timeToLive,
                     isReversible = isReversible,
+                    rotating = rotating,
+                    animationSlices = animation,
+                    timePerFrame = timePerFrame,
                 )
             )
             tempVec2f.rotate(deltaAngle)
@@ -657,7 +686,7 @@ open class Boss(
             nextFireIn -= dt.seconds
             while (nextFireIn <= 0f) {
                 periodicShot()
-                nextFireIn += fireEvery*difficulty
+                nextFireIn += fireEvery * difficulty
             }
         }
 
@@ -699,8 +728,8 @@ open class Boss(
 
         batch.draw(
             slice = slice,
-            x = position.x - slice.width/2f,
-            y = position.y - slice.height * 0.8f - solidElevation,
+            x = position.x - slice.width / 2f,
+            y = position.y - slice.height * 0.8f - solidElevation + verticalOffset,
             width = slice.width.toFloat(),
             height = slice.height.toFloat(),
             colorBits = if (damagedForSeconds > 0f) damageColor * damagedForSeconds else batch.colorBits
@@ -717,9 +746,9 @@ open class Boss(
             batch.draw(
                 assets.texture.littleStar,
                 x = tempVec2f.x,
-                y = tempVec2f.y - 30f - solidElevation,
-                width = 8f,
-                height = 8f,
+                y = tempVec2f.y - slice.height * 0.8f - solidElevation,
+                width = 10f,
+                height = 10f,
             )
         }
     }

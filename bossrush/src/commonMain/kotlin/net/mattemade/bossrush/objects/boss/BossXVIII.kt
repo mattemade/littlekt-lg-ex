@@ -38,9 +38,9 @@ class BossXVIII(
     destroyCollectibles,
     position = MutableVec2f(0f, -100f),
     health = 2f,//2f,
-    standTexture = assets.texture.bossIIStand,
-    flyTexture = assets.texture.bossIIFly,
-    projectileTexture = assets.texture.projectile,
+    standTexture = assets.texture.bossXVIIIStand,
+    flyTexture = assets.texture.bossXVIIIFly,
+    projectileTexture = assets.texture.bossIProjectile,
 ) {
 
     init {
@@ -50,6 +50,8 @@ class BossXVIII(
         followingPlayerSpeed = 20f
         periodicShot = ::throwBomb
     }
+
+    override val verticalOffset: Float = -4f
 
     private val jumpDestroyingCollectibles: Program = listOf(
         1f to {},
@@ -256,7 +258,7 @@ class BossXVIII(
                             elevationRateOverride = -4f,
                             isReversible = false,
                             spawnsCollectible = false,
-                            texture = assets.texture.bombProjectile,
+                            texture = assets.texture.dangerousProjectile,
                             scale = 0.5f,
                             tracking = false,
                             extraAngle = extraAngle

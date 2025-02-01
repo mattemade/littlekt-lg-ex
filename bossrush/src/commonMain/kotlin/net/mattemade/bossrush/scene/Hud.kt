@@ -84,6 +84,8 @@ class Hud(
     }
 
     private val filledBallsColor: Float = Color.WHITE.toMutableColor().apply { a = 0.0f }.toFloatBits()
+    private val diselectedItemColor: Float = Color.WHITE.toMutableColor().apply { a = 0.85f }.toFloatBits()
+    private val selectedItemColor: Float = Color.WHITE.toFloatBits()
 
     private fun renderUi(dt: Duration, batch: Batch) {
         (uiShapeRenderer ?: ShapeRenderer(batch, slice = assets.texture.whitePixel).also { uiShapeRenderer = it }).let { shapeRenderer ->
@@ -126,6 +128,41 @@ class Hud(
             )
             batch.setToPreviousBlendFunction()
 
+            var xOffset = 10f
+            val yOffset = 7f + assets.texture.resource.height
+            if (player.resources >= 2) {
+                xOffset += assets.texture.ballIcon.width
+                batch.draw(
+                    assets.texture.ballIcon,
+                    x = VIRTUAL_WIDTH - xOffset,
+                    y = yOffset,
+                    width = assets.texture.ballIcon.width.toFloat(),
+                    height = assets.texture.ballIcon.height.toFloat(),
+                    colorBits = if (selectorPosition >= 1f) diselectedItemColor else selectedItemColor,
+                )
+            }
+            if (player.resources >= 5) {
+                xOffset += 2f + assets.texture.trapIcon.width
+                batch.draw(
+                    assets.texture.trapIcon,
+                    x = VIRTUAL_WIDTH - xOffset,
+                    y = yOffset,
+                    width = assets.texture.trapIcon.width.toFloat(),
+                    height = assets.texture.trapIcon.height.toFloat(),
+                    colorBits = if (selectorPosition == 0f || selectorPosition >= 1f && selectorPosition < 2f) selectedItemColor else diselectedItemColor,
+                )
+            }
+            if (player.resources >= 10) {
+                xOffset += 2f + assets.texture.healIcon.width
+                batch.draw(
+                    assets.texture.healIcon,
+                    x = VIRTUAL_WIDTH - xOffset,
+                    y = yOffset,
+                    width = assets.texture.healIcon.width.toFloat(),
+                    height = assets.texture.healIcon.height.toFloat(),
+                    colorBits = if (selectorPosition == 0f || selectorPosition >= 2f) selectedItemColor else diselectedItemColor,
+                )
+            }
         }
     }
 }

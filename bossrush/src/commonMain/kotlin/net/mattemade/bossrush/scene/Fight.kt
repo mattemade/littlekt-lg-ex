@@ -118,6 +118,7 @@ class Fight(
     private var cameraTime: Float = 2f
     private var cameraMaxTime: Float = 2f
     private var cameraFactor: Float = 1f
+    private val spinningBallSlices by lazy { assets.texture.spinningBall.slice(22, 22, 0)[0] }
 
     private val delayedQueue = mutableListOf<Pair<Float, () -> Unit>>()
 
@@ -380,6 +381,7 @@ class Fight(
                                             ::destroyCollectibles,
                                             { camera.startMovement() },
                                             MutableVec2f(-100f, 0f),
+                                            assets.texture.bossV1,
                                             /*health = 0.25f*/
                                         ).solid()
                                     )
@@ -395,6 +397,7 @@ class Fight(
                                             ::destroyCollectibles,
                                             { camera.startMovement() },
                                             MutableVec2f(100f, 0f),
+                                            assets.texture.bossV2,
                                             /*health = 0.25f*/
                                         ).solid()
                                     )
@@ -761,8 +764,15 @@ class Fight(
                             it.target = target?.first
                             it.targetElevation = target?.second
                             it.angularSpeedScale = powerfulAngularSpeedScale
+                            it.animationSlices = spinningBallSlices
+                            it.texture = spinningBallSlices[0]
+                            it.scale = 0.25f
+                            it.rotating = false
                         } else {
                             tempVec2f.set(it.position).subtract(from)
+                            it.animationSlices = null
+                            it.texture = assets.texture.ball
+                            it.scale = 1f
                             it.direction.setLength(80f).rotateTowards(tempVec2f)
                             if (it.targetElevation != null) {
                                 it.elevationRate = -60f
@@ -797,13 +807,14 @@ class Fight(
                 }
                 Projectile(
                     assets = assets,
-                    texture = assets.texture.projectile,
+                    texture = spinningBallSlices[0],
                     position = it.position.toMutableVec2(),
                     direction = ballDirection,
                     solidElevation = it.elevation,
                     elevationRate = 120f,
                     onSolidImpact = ::spawnCollectible,
-                    scale = 0.5f,
+                    scale = 0.25f,
+                    animationSlices = spinningBallSlices
                 ).also {
                     targetBoss?.let { boss ->
                         it.target = boss::position
@@ -826,6 +837,7 @@ class Fight(
                 position = projectile.position.toMutableVec2(),
                 direction = projectile.direction.toMutableVec2().scale(0.5f),
                 elevation = maxOf(0f, projectile.solidElevation),
+                assets = assets,
                 //targetElevation = 6f,
             ).solid()
         }

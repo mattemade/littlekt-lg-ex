@@ -42,7 +42,7 @@ class Arena(
     private val textureSize = Vec2f(assets.texture.arena.width.toFloat(), assets.texture.arena.height.toFloat())
     private val startPosition = Vec2f(-assets.texture.arena.width / 2f, -assets.texture.arena.height / 2f)
     private val tempVec2f = MutableVec2f()
-    var currentHour = 0
+    var currentHour = 4
 
     var angularVelocity: Float = 0f
         set(value) {
@@ -52,6 +52,7 @@ class Arena(
     private var turningToZeroAction: (() -> Unit)? = null
     private var deactivated: Boolean = false
 
+    private val maxClockAlpha = 1f
     private val clockMask = Color.WHITE.toMutableColor().apply {
         a = 0f
     }
@@ -93,7 +94,6 @@ class Arena(
             //}
 
             if (hours != lastHour) {
-                println("hour: $hours")
                 lastHour = hours
             }
 
@@ -156,7 +156,7 @@ class Arena(
     var disappearing: Boolean = false
     var previousProgress: Float = 0f
     var showingClockFor: Float = 0f
-    val maxShowingClockFor: Float = 4f
+    var maxShowingClockFor: Float = 4f
 
     var movingMinuteFrom = 0f
     var movingMinute = 0f
@@ -189,14 +189,19 @@ class Arena(
             } else {
                 movingMinuteTo = currentHour * 60f + minOf(60f, progress * 60f)
             }
-            showingClockFor = if (progress == 1f) maxShowingClockFor + 3f else maxShowingClockFor
+            if (previousProgress > 0f && progress == 0f) {
+                maxShowingClockFor = 9f
+            } else {
+                maxShowingClockFor = 4f
+            }
+            showingClockFor = maxShowingClockFor
             previousProgress = progress
         }
         //clockMask.a = (clockMask.a + dt.seconds / 2f) % 1f
         if (showingClockFor > 0f) {
             showingClockFor = maxOf(0f, showingClockFor - dt.seconds)
             val passed = maxShowingClockFor - showingClockFor
-            clockMask.a = if (passed < maxMovingClockFor) 1f else (showingClockFor / (maxShowingClockFor - maxMovingClockFor)).pow(2)
+            clockMask.a = if (passed < maxMovingClockFor) maxClockAlpha else (showingClockFor / (maxShowingClockFor - maxMovingClockFor)).pow(2) * maxClockAlpha
             val minuteFactor = minOf(1f, passed / maxMovingClockFor)
             movingMinute = smoothStep(0f, 1f, minuteFactor).interpolate(movingMinuteFrom, movingMinuteTo)// minuteFactor.interpolate(movingMinuteFrom, movingMinuteTo)
 
@@ -315,12 +320,13 @@ class Arena(
     }
 
     fun setClockFactor(factor: Float) {
-        clockMask.a = minOf(1f, factor * factor)
+        clockMask.a = minOf(1f, factor * factor) * maxClockAlpha
     }
     fun fadeClockOut() {
         //previousProgress = 0f
         movingMinuteFrom = movingMinute
         movingMinuteTo = movingMinute
+        maxShowingClockFor = 4f
         showingClockFor = 2f + maxShowingClockFor// - maxMovingClockFor
     }
 }
