@@ -6,10 +6,8 @@ import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.graphics.shader.ShaderProgram
 import com.littlekt.graphics.toFloatBits
+import com.littlekt.graphics.util.BlendMode
 import com.littlekt.math.MutableVec2f
-import com.littlekt.math.PI2_F
-import com.littlekt.math.floorToInt
-import com.littlekt.math.geom.radians
 import com.littlekt.util.milliseconds
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
@@ -61,11 +59,9 @@ class Hud(
     val halfWidth = heartSlices[0].width / 2f
     val halfHeight = heartSlices[0].height / 2f
 
-    private val fadeOutColor = Color.BLACK.toMutableColor().apply { a = 0.5f }.toFloatBits()
-
-    private val heartTextures = Array(20) { index ->
-        val startX = 10f + (heartSlices[0].width + 1) * (index % 10)
-        val startY = 7f + (heartSlices[0].height + 1) * (index / 10)
+    private val heartTextures = Array(40) { index ->
+        val startX = 10f + (heartSlices[0].width + 1) * (index % 20)
+        val startY = 7f + (heartSlices[0].height + 1) * (index / 20)
         TextureParticles(
             context,
             particleShader,
@@ -87,14 +83,16 @@ class Hud(
         }
     }
 
+    private val filledBallsColor: Float = Color.WHITE.toMutableColor().apply { a = 0.0f }.toFloatBits()
+
     private fun renderUi(dt: Duration, batch: Batch) {
         (uiShapeRenderer ?: ShapeRenderer(batch, slice = assets.texture.whitePixel).also { uiShapeRenderer = it }).let { shapeRenderer ->
 
             for (i in 0 until player.maxHearts) {
                 batch.draw(
                     heartSlices[1],
-                    x = 10f + (heartSlices[1].width + 1) * (i % 10),
-                    y = 7f + (heartSlices[1].height + 1) * (i / 10),
+                    x = 10f + (heartSlices[1].width + 1) * (i % 20),
+                    y = 7f + (heartSlices[1].height + 1) * (i / 20),
                     width = heartSlices[1].width.toFloat(),
                     height = heartSlices[1].height.toFloat()
                 )
@@ -104,54 +102,29 @@ class Hud(
                 heartTexture.render(batch, shapeRenderer)
             }
 
-
-            val offset = VIRTUAL_WIDTH - 100
-            batch.draw(assets.texture.mock, x = offset.toFloat(), y = 90f, width = 100f, height = 150f)
+            val offset = VIRTUAL_WIDTH - 10
             for (i in 1..player.resources) {
-                val row = (i - 1) % 6
-                val column = (i - 1) / 6
                 batch.draw(
                     assets.texture.resource,
-                    x = offset + 10f + 10f * column,
-                    y = 150f - 10f * row,
-                    width = 9f,
-                    height = 9f
+                    x = offset - i*(assets.texture.resource.width + 1).toFloat(),// offset + 10f + 10f * column,
+                    y = 5f,
+                    width = assets.texture.resource.width.toFloat(),
+                    height = assets.texture.resource.height.toFloat()
                 )
             }
+
+            batch.setBlendFunction(BlendMode.Alpha)
             val selectorPosition = minOf(player.placingTrapForSeconds, 3f)
-            if (selectorPosition > 0f) {
-                batch.draw(
-                    assets.texture.selector,
-                    x = offset + 38f,
-                    y = 155f - selectorPosition * 19f,
-                    width = 10f,
-                    height = 5f
-                )
-
-                val trap = minOf(3, selectorPosition.floorToInt() + 1)
-                for (i in 1..3) {
-                    if (i != trap) {
-                        shapeRenderer.filledRectangle(
-                            x = offset + 50f,
-                            y = 155f - i * 19f,
-                            width = 50f,
-                            height = 22f,
-                            color = fadeOutColor
-                        )
-                    }
-                }
-            } else {
-
-            }
-            val trapAvailable =
-                if (player.resources >= 10) 3 else if (player.resources >= 5) 2 else if (player.resources >= 2) 1 else 0
+            val filledBalls = if (selectorPosition >= 2f) 10 else if (selectorPosition >= 1f) 5 else if (selectorPosition > 0f) 2 else 0
+            val filledWidth = 10f + filledBalls * (assets.texture.resource.width + 1)
             shapeRenderer.filledRectangle(
-                x = offset + 50f,
-                y = 155f - 3 * 19f,
-                width = 50f,
-                height = 22f + 2 * 19f - trapAvailable*19f,
-                color = fadeOutColor
+                x = VIRTUAL_WIDTH - filledWidth,
+                y = 0f,
+                width = filledWidth,
+                height = 5f + assets.texture.resource.height + 2f,
+                color = filledBallsColor
             )
+            batch.setToPreviousBlendFunction()
 
         }
     }

@@ -120,11 +120,10 @@ class SpikeBall(
 
 
     override fun renderShadow(shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledEllipse(
+        shapeRenderer.filledCircle(
             position,
-            shadowRadii,
-            innerColor = Color.BLUE.toFloatBits(),
-            outerColor = Color.BLACK.toFloatBits()
+            radius = shadowRadii.x,
+            color = Color.BLACK.toFloatBits()
         )
     }
 

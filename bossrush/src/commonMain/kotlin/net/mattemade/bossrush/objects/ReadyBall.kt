@@ -41,7 +41,11 @@ class ReadyBall(
     }
 
     override fun renderShadow(shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledEllipse(position, shadowRadii, innerColor = Color.BLUE.toFloatBits(), outerColor = Color.BLACK.toFloatBits())
+        shapeRenderer.filledCircle(
+            position,
+            radius = shadowRadii.x,
+            color = Color.BLACK.toFloatBits()
+        )
     }
 
 }

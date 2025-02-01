@@ -42,7 +42,7 @@ class Player(
 
     var resources: Int = 0
         set(value) {
-            field = minOf(value, 12)
+            field = minOf(value, 20)
         }
     var hearts: Int = 3
     var maxHearts: Int = 3
@@ -316,11 +316,10 @@ class Player(
 
 
     override fun renderShadow(shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledEllipse(
+        shapeRenderer.filledCircle(
             position,
-            shadowRadii,
-            innerColor = Color.BLUE.toFloatBits(),
-            outerColor = Color.BLACK.toFloatBits()
+            radius = shadowRadii.x,
+            color = Color.BLACK.toFloatBits()
         )
     }
 

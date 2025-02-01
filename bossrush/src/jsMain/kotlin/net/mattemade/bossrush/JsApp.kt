@@ -12,6 +12,8 @@ private const val CANVAS_ID = "canvas"
 
 external fun decodeURIComponent(encodedURI: String): String
 
+val canvas = document.getElementById(CANVAS_ID) as HTMLCanvasElement
+
 fun main() {
     createLittleKtApp {
         width = 960
@@ -24,13 +26,30 @@ fun main() {
         scheduleCanvasResize(it)
         val game = Game(it, ::onLowPerformance, zoom)
         window.addEventListener("blur", {
+            if (!game.showingIntro && !game.showingOutro && game.showingGame) {
+                game.showMenu = true
+            }
             //game.focused = false
         })
+        window.onerror = { b: dynamic, s: String, i: Int, i1: Int, any: Any? ->
+            true
+        }
+        window.onunhandledrejection = {
+            true
+        }
+        document.addEventListener("pointerlockchange", {
+            if (document.asDynamic().pointerLockElement !== canvas) {
+                if (game.showSubmenu) {
+                    game.showSubmenu = false
+                } else if (!game.showingIntro && !game.showingOutro && game.showingGame) {
+                    game.showMenu = true
+                }
+            }
+        }, false)
         game
     }
 }
 
-val canvas = document.getElementById(CANVAS_ID) as HTMLCanvasElement
 private var zoom = 1f
 private var zoomFactor = 1f
 private fun scheduleCanvasResize(context: Context) {

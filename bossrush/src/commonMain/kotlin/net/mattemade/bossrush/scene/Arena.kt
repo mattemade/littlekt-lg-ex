@@ -78,17 +78,29 @@ class Arena(
             batch.draw(assets.texture.giantClock, x = clockStartPosition.x, y = clockStartPosition.y, width = clockTextureSize.x, height = clockTextureSize.y)
             //val bossNumber = 1
             //val totalMinutes = currentHour * 60 + (1 - bossProgress()) * 60// absoluteTime// * 20f
-            val minutes = movingMinute % 60f//(1f - bossProgress()) * 60f
-            val hours = /*currentHour +*/ movingMinute / 60f
+            val minutes: Float// = movingMinute % 60f//(1f - bossProgress()) * 60f
+            val hours: Float// = /*currentHour +*/ movingMinute / 60f
+
+            /*if (currentHour == 5) {
+                minutes = 0f
+                hours = 0f
+            } else*/ /*if (currentHour == 4) {
+                minutes = (-movingMinute) % 60f
+                hours = 8f - movingMinute / 60f
+            } else*/ //{
+                minutes = movingMinute % 60f
+                hours = /*currentHour +*/ movingMinute / 60f
+            //}
 
             if (hours != lastHour) {
+                println("hour: $hours")
                 lastHour = hours
             }
 
-            if (hours >= 4) putHour(batch, assets.texture.giantClockX, 0f)
-            if (hours >= 1) putHour(batch, assets.texture.giantClockI, PI_F / 2f)
-            if (hours >= 2) putHour(batch, assets.texture.giantClockII, PI_F)
-            if (hours >= 3) putHour(batch, assets.texture.giantClockV, PI2_F * 0.75f)
+            if (hours >= 4 || currentHour >= 4) putHour(batch, assets.texture.giantClockX, 0f)
+            if (hours >= 1 || currentHour >= 4) putHour(batch, assets.texture.giantClockI, PI_F / 2f)
+            if (hours >= 2 || currentHour >= 4) putHour(batch, assets.texture.giantClockII, PI_F)
+            if (hours >= 3 || currentHour >= 4) putHour(batch, assets.texture.giantClockV, PI2_F * 0.75f)
 
             val minutesRotation = minutes * PI2_F / 60f// + PI_F
             val hoursRotation = hours * PI2_F / 4f// - PI_F/2f
@@ -155,13 +167,29 @@ class Arena(
         val progress = 1f - bossLeft()
         if (previousProgress == 1f && progress == 0f || previousProgress == 0f && progress == 1f) {
             previousProgress = progress
-            movingMinuteFrom = currentHour*60f + progress * 60f
-            movingMinute = currentHour*60f + progress * 60f
-            movingMinuteTo = currentHour*60f + progress * 60f
+            if (currentHour == 5) {
+                movingMinuteFrom = 0f
+                movingMinute = 0f
+                movingMinuteTo = 0f
+            } else if (currentHour == 4) {
+                movingMinuteFrom = currentHour * 60f - progress*4f * 60f
+                movingMinute = currentHour * 60f - progress*4f * 60f
+                movingMinuteTo = currentHour * 60f - progress*4f * 60f
+            } else {
+                movingMinuteFrom = currentHour * 60f + progress * 60f
+                movingMinute = currentHour * 60f + progress * 60f
+                movingMinuteTo = currentHour * 60f + progress * 60f
+            }
         } else if (previousProgress != progress) {
             movingMinuteFrom = movingMinute
-            movingMinuteTo = currentHour*60f + minOf(60f, progress * 60f)
-            showingClockFor = maxShowingClockFor
+            if (currentHour == 5) {
+                movingMinuteTo = 0f
+            } else if (currentHour == 4) {
+                movingMinuteTo = currentHour * 60f - minOf(240f, progress * 4f * 60f)
+            } else {
+                movingMinuteTo = currentHour * 60f + minOf(60f, progress * 60f)
+            }
+            showingClockFor = if (progress == 1f) maxShowingClockFor + 3f else maxShowingClockFor
             previousProgress = progress
         }
         //clockMask.a = (clockMask.a + dt.seconds / 2f) % 1f
@@ -290,6 +318,9 @@ class Arena(
         clockMask.a = minOf(1f, factor * factor)
     }
     fun fadeClockOut() {
-        showingClockFor = maxShowingClockFor - maxMovingClockFor
+        //previousProgress = 0f
+        movingMinuteFrom = movingMinute
+        movingMinuteTo = movingMinute
+        showingClockFor = 2f + maxShowingClockFor// - maxMovingClockFor
     }
 }

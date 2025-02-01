@@ -61,7 +61,7 @@ open class Boss(
     private val notSpawnCollectible: (Projectile) -> Unit = {}
     private var damagedForSeconds: Float = 0f
     private var starTimer = 0f
-    private var trappedForSeconds = 0f
+    protected var trappedForSeconds = 0f
     var meleeCooldown = 0f
     private val shadowRadii = MutableVec2f(0f, 0f)
     private val damageColor = Color.RED.toFloatBits()
@@ -71,6 +71,7 @@ open class Boss(
     private var dizzinessSign = 1f
     var canMeleeAttack: Boolean = false
     var meleeAttackRadius = 40f
+    var difficulty = 1f
     var canSwing: Boolean = false
 
     override val solidRadius: Float
@@ -80,6 +81,22 @@ open class Boss(
     protected var dashingSpeed: Float = 80f
     var isDashing: Boolean = false
 
+    val jump = 0.25f to {
+        elevatingRate = 200f
+        targetElevation = 200f
+    }
+    val smallJump = 0.25f to {
+        elevatingRate = 100f
+        targetElevation = 200f
+    }
+    val fall = 0.25f to {
+        elevatingRate = -200f
+        targetElevation = 0f
+    }
+    val smallFall = 0.25f to {
+        elevatingRate = -100f
+        targetElevation = 0f
+    }
 
     private val appearingFor = if (DEBUG) 0f else 3500f
     private fun createParticles(texture: TextureSlice): TextureParticles {
@@ -240,7 +257,8 @@ open class Boss(
             fill(length * cos(angle), length * sin(angle))
         },
         setEndPosition = { x, y -> fill(0f, standTexture.width/2f) })
-    private var charging = false
+    protected var charging = false
+    protected var chargingTimeMultiplier = 1f
 
     protected open var currentState: State = stayingUpState
         set(value) {
@@ -256,7 +274,7 @@ open class Boss(
     var angularSpinningSpeed = 0f
     protected var targetElevation = 0f
     var elevatingRate = 0f
-    private var followingPlayer = false
+    protected var followingPlayer = false
     protected var followingPlayerSpeed = 20f
     var importantForCamera = true
 
@@ -341,7 +359,60 @@ open class Boss(
                 )
             )
         }
+    }
+    fun spawnBombs() {
+        for (i in 0..8) {
+            spawnRandomFloatingBomb(200f, 200f)
+        }
+    }
 
+    protected fun spawnRandomFloatingBomb(from: Float, range: Float) {
+        tempVec2f.set(Random.nextFloat() * 100f, 0f).rotate((Random.nextFloat() * PI2_F).radians)
+        val spawnElevation = from + Random.nextFloat() * range
+        spawn(
+            Projectile(
+                assets = assets,
+                texture = assets.texture.bomb,
+                position = tempVec2f.toMutableVec2(),
+                direction = MutableVec2f(0f, 0f),
+                solidElevation = spawnElevation,
+                elevationRate = 0f,
+                onSolidImpact = {
+                    fireProjectiles(
+                        32,
+                        PI2_F,
+                        it.position,
+                        80f,
+                        maxOf(0f, it.solidElevation) + 0.1f,
+                        elevationRateOverride = 10f,
+                        tracking = false,
+                        scale = 0.5f,
+                        isReversible = false,
+                        spawnsCollectible = false,
+                        timeToLive = 0.3f,
+                        texture = assets.texture.bombProjectile
+                    )
+                    fireProjectiles(
+                        32,
+                        PI2_F,
+                        it.position,
+                        60f,
+                        maxOf(0f, it.solidElevation) + 0.1f,
+                        elevationRateOverride = 10f,
+                        tracking = false,
+                        scale = 0.5f,
+                        isReversible = false,
+                        spawnsCollectible = false,
+                        timeToLive = 0.3f,
+                        texture = assets.texture.projectile
+                    )
+                },
+                gravity = 50f,
+                solidRadius = 2f,
+                isBomb = true,
+                scale = 0.5f
+            )
+        )
     }
 
     protected fun throwBoulder() {
@@ -375,14 +446,18 @@ open class Boss(
         val reachingInSeconds = distance / speed
         tempVec2f.setLength(speed)
         val spawnElevation = solidElevation + 24f
+        makeBomb(spawnElevation,  50f * reachingInSeconds, MutableVec2f(tempVec2f))
+    }
+
+    protected fun makeBomb(spawnElevation: Float, elevationRate: Float, direction: MutableVec2f) {
         spawn(
             Projectile(
                 assets = assets,
                 texture = assets.texture.bomb,
                 position = position.toMutableVec2(),
-                direction = MutableVec2f(tempVec2f),
+                direction = direction,
                 solidElevation = spawnElevation,
-                elevationRate = 50f * reachingInSeconds,//-spawnElevation / reachingInSeconds * 0.7f, // to make them fly a bit longer,
+                elevationRate = elevationRate,
                 onSolidImpact = {
                     fireProjectiles(
                         32,
@@ -426,7 +501,7 @@ open class Boss(
         angle = PI_F / 4f,
         tracking = true,
         speed = 120f,
-        elevationRateOverride = 0f,
+        elevationRateOverride = -solidElevation*3f,
         scale = 0.5f,
         timeToLive = 0.6f
     )
@@ -435,7 +510,7 @@ open class Boss(
 
     protected fun strongAttack() = fireProjectiles(5, PI_F / 2f, tracking = true, /*scale = 0.5f*/)
 
-    private fun fireProjectiles(
+    protected fun fireProjectiles(
         count: Int,
         angle: Float,
         from: Vec2f = position,
@@ -449,6 +524,7 @@ open class Boss(
         isReversible: Boolean = true,
         spawnsCollectible: Boolean = true,
         texture: TextureSlice = projectileTexture,
+        extraAngle: Float = 0f,
     ) {
         assets.sound.bossFire.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
 
@@ -457,7 +533,7 @@ open class Boss(
 
         val distance = tempVec2f.set(player.position).subtract(from).length()
         val reachingInSeconds = distance / speed
-        tempVec2f.setLength(speed).rotate(if (tracking) startAngle else -tempVec2f.angleTo(NO_ROTATION))
+        tempVec2f.setLength(speed).rotate((if (tracking) startAngle else -tempVec2f.angleTo(NO_ROTATION)) + extraAngle.radians)
         /*if (tracking) {
             tempVec2f.rotate(startAngle)
         }*/
@@ -482,7 +558,12 @@ open class Boss(
         }
     }
 
+    open fun preUpdate() {
+
+    }
+
     override fun update(dt: Duration): Boolean {
+        preUpdate()
         starTimer = (starTimer + dt.seconds) % PI2_F
         if (disappearing) {
             appear.update(-dt)
@@ -505,7 +586,7 @@ open class Boss(
             return true
         }
         if (meleeCooldown > 0f) {
-            meleeCooldown = maxOf(0f, meleeCooldown - dt.seconds)
+            meleeCooldown = maxOf(0f, meleeCooldown - dt.seconds * difficulty)
         }
 
         if (solidElevation < targetElevation && elevatingRate > 0f) {
@@ -529,13 +610,13 @@ open class Boss(
         }
 
         if (angularSpinningSpeed != 0f) {
-            position.rotate((angularSpinningSpeed * dt.seconds).radians)
+            position.rotate((angularSpinningSpeed * difficulty * dt.seconds).radians)
         }
 
         dashingTowards?.let { dashingTowards ->
             tempVec2f.set(dashingTowards).subtract(position)
             val distanceToTarget = tempVec2f.length()
-            tempVec2f.setLength(dashingSpeed).scale(dt.seconds)
+            tempVec2f.setLength(dashingSpeed).scale(difficulty).scale(dt.seconds)
             if (tempVec2f.length() > distanceToTarget) {
                 position.set(dashingTowards)
                 this.dashingTowards = null
@@ -546,7 +627,7 @@ open class Boss(
             }
         }
 
-        toNextProgramIndex -= dt.seconds
+        toNextProgramIndex -= dt.seconds * difficulty
         while (toNextProgramIndex < 0f) {
             currentProgramIndex++
             while (currentProgramIndex !in currentProgram.indices) {
@@ -563,20 +644,20 @@ open class Boss(
         if (followingPlayer) {
             tempVec2f.set(player.position).subtract(position)
             if (tempVec2f.length() > solidRadius * 2f + player.solidRadius) {
-                tempVec2f.setLength(followingPlayerSpeed).scale(dt.seconds)
+                tempVec2f.setLength(followingPlayerSpeed).scale(difficulty).scale(dt.seconds)
                 position.add(tempVec2f)
             }
         }
 
         if (charging) {
-            charge.addToTime(dt.milliseconds)
+            charge.addToTime(dt.milliseconds * chargingTimeMultiplier)
         }
 
         if (nextFireIn > 0f) {
             nextFireIn -= dt.seconds
             while (nextFireIn <= 0f) {
                 periodicShot()
-                nextFireIn += fireEvery
+                nextFireIn += fireEvery*difficulty
             }
         }
 
@@ -597,11 +678,10 @@ open class Boss(
     }
 
     override fun renderShadow(shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledEllipse(
+        shapeRenderer.filledCircle(
             position,
-            shadowRadii,
-            innerColor = Color.BLUE.toFloatBits(),
-            outerColor = Color.BLACK.toFloatBits()
+            radius = shadowRadii.x,
+            color = Color.BLACK.toFloatBits()
         )
     }
 
@@ -656,12 +736,14 @@ open class Boss(
 
     fun trapped() {
         trappedForSeconds = 5f
+        meleeCooldown = 5f
         targetElevation = 0f
-        elevatingRate = -60f
+        elevatingRate = -400f
         angularSpinningSpeed = 0f
         fireEvery = 0f
         importantForCamera = true
         dashingTowards = null
+        followingPlayer = false
         isDashing = false
         charging = false
         currentState = returnToPosition

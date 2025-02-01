@@ -45,11 +45,8 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
     val bombProjectile by "texture/bomb_projectile.png".pack()
 
     val heart by "texture/heart.png".pack()
-
     val resource by "texture/hud/resource.png".pack()
-    val selector by "texture/hud/selector.png".pack()
 
-    val mock by "texture/hud/mock.png".pack()
     val xviii by prepare { context.vfs["texture/xviii.png"].readTexture() }
 
     val cogwheel by "texture/cogwheel.png".pack()

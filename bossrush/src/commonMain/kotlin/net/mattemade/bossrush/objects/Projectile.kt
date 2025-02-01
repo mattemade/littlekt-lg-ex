@@ -76,11 +76,10 @@ class Projectile(
     }
 
     override fun renderShadow(shapeRenderer: ShapeRenderer) {
-        shapeRenderer.filledEllipse(
+        shapeRenderer.filledCircle(
             position,
-            shadowRadii.set(texture.width / 2f, texture.height / 4f).scale(scale).scale(if (solidElevation < 10f) 1f else if (solidElevation > 400f) 0f else 1f - 1f * (solidElevation - 10f) / (400f - 10f)),
-            innerColor = Color.BLUE.toFloatBits(),
-            outerColor = Color.BLACK.toFloatBits()
+            radius = shadowRadii.set(texture.width / 2f, texture.height / 4f).scale(scale).scale(if (solidElevation < 10f) 1f else if (solidElevation > 400f) 0f else 1f - 1f * (solidElevation - 10f) / (400f - 10f)).x,
+            color = Color.BLACK.toFloatBits()
         )
     }
 }

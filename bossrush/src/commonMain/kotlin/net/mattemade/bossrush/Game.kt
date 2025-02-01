@@ -63,9 +63,9 @@ class Game(
     private val assets = Assets(context)
     private var audioReady: Boolean = false
     private var assetsReady: Boolean = false
-    private var showingIntro: Boolean = !DEBUG
-    private var showingGame: Boolean = DEBUG
-    private var showingOutro: Boolean = false
+    var showingIntro: Boolean = !DEBUG
+    var showingGame: Boolean = DEBUG
+    var showingOutro: Boolean = false
     private var introStaysFor: Float = 0f
     private var introFadesOutIn: Float = 0f
     private var introRotation: Float = -PI2_F
@@ -96,9 +96,9 @@ class Game(
     private var scale = 0f
 
     private var absoluteGameTime = 0f
-    private var showMenu: Boolean = false
+    var showMenu: Boolean = false
     private var submenuRotation: Float = 0f
-    private var showSubmenu: Boolean = false
+    var showSubmenu: Boolean = false
         set(value) {
             field = value
             submenuRotation = 0f
@@ -166,6 +166,7 @@ class Game(
                     focused = true
                 }
 
+                captureCursor()
                 if (pointer == Pointer.MOUSE_LEFT) {
                     if (showSubmenu) {
                         when (menuSelection) {

@@ -45,23 +45,6 @@ class BossV(
         periodicShot = ::throwBomb
     }
 
-    val jump = 0.25f to {
-        elevatingRate = 200f
-        targetElevation = 200f
-    }
-    val smallJump = 0.25f to {
-        elevatingRate = 100f
-        targetElevation = 200f
-    }
-    val fall = 0.25f to {
-        elevatingRate = -200f
-        targetElevation = 0f
-    }
-    val smallFall = 0.25f to {
-        elevatingRate = -100f
-        targetElevation = 0f
-    }
-
     override val returnToPosition: State = listOf(
         1f to listOf(
             2f to {
