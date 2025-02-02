@@ -482,6 +482,7 @@ class Fight(
                                             delay(extraDelay * 1.25f) {
                                                 player.startDisappearing()
                                                 delay(extraDelay * 1.5f) {
+                                                    assets.sound.disassembleLong.stopAll()
                                                     end()
                                                 }
                                             }
@@ -696,6 +697,7 @@ class Fight(
         if (place) {
             if (seconds >= 2f && player.resources >= 10) {
                 // heal
+                assets.sound.heal.maybePlay(player.position)
                 player.resources -= 10
                 player.hearts = minOf(player.maxHearts, player.hearts + (player.maxHearts + 1) / 2)
             } else if (seconds >= 1f && player.resources >= 5) {

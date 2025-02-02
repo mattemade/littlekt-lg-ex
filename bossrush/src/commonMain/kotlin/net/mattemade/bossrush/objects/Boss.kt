@@ -303,6 +303,7 @@ open class Boss(
     }
 
     protected fun dashIntoPlayer() {
+        assets.sound.strongSwing.maybePlay(position)
         val angleToCenter = position.angleTo(NO_ROTATION).radians
         val angleHorde = tempVec2f.set(position).subtract(player.position).angleTo(NO_ROTATION).radians
         val diff = minimalRotation(angleToCenter, angleHorde)
@@ -313,9 +314,14 @@ open class Boss(
         dashingSpeed = 200f
     }
 
-    protected fun startCharging() {
+    protected fun startChargingOverride(sound: AudioClipEx) {
+        sound.maybePlay(position)
         charge.addToTime(-200000f)
         charging = true
+    }
+
+    protected fun startCharging() {
+        startChargingOverride(assets.sound.charging)
     }
 
     protected fun stopCharging() {
@@ -550,6 +556,7 @@ open class Boss(
         timeToLive = 0.6f,
         texture = assets.texture.bullet,
         rotating = true,
+        onSpawnSound = assets.sound.shotgun,
     )
 
     protected fun simpleAttack() = fireProjectiles(1, 0f, tracking = true /*scale = 0.5f*/)
@@ -624,11 +631,11 @@ open class Boss(
         if (disappearing) {
             appear.update(-dt)
             disappearing = appear.liveFactor > 0f
-            shadowRadii.set(10f, 5f).scale(appear.liveFactor)
+            shadowRadii.set(solidRadius + 2f, 5f).scale(appear.liveFactor)
             return disappearing
         } else if (appearing) {
             appearing = appear.update(dt)
-            shadowRadii.set(10f, 5f)
+            shadowRadii.set(solidRadius + 2f, 5f)
             if (appearing) {
                 shadowRadii.scale(appear.liveFactor)
             }

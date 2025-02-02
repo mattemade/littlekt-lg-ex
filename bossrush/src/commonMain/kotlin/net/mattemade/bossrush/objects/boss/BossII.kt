@@ -44,7 +44,7 @@ class BossII(
         periodicShot = ::throwBoulder
     }
 
-
+    override val solidRadius: Float = 16f
     override val returnToPosition: State = listOf(
         1f to listOf(
             2f to {

@@ -125,7 +125,18 @@ class Player(
 
     var placingTrapForSeconds = 0f
         set(value) {
-            field = minOf(value, if (resources >= 10) 2.99f else if (resources >= 5) 1.99f else if (resources >= 2f) 0.99f else 0f)
+            val newValue = minOf(
+                value,
+                if (resources >= 10) 2.99f else if (resources >= 5) 1.99f else if (resources >= 2f) 0.99f else 0f
+            )
+            if (field == 0f && newValue > 0f) {
+                assets.sound.selectBall.maybePlay(position)
+            } else if (field < 1f && newValue >= 1f) {
+                assets.sound.selectTrap.maybePlay(position)
+            } else if (field < 2f && newValue >= 2f) {
+                assets.sound.selectHeal.maybePlay(position)
+            }
+            field = newValue
         }
     private val bumpingDirection = MutableVec2f()
     private var bumpingForSeconds = 0f

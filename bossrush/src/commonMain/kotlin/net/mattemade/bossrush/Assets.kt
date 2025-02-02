@@ -121,6 +121,22 @@ class Sound(context:Context): AssetPack(context) {
         context.resourcesVfs["sound/boss_fire.wav"].readAudioClipEx()
     }
 
+    val shotgun by prepare {
+        context.resourcesVfs["sound/shotgun.wav"].readAudioClipEx()
+    }
+
+    val charging by prepare {
+        context.resourcesVfs["sound/charging_2s.wav"].readAudioClipEx()
+    }
+
+    val charging1S by prepare {
+        context.resourcesVfs["sound/charging_1s.wav"].readAudioClipEx()
+    }
+
+    val charging3S by prepare {
+        context.resourcesVfs["sound/charging_3s.wav"].readAudioClipEx()
+    }
+
     val bossHit by prepare {
         context.resourcesVfs["sound/boss_damage.wav"].readAudioClipEx()
     }

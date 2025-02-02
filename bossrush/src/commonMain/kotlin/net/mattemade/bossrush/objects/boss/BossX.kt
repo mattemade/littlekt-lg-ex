@@ -8,6 +8,7 @@ import com.littlekt.math.Vec2f
 import com.littlekt.math.geom.radians
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.NO_ROTATION
+import net.mattemade.bossrush.maybePlay
 import net.mattemade.bossrush.objects.Boss
 import net.mattemade.bossrush.objects.Projectile
 import net.mattemade.bossrush.objects.State
@@ -91,7 +92,7 @@ class BossX(
                     canSwing = false
                     canMeleeAttack = false
                     chargingTimeMultiplier = 2f
-                    startCharging()
+                    startChargingOverride(assets.sound.charging1S)
                 },
                 0.5f to {
                     stopCharging()
@@ -135,10 +136,11 @@ class BossX(
                     canSwing = false
                     canMeleeAttack = false
                     chargingTimeMultiplier = 2/3f
-                    startCharging()
+                    startChargingOverride(assets.sound.charging3S)
                 },
                 0.5f to {
                     stopCharging()
+                    assets.sound.heal.maybePlay(position)
                     health = minOf(initialHealth, health + initialHealth * 0.2f)
                 },
                 1f to {
