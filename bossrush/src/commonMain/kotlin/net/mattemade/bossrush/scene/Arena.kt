@@ -42,7 +42,7 @@ class Arena(
     private val textureSize = Vec2f(assets.texture.arena.width.toFloat(), assets.texture.arena.height.toFloat())
     private val startPosition = Vec2f(-assets.texture.arena.width / 2f, -assets.texture.arena.height / 2f)
     private val tempVec2f = MutableVec2f()
-    var currentHour = 4
+    var currentHour = 0
 
     var angularVelocity: Float = 0f
         set(value) {

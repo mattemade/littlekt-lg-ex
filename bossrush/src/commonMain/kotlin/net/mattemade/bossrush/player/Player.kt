@@ -22,6 +22,7 @@ import net.mattemade.bossrush.SOUND_VOLUME
 import net.mattemade.bossrush.SWING_ANGLE
 import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.math.minimalRotation
+import net.mattemade.bossrush.maybePlay
 import net.mattemade.bossrush.objects.TemporaryDepthRenderableObject
 import net.mattemade.bossrush.objects.TextureParticles
 import net.mattemade.bossrush.shader.ParticleShader
@@ -40,12 +41,12 @@ class Player(
     private val swing: (angle: Float, clockwise: Boolean, powerful: Boolean) -> Unit,
 ) : TemporaryDepthRenderableObject {
 
-    var resources: Int = 20
+    var resources: Int = 0
         set(value) {
             field = minOf(value, 20)
         }
-    var hearts: Int = 30
-    var maxHearts: Int = 30
+    var hearts: Int = 3
+    var maxHearts: Int = 3
     override val solidHeight: Float = 30f
     var dizziness: Float = 0f
     var dizzy: Boolean = false
@@ -331,7 +332,7 @@ class Player(
 
     fun damaged() {
         if (hearts > 0 && damagedForSeconds == 0f) {
-            assets.sound.playerHit.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
+            assets.sound.playerHit.maybePlay(position)
             damagedForSeconds = 0.75f
             hearts--
             if (hearts == 0) {

@@ -57,6 +57,10 @@ internal class WebAudioStreamEx(private val audio: WebAudioEx) : AudioStreamEx {
         isPaused = false
     }
 
+    override fun fullStop() {
+        audio.fullStop()
+    }
+
     override fun resume() {
         audio.resume()
         isPaused = false

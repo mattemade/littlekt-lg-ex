@@ -223,6 +223,7 @@ class Game(
 
             if (focused && assetsReady) {
 
+                updateSoundTime(dt)
                 if (showingGame && !showingOutro && !showMenu) {
                     fight.updateAndRender(dt)
                 }

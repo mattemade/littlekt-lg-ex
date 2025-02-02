@@ -111,6 +111,10 @@ internal class WebAudioEx private constructor(
         isPlaying = false
     }
 
+    internal fun fullStop() {
+        pipeline.source.stop(0.0)
+    }
+
     internal fun resume() = resume(pipeline)
 
     internal fun resume(pipeline: WebAudioPipeline) {

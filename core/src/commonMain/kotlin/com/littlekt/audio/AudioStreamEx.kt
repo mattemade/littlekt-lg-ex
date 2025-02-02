@@ -26,4 +26,6 @@ interface AudioStreamEx : AudioStream {
     )
 
     fun setPosition(positionX: Float, positionY: Float)
+
+    fun fullStop()
 }

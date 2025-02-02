@@ -52,6 +52,7 @@ class BossX(
     standTexture =  assets.texture.robot.slice(sliceWidth = assets.texture.robot.width / 8, sliceHeight = assets.texture.robot.height)[0][0],
     flyTexture = assets.texture.robot.slice(sliceWidth = assets.texture.robot.width / 8, sliceHeight = assets.texture.robot.height)[0][0],
     projectileTexture = assets.texture.ball,
+    associatedMusic = assets.music.bossX,
 ) {
 
     init {

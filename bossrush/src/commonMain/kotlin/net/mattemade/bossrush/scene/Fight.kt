@@ -17,12 +17,15 @@ import net.mattemade.bossrush.ARENA_RADIUS
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.DEBUG
 import net.mattemade.bossrush.NO_ROTATION
-import net.mattemade.bossrush.SOUND_VOLUME
 import net.mattemade.bossrush.VIRTUAL_HEIGHT
 import net.mattemade.bossrush.VIRTUAL_WIDTH
+import net.mattemade.bossrush.cameraMoved
+import net.mattemade.bossrush.fullStopMusic
 import net.mattemade.bossrush.input.GameInput
 import net.mattemade.bossrush.math.minimalRotation
 import net.mattemade.bossrush.math.rotateTowards
+import net.mattemade.bossrush.maybePlay
+import net.mattemade.bossrush.maybePlayMusic
 import net.mattemade.bossrush.objects.Boss
 import net.mattemade.bossrush.objects.BossMeleeAttack
 import net.mattemade.bossrush.objects.Cogwheel
@@ -42,6 +45,7 @@ import net.mattemade.bossrush.objects.boss.BossXVIII
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleFragmentShader
 import net.mattemade.bossrush.shader.ParticleVertexShader
+import net.mattemade.bossrush.pauseMusic
 import net.mattemade.utils.releasing.Releasing
 import net.mattemade.utils.releasing.Self
 import net.mattemade.utils.render.PixelRender
@@ -164,6 +168,7 @@ class Fight(
         )
         context.audio.setListenerPosition(camera.position.x, camera.position.y, -50f)
         assets.sound.arenaRotating.setPosition(camera.position.x, camera.position.y)
+        cameraMoved(camera.position)
         camera.update()
 
         gameObjects.fastIterateRemove { obj ->
@@ -266,11 +271,7 @@ class Fight(
                                             collide = true
                                         } else if (solid.isActive() && (solid is Column || solid is SpikeBall)) {
                                             obj.direction.set(0f, 0f)
-                                            assets.sound.projectileLand.play(
-                                                volume = SOUND_VOLUME,
-                                                positionX = obj.position.x,
-                                                positionY = obj.position.y
-                                            )
+                                            assets.sound.projectileLand.maybePlay(obj.position)
                                             obj.onSolidImpact(obj)
                                             //spawnCollectible(obj)
                                             collide = true
@@ -508,10 +509,12 @@ class Fight(
         }
         if (bosses.isNotEmpty()) {
             totalBossHealth = maxOf(0f, bosses.sumOf { it.health })
+            bosses.first().associatedMusic.maybePlayMusic(context.vfs)
         }
         val playerIsDead = player.hearts == 0
         if (!bossScheduled && !cogwheelFound && (totalBossHealth <= 0f || playerIsDead)) {
             bosses.clear()
+
             solidObjects.fastIterateRemove {
                 var removing = it !is Player && it !is Collectible
                 if (it is Column || it is SpikeBall || it is Boss) {
@@ -537,6 +540,7 @@ class Fight(
                 }
             }
             if (playerIsDead) {
+                pauseMusic()
                 extraDelay = maxOf(0f, extraDelay - 2f)
                 player.maxHearts = minOf(40, player.maxHearts + player.maxHearts / 3)
                 player.hearts = player.maxHearts
@@ -546,6 +550,7 @@ class Fight(
                 delayedQueue.clear()
             } else {
                 // bosses cleared
+                pauseMusic()
                 extraDelay = 5f
                 arena.currentHour++
             }
@@ -691,11 +696,7 @@ class Fight(
                 player.resources -= 5
                 placeTrap(MutableVec2f(player.racketPosition))
             } else if (seconds > 0f && player.resources >= 2) {
-                assets.sound.placeBall.play(
-                    volume = SOUND_VOLUME,
-                    positionX = player.racketPosition.x,
-                    positionY = player.racketPosition.y
-                )
+                assets.sound.placeBall.maybePlay(player.racketPosition)
                 player.resources -= 2
                 placeBall(MutableVec2f(player.racketPosition))
             }
@@ -740,9 +741,9 @@ class Fight(
         getTarget: ((Projectile) -> Pair<() -> Vec2f, () -> Float>?)?
     ) {
         if (powerful) {
-            assets.sound.strongSwing.sound.play(volume = SOUND_VOLUME, positionX = from.x, positionY = from.y)
+            assets.sound.strongSwing.maybePlay(from)
         } else {
-            assets.sound.lightSwing.sound.play(volume = SOUND_VOLUME, positionX = from.x, positionY = from.y)
+            assets.sound.lightSwing.maybePlay(from)
         }
         val swing = Swing(from, angle, elevation, clockwise, assets, powerful).save()
         gameObjects.fastForEach {

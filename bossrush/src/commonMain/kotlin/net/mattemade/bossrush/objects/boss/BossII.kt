@@ -35,6 +35,7 @@ class BossII(
     standTexture = assets.texture.bossIIStand,
     flyTexture = assets.texture.bossIIFly,
     projectileTexture = assets.texture.projectile,
+    associatedMusic = assets.music.bossII,
 ) {
 
     init {

@@ -1,6 +1,7 @@
 package net.mattemade.bossrush.objects
 
 import com.littlekt.Context
+import com.littlekt.audio.AudioStreamEx
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.TextureSlice
@@ -21,6 +22,7 @@ import net.mattemade.bossrush.DEBUG
 import net.mattemade.bossrush.NO_ROTATION
 import net.mattemade.bossrush.SOUND_VOLUME
 import net.mattemade.bossrush.math.minimalRotation
+import net.mattemade.bossrush.maybePlay
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleShader
 import net.mattemade.utils.math.fill
@@ -43,6 +45,7 @@ open class Boss(
     private val spawnCollectible: (Projectile) -> Unit,
     private val melee: (position: Vec2f, angle: Float, clockwise: Boolean) -> Unit,
     private val destroyCollectibles: (Boss) -> Unit,
+    val associatedMusic: AudioStreamEx,
     override val position: MutableVec2f = MutableVec2f(0f, -100f),
     var health: Float = 1f,
     private val standTexture: TextureSlice = assets.texture.bossIStand,
@@ -521,7 +524,7 @@ open class Boss(
         tracking = true,
         speed = 120f,
         elevation = solidHeight * 0.75f,
-        elevationRateOverride = -solidElevation * 3f,
+        elevationRateOverride = -solidElevation * 2f,
         scale = 1f,
         timeToLive = 0.6f,
         texture = assets.texture.bullet,
@@ -551,7 +554,7 @@ open class Boss(
         animation: Array<TextureSlice>? = null,
         timePerFrame: Float = 0.2f,
     ) {
-        assets.sound.bossFire.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
+        assets.sound.bossFire.maybePlay(position)
 
         val deltaAngle = (angle / count).radians
         val startAngle = (-count / 2).toFloat() * deltaAngle
@@ -783,9 +786,9 @@ open class Boss(
             return
         }*/
         if (damagedForSeconds <= 0f) {
-            assets.sound.bossHit.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
+            assets.sound.bossHit.maybePlay(position)
             damagedForSeconds = 0.75f
-            health -= /*if (strong) 0.1f else*/ 0.05f
+            health -= /*if (strong) 0.1f else*/ 0.05f + maxOf(0f, (player.maxHearts - 3f)) * 0.01f
         }
         /*if (health <= 0f) {
             health = 0f

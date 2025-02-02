@@ -14,6 +14,7 @@ import net.mattemade.bossrush.FRONT_ROTATION
 import net.mattemade.bossrush.NO_ROTATION
 import net.mattemade.bossrush.SOUND_VOLUME
 import net.mattemade.bossrush.math.rotateTowards
+import net.mattemade.bossrush.maybePlay
 import kotlin.time.Duration
 
 class Projectile(
@@ -69,7 +70,7 @@ class Projectile(
             elevationRate -= gravity * dt.seconds
             solidElevation += elevationRate * dt.seconds
             if (solidElevation <= 0f) {
-                assets.sound.projectileLand.play(volume = SOUND_VOLUME, positionX = position.x, positionY = position.y)
+                assets.sound.projectileLand.maybePlay(position)
                 onSolidImpact(this)
                 return false
             }

@@ -41,6 +41,7 @@ class BossXVIII(
     standTexture = assets.texture.bossXVIIIStand,
     flyTexture = assets.texture.bossXVIIIFly,
     projectileTexture = assets.texture.bossIProjectile,
+    associatedMusic = assets.music.bossXVIII,
 ) {
 
     init {

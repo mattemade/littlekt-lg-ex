@@ -33,6 +33,7 @@ class BossV(
     spawnCollectible,
     melee,
     destroyCollectibles,
+    associatedMusic = assets.music.bossV,
     position,
     health = 0.689f / 2f,
     standTexture = textureSlice,//assets.texture.bossIIStand,

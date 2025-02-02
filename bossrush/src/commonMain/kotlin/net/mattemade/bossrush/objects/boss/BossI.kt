@@ -36,6 +36,7 @@ class BossI(
     standTexture = assets.texture.bossIStand,
     flyTexture = assets.texture.bossIFly,
     projectileTexture = assets.texture.bossIProjectile,
+    associatedMusic = assets.music.bossI,
 ) {
 
     override val returnToPosition: State = listOf(

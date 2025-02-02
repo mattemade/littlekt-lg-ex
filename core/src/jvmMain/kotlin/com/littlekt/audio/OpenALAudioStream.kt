@@ -170,6 +170,8 @@ class OpenALAudioStream(
         isPaused = false
     }
 
+    override fun fullStop() = stop()
+
     override fun resume() = withDevice {
         if (sourceID != -1) {
             alSourcePlay(sourceID)

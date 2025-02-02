@@ -17,6 +17,7 @@ class Assets(context: Context) : AssetPack(context) {
 
     val texture by pack { Textures(context, runtimeTextureAtlasPacker) }
     val sound by pack { Sound(context) }
+    val music by pack { Music(context) }
 
     private val atlas by prepare(1) { runtimeTextureAtlasPacker.packAtlas() }
 }
@@ -135,6 +136,30 @@ class Sound(context:Context): AssetPack(context) {
     }
 
 
+}
+
+class Music(context: Context): AssetPack(context) {
+    val bossI by prepare {
+        context.resourcesVfs["music/5. Boss 1.mp3"].readAudioStreamEx()
+    }
+    val bossII by prepare {
+        context.resourcesVfs["music/3. Subway.mp3"].readAudioStreamEx()
+    }
+    val bossV by prepare {
+        context.resourcesVfs["music/8. Boss 2.mp3"].readAudioStreamEx()
+    }
+    val bossX by prepare {
+        context.resourcesVfs["music/9. Neon Towers.mp3"].readAudioStreamEx()
+    }
+    val bossXVIII by prepare {
+        context.resourcesVfs["music/12. Final Boss.mp3"].readAudioStreamEx()
+    }
+
+    /*I - boss 1
+II - subway
+V - boss 2
+X - neon towers
+XVIII - last boss*/
 }
 
 
