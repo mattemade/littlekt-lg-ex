@@ -192,9 +192,12 @@ class Fight(
             if (it != player) {
                 it.solidRadius?.let { solidRadius ->
                     if (player.position.distance(it.position) < player.solidRadius + solidRadius) {
-                        if (it is Collectible && !it.collected) {
-                            it.collected = true
-                            player.resources++
+                        if (it is Collectible) {
+                            if (!it.collected && player.resources < 20) {
+                                it.collected = true
+                                assets.sound.collectBall.maybePlay(player.position)
+                                player.resources++
+                            }
                         } else if (player.damagedForSeconds == 0f && (it is SpikeBall || it is Boss && it.isDashing) && it.isActive()) {
                             player.bumpFrom(it.position)
                             player.damaged()
@@ -240,11 +243,13 @@ class Fight(
                         if (obj.position.distance(player.position) < player.solidRadius + obj.solidRadius) {
                             player.trapped()
                             obj.activate()
+                            assets.sound.trapTrigger.maybePlay(obj.position)
                         }
                         bosses.fastForEach { boss ->
                             if (obj.activatedTimeToLive < 0f && boss.solidElevation < 5f && obj.position.distance(boss.position) < boss.solidRadius + obj.solidRadius * 3f) {
                                 boss.trapped()
                                 obj.activate()
+                                assets.sound.trapTrigger.maybePlay(obj.position)
                             }
                         }
                     }
@@ -271,7 +276,7 @@ class Fight(
                                             collide = true
                                         } else if (solid.isActive() && (solid is Column || solid is SpikeBall)) {
                                             obj.direction.set(0f, 0f)
-                                            assets.sound.projectileLand.maybePlay(obj.position)
+                                            obj.onLandSound.maybePlay(obj.position)
                                             obj.onSolidImpact(obj)
                                             //spawnCollectible(obj)
                                             collide = true
@@ -696,7 +701,6 @@ class Fight(
                 player.resources -= 5
                 placeTrap(MutableVec2f(player.racketPosition))
             } else if (seconds > 0f && player.resources >= 2) {
-                assets.sound.placeBall.maybePlay(player.racketPosition)
                 player.resources -= 2
                 placeBall(MutableVec2f(player.racketPosition))
             }
@@ -704,10 +708,12 @@ class Fight(
     }
     
     private fun placeTrap(position: MutableVec2f) {
+        assets.sound.putTrap.maybePlay(position)
         Trap(position, assets).save()
     }
     
     private fun placeBall(position: MutableVec2f) {
+        assets.sound.placeBall.maybePlay(position)
         ReadyBall(position, assets).save()
     }
 

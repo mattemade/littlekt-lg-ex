@@ -57,11 +57,11 @@ class BossXVIII(
     private val jumpDestroyingCollectibles: Program = listOf(
         1f to {},
         jump,
-        fall,
+        *fall,
         jump,
-        fall,
+        *fall,
         jump,
-        fall,
+        *fall,
         4f to {
             destroyCollectibles(this)
             if (Random.nextBoolean()) spawnBoulders() else spawnBombs()

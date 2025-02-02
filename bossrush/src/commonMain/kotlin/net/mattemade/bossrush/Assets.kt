@@ -98,21 +98,17 @@ class Textures(context: Context, private val packer: RuntimeTextureAtlasPacker):
 class Sound(context:Context): AssetPack(context) {
     val lightSwing by pack {
         SoundPack(context, listOf(
-            "sound/Light Hit 1.wav",
-            "sound/Light Hit 2.wav",
-            "sound/Light hit 3.wav",
-            "sound/Light hit 4.wav",
+            "sound/light_swing.wav",
         ))
     }
     val strongSwing by pack {
         SoundPack(context, listOf(
-            "sound/Heavy Hit 1.wav",
-            "sound/Heavy Hit 2.wav",
+            "sound/strong_swing.wav",
         ))
     }
 
     val arenaRotating by prepare {
-        context.resourcesVfs["sound/Floor Rotating.wav"].readAudioStreamEx()
+        context.resourcesVfs["sound/arena_rotating.wav"].readAudioStreamEx()
     }
 
     val bossFire by prepare {
@@ -120,22 +116,60 @@ class Sound(context:Context): AssetPack(context) {
     }
 
     val bossHit by prepare {
-        context.resourcesVfs["sound/Boss gets hit.wav"].readAudioClipEx()
+        context.resourcesVfs["sound/boss_damage.wav"].readAudioClipEx()
+    }
+
+    val bossJump by prepare {
+        context.resourcesVfs["sound/boss_jump.wav"].readAudioClipEx()
+    }
+
+    val bossLand by prepare {
+        context.resourcesVfs["sound/boss_land.wav"].readAudioClipEx()
+    }
+
+    val boulderThrow by prepare {
+        context.resourcesVfs["sound/boss_boulder_throw.wav"].readAudioClipEx()
+    }
+
+    val boulderLand by prepare {
+        context.resourcesVfs["sound/boulder_land.wav"].readAudioClipEx()
+    }
+
+    val bombExplosion by prepare {
+        context.resourcesVfs["sound/bomb_explosion.wav"].readAudioClipEx()
     }
 
     val playerHit by prepare {
-        context.resourcesVfs["sound/Player gets hit.mp3"].readAudioClipEx()
+        context.resourcesVfs["sound/player_damage.wav"].readAudioClipEx()
+    }
+
+    val collectBall by prepare {
+        context.resourcesVfs["sound/ball_collected.wav"].readAudioClipEx()
     }
 
     val placeBall by prepare {
         context.resourcesVfs["sound/Placing Ball.wav"].readAudioClipEx()
     }
 
+    val putTrap by prepare {
+        context.resourcesVfs["sound/put_trap.wav"].readAudioClipEx()
+    }
+
+    val trapTrigger by prepare {
+        context.resourcesVfs["sound/trap_trigger.wav"].readAudioClipEx()
+    }
+
     val projectileLand by prepare {
         context.resourcesVfs["sound/Ball hits wall or floor.mp3"].readAudioClipEx()
     }
 
+    val cogwheelTurn by prepare {
+        context.resourcesVfs["sound/cogwheel_turn.wav"].readAudioClipEx()
+    }
 
+    val silence by prepare {
+        context.resourcesVfs["sound/silence.wav"].readAudioClipEx()
+    }
 }
 
 class Music(context: Context): AssetPack(context) {

@@ -9,9 +9,11 @@ import com.littlekt.math.Vec2f
 import com.littlekt.math.floorToInt
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.input.GameInput
+import net.mattemade.bossrush.maybePlay
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.shader.ParticleShader
 import net.mattemade.utils.math.fill
+import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.time.Duration
 
@@ -39,6 +41,8 @@ class Cogwheel(
     private val halfWidth = width / 2f
     private var appearing = true
     private var disappearing = false
+    private var previousSegment = 0
+    private var segment = 0
 
     private val appear = TextureParticles(
         context,
@@ -69,6 +73,11 @@ class Cogwheel(
             appearing = appear.update(dt)
         } else if (player.position.distance(position) < player.solidRadius * 5f + solidRadius) {
             rotation -= input.dRotation
+            previousSegment = segment
+            segment = ((rotation / radInSegment).floorToInt() % positions + positions) % positions
+            if (previousSegment != segment) {
+                assets.sound.cogwheelTurn.maybePlay(position)
+            }
         }
         return true
     }
@@ -83,7 +92,6 @@ class Cogwheel(
         if (appearing || disappearing) {
             appear.render(batch, shapeRenderer)
         } else {
-            val segment = ((rotation / radInSegment).floorToInt() % positions + positions) % positions
             val slice = segments[segment]
             batch.draw(
                 slice,

@@ -45,8 +45,8 @@ class Player(
         set(value) {
             field = minOf(value, 20)
         }
-    var hearts: Int = 3
-    var maxHearts: Int = 3
+    var hearts: Int = 30
+    var maxHearts: Int = 30
     override val solidHeight: Float = 30f
     var dizziness: Float = 0f
     var dizzy: Boolean = false

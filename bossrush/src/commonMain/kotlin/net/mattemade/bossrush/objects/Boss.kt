@@ -1,6 +1,7 @@
 package net.mattemade.bossrush.objects
 
 import com.littlekt.Context
+import com.littlekt.audio.AudioClipEx
 import com.littlekt.audio.AudioStreamEx
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.g2d.Batch
@@ -20,7 +21,6 @@ import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.DEBUG
 import net.mattemade.bossrush.NO_ROTATION
-import net.mattemade.bossrush.SOUND_VOLUME
 import net.mattemade.bossrush.math.minimalRotation
 import net.mattemade.bossrush.maybePlay
 import net.mattemade.bossrush.player.Player
@@ -86,6 +86,7 @@ open class Boss(
     protected open val verticalOffset: Float = 0f
 
     val jump = 0.25f to {
+        assets.sound.bossJump.maybePlay(position)
         elevatingRate = 200f
         targetElevation = 200f
     }
@@ -93,10 +94,14 @@ open class Boss(
         elevatingRate = 100f
         targetElevation = 200f
     }
-    val fall = 0.25f to {
+    val fall = listOf(0.25f to {
         elevatingRate = -200f
         targetElevation = 0f
-    }
+    }, 0f to {
+        assets.sound.bossLand.maybePlay(position)
+        Unit
+    }).toTypedArray()
+
     val smallFall = 0.25f to {
         elevatingRate = -100f
         targetElevation = 0f
@@ -357,11 +362,13 @@ open class Boss(
                             false,
                             scale = 1f,
                             texture = assets.texture.stone,
+                            onSpawnSound = assets.sound.silence,
                         )
                     },
                     gravity = 100f,
                     solidRadius = 8f,
                     isReversible = false,
+                    onLandSound = assets.sound.boulderLand,
                 )
             )
         }
@@ -399,7 +406,9 @@ open class Boss(
                         timeToLive = 0.3f,
                         texture = bombParticles[0],
                         animation = bombParticles,
-                        timePerFrame = 0.3f/5f,
+                        timePerFrame = 0.3f / 5f,
+                        onSpawnSound = assets.sound.silence,
+                        onLandSound = assets.sound.silence,
                     )
                     /*fireProjectiles(
                         32,
@@ -419,12 +428,14 @@ open class Boss(
                 gravity = 50f,
                 solidRadius = 2f,
                 isBomb = true,
-                scale = 1f
+                scale = 1f,
+                onLandSound = assets.sound.bombExplosion,
             )
         )
     }
 
     protected fun throwBoulder() {
+        assets.sound.boulderThrow.maybePlay(position)
         val speed = 60f
         val distance = tempVec2f.set(player.position).subtract(position).length()
         val reachingInSeconds = distance / speed
@@ -450,17 +461,20 @@ open class Boss(
                         false,
                         scale = 1f,
                         texture = assets.texture.stone,
+                        onSpawnSound = assets.sound.silence,
                     )
                 },
                 gravity = 200f,
                 solidRadius = 8f,
                 isReversible = false,
+                onLandSound = assets.sound.boulderLand,
             )
         )
     }
 
 
     protected fun throwBomb() {
+        assets.sound.boulderThrow.maybePlay(position)
         val speed = 60f
         val distance = tempVec2f.set(player.position).subtract(position).length()
         val reachingInSeconds = distance / speed
@@ -493,7 +507,9 @@ open class Boss(
                         timeToLive = 0.3f,
                         texture = bombParticles[0],
                         animation = bombParticles,
-                        timePerFrame = 0.3f/5f,
+                        timePerFrame = 0.3f / 5f,
+                        onSpawnSound = assets.sound.silence,
+                        onLandSound = assets.sound.silence,
                     )
                     /*fireProjectiles(
                         32,
@@ -513,7 +529,8 @@ open class Boss(
                 gravity = 100f,
                 solidRadius = 2f,
                 isBomb = true,
-                scale = 1f
+                scale = 1f,
+                onLandSound = assets.sound.bombExplosion,
             )
         )
     }
@@ -553,8 +570,10 @@ open class Boss(
         rotating: Boolean = false,
         animation: Array<TextureSlice>? = null,
         timePerFrame: Float = 0.2f,
+        onSpawnSound: AudioClipEx = assets.sound.bossFire,
+        onLandSound: AudioClipEx = assets.sound.projectileLand,
     ) {
-        assets.sound.bossFire.maybePlay(position)
+        onSpawnSound.maybePlay(position)
 
         val deltaAngle = (angle / count).radians
         val startAngle = (-count / 2).toFloat() * deltaAngle
@@ -584,6 +603,7 @@ open class Boss(
                     rotating = rotating,
                     animationSlices = animation,
                     timePerFrame = timePerFrame,
+                    onLandSound = onLandSound,
                 )
             )
             tempVec2f.rotate(deltaAngle)

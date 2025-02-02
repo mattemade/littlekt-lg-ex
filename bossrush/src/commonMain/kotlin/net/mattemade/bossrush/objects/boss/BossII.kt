@@ -61,11 +61,11 @@ class BossII(
             },
             1f to {},
             jump,
-            fall,
+            *fall,
             jump,
-            fall,
+            *fall,
             jump,
-            fall,
+            *fall,
             4f to {
                 destroyCollectibles(this)
                 spawnBoulders()

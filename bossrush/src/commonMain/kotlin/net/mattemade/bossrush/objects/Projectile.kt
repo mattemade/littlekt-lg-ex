@@ -1,5 +1,6 @@
 package net.mattemade.bossrush.objects
 
+import com.littlekt.audio.AudioClipEx
 import com.littlekt.graphics.Color
 import com.littlekt.graphics.g2d.Batch
 import com.littlekt.graphics.g2d.TextureSlice
@@ -35,6 +36,7 @@ class Projectile(
     var rotating: Boolean = false,
     var animationSlices: Array<TextureSlice>? = null,
     private val timePerFrame: Float = 0.2f,
+    val onLandSound: AudioClipEx = assets.sound.projectileLand,
 ) : TemporaryDepthRenderableObject {
 
     private val previousPosition = position.toMutableVec2()
@@ -70,7 +72,7 @@ class Projectile(
             elevationRate -= gravity * dt.seconds
             solidElevation += elevationRate * dt.seconds
             if (solidElevation <= 0f) {
-                assets.sound.projectileLand.maybePlay(position)
+                onLandSound.maybePlay(position)
                 onSolidImpact(this)
                 return false
             }
