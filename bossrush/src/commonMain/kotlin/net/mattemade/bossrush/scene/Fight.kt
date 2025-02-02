@@ -478,6 +478,7 @@ class Fight(
                                     arena.turnToZero {
                                         delay(extraDelay / 2f) {
                                             arena.startDisappearing()
+                                            assets.sound.disassembleLong.maybePlay(obj.position)
                                             delay(extraDelay * 1.25f) {
                                                 player.startDisappearing()
                                                 delay(extraDelay * 1.5f) {

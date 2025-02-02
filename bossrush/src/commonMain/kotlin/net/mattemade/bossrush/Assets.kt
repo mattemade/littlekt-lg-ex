@@ -106,13 +106,19 @@ class Sound(context:Context): AssetPack(context) {
             "sound/strong_swing.wav",
         ))
     }
+    val footsteps by pack {
+        SoundPack(context, listOf(
+            "sound/footstep_1.wav",
+            "sound/footstep_2.wav",
+        ), randomize = false)
+    }
 
     val arenaRotating by prepare {
         context.resourcesVfs["sound/arena_rotating.wav"].readAudioStreamEx()
     }
 
     val bossFire by prepare {
-        context.resourcesVfs["sound/Boss Firing.wav"].readAudioClipEx()
+        context.resourcesVfs["sound/boss_fire.wav"].readAudioClipEx()
     }
 
     val bossHit by prepare {
@@ -148,7 +154,7 @@ class Sound(context:Context): AssetPack(context) {
     }
 
     val placeBall by prepare {
-        context.resourcesVfs["sound/Placing Ball.wav"].readAudioClipEx()
+        context.resourcesVfs["sound/put_ball.wav"].readAudioClipEx()
     }
 
     val putTrap by prepare {
@@ -160,7 +166,7 @@ class Sound(context:Context): AssetPack(context) {
     }
 
     val projectileLand by prepare {
-        context.resourcesVfs["sound/Ball hits wall or floor.mp3"].readAudioClipEx()
+        context.resourcesVfs["sound/projectile_land.wav"].readAudioClipEx()
     }
 
     val cogwheelTurn by prepare {
@@ -169,6 +175,42 @@ class Sound(context:Context): AssetPack(context) {
 
     val silence by prepare {
         context.resourcesVfs["sound/silence.wav"].readAudioClipEx()
+    }
+
+    val ambientBuzz by prepare {
+        context.resourcesVfs["sound/ambient_strong_buzz.wav"].readAudioClipEx()
+    }
+
+    val assemble by prepare {
+        context.resourcesVfs["sound/assemble.wav"].readAudioClipEx()
+    }
+
+    val disassemble by prepare {
+        context.resourcesVfs["sound/disassemble.wav"].readAudioClipEx()
+    }
+
+    val disassembleLong by prepare {
+        context.resourcesVfs["sound/long_disassemble.wav"].readAudioClipEx()
+    }
+
+    val headSpin by prepare {
+        context.resourcesVfs["sound/head_spin_started.wav"].readAudioClipEx()
+    }
+
+    val heal by prepare {
+        context.resourcesVfs["sound/heal.wav"].readAudioClipEx()
+    }
+
+    val selectBall by prepare {
+        context.resourcesVfs["sound/select_ball.wav"].readAudioClipEx()
+    }
+
+    val selectTrap by prepare {
+        context.resourcesVfs["sound/select_trap.wav"].readAudioClipEx()
+    }
+
+    val selectHeal by prepare {
+        context.resourcesVfs["sound/select_heal.wav"].readAudioClipEx()
     }
 }
 
@@ -188,12 +230,6 @@ class Music(context: Context): AssetPack(context) {
     val bossXVIII by prepare {
         context.resourcesVfs["music/12. Final Boss.mp3"].readAudioStreamEx()
     }
-
-    /*I - boss 1
-II - subway
-V - boss 2
-X - neon towers
-XVIII - last boss*/
 }
 
 

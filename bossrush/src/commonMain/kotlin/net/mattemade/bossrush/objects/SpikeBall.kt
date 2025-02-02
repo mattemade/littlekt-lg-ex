@@ -13,6 +13,7 @@ import com.littlekt.math.geom.radians
 import com.littlekt.util.seconds
 import net.mattemade.bossrush.Assets
 import net.mattemade.bossrush.input.GameInput
+import net.mattemade.bossrush.maybePlay
 import net.mattemade.bossrush.player.Player
 import net.mattemade.bossrush.scene.Arena
 import net.mattemade.bossrush.shader.ParticleShader
@@ -46,6 +47,10 @@ class SpikeBall(
     private var deactivated = false
 
     override val solidHeight: Float = height
+
+    init {
+        assets.sound.assemble.maybePlay(position)
+    }
 
     private val appear = TextureParticles(
         context,
@@ -106,6 +111,7 @@ class SpikeBall(
     override fun isActive(): Boolean = !appearing && !disappearing && !deactivated
 
     override fun startDisappearing() {
+        assets.sound.disassemble.maybePlay(position)
         disappearing = true
     }
 

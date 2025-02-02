@@ -45,8 +45,8 @@ class Player(
         set(value) {
             field = minOf(value, 20)
         }
-    var hearts: Int = 30
-    var maxHearts: Int = 30
+    var hearts: Int = 3
+    var maxHearts: Int = 3
     override val solidHeight: Float = 30f
     var dizziness: Float = 0f
     var dizzy: Boolean = false
@@ -129,6 +129,7 @@ class Player(
         }
     private val bumpingDirection = MutableVec2f()
     private var bumpingForSeconds = 0f
+    private var distanceWalked = 0f
 
     private val tempVec2f = MutableVec2f()
 
@@ -148,6 +149,7 @@ class Player(
         }
 
         if (!dizzy && dizziness >= 5f) {
+            assets.sound.headSpin.maybePlay(position)
             dizzy = true
             dizziness = 5f
         }
@@ -214,6 +216,13 @@ class Player(
 
 
         position.add(input.movement)
+        val walked = previousPosition.distance(position)
+        val previousSteps = distanceWalked.floorToInt() / 10
+        distanceWalked += walked
+        val currentSteps = distanceWalked.floorToInt() / 10
+        if (currentSteps > previousSteps) {
+            assets.sound.footsteps.sound.maybePlay(position)
+        }
 
         if (bumpingForSeconds > 0f) {
             bumpingForSeconds = maxOf(0f, bumpingForSeconds - dt.seconds)
@@ -325,6 +334,7 @@ class Player(
     }
 
     fun trapped() {
+        assets.sound.headSpin.maybePlay(position)
         trappedForSeconds = 2f
         placingTrapForSeconds = 0f
         bumpingDirection.set(0f, 0f)

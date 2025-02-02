@@ -44,6 +44,10 @@ class Cogwheel(
     private var previousSegment = 0
     private var segment = 0
 
+    init {
+        assets.sound.assemble.maybePlay(position)
+    }
+
     private val appear = TextureParticles(
         context,
         shader,
@@ -83,6 +87,7 @@ class Cogwheel(
     }
 
     override fun startDisappearing() {
+        assets.sound.disassemble.maybePlay(position)
         disappearing = true
     }
 

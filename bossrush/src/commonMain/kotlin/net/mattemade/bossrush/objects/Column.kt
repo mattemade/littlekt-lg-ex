@@ -6,6 +6,7 @@ import com.littlekt.graphics.g2d.shape.ShapeRenderer
 import com.littlekt.math.MutableVec2f
 import com.littlekt.math.Vec2f
 import net.mattemade.bossrush.Assets
+import net.mattemade.bossrush.maybePlay
 import net.mattemade.bossrush.shader.ParticleShader
 import net.mattemade.utils.math.fill
 import kotlin.random.Random
@@ -22,6 +23,10 @@ class Column(override val position: MutableVec2f, private val assets: Assets, co
     private val halfHeight = height / 2f
     private var appearing = true
     private var disappearing = false
+
+    init {
+        assets.sound.assemble.maybePlay(position)
+    }
 
     override val solidHeight: Float = 50f
     private val appear = TextureParticles(
@@ -74,6 +79,7 @@ class Column(override val position: MutableVec2f, private val assets: Assets, co
     override fun isActive(): Boolean = !disappearing
 
     override fun startDisappearing() {
+        assets.sound.disassemble.maybePlay(position)
         disappearing = true
     }
 }

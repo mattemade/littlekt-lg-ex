@@ -108,6 +108,10 @@ open class Boss(
     }
     protected val bombParticles by lazy { assets.texture.bombParticles.slice(15, 15, 0)[0] }
 
+    init {
+        assets.sound.assemble.maybePlay(position)
+    }
+
     private val appearingFor = if (DEBUG) 0f else 3500f
     private fun createParticles(texture: TextureSlice): TextureParticles {
         val width = texture.width
@@ -779,6 +783,7 @@ open class Boss(
     override fun isActive(): Boolean = !appearing && !disappearing && !deactivated
 
     override fun startDisappearing() {
+        assets.sound.disassemble.maybePlay(position)
         disappearing = true
     }
 
@@ -787,6 +792,7 @@ open class Boss(
     }
 
     fun trapped() {
+        assets.sound.headSpin.maybePlay(position)
         trappedForSeconds = 5f
         meleeCooldown = 5f
         targetElevation = 0f
